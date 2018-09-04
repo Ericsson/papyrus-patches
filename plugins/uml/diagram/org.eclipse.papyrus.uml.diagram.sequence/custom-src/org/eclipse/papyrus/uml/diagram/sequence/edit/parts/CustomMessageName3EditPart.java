@@ -41,10 +41,10 @@ public class CustomMessageName3EditPart extends MessageReplyNameEditPart impleme
 	public CustomMessageName3EditPart(View view) {
 		super(view);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart#createDefaultEditPolicies()
 	 */
 	@Override
@@ -55,7 +55,7 @@ public class CustomMessageName3EditPart extends MessageReplyNameEditPart impleme
 
 	@Override
 	public int getDirectEditionType() {
-		return IDirectEdition.DEFAULT_DIRECT_EDITOR;
+		return IDirectEdition.EXTENDED_DIRECT_EDITOR;
 	}
 
 	@Override

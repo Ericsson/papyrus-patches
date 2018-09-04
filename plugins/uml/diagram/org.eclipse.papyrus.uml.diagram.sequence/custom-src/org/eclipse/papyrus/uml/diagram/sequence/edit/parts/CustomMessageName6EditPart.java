@@ -44,12 +44,12 @@ public class CustomMessageName6EditPart extends MessageLostNameEditPart implemen
 
 	@Override
 	public int getDirectEditionType() {
-		return IDirectEdition.DEFAULT_DIRECT_EDITOR;
+		return IDirectEdition.EXTENDED_DIRECT_EDITOR;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart#createDefaultEditPolicies()
 	 */
 	@Override

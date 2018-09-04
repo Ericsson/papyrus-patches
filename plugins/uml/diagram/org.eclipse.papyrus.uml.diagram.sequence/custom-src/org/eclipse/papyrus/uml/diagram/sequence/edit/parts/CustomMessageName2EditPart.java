@@ -63,10 +63,10 @@ public class CustomMessageName2EditPart extends MessageAsyncNameEditPart impleme
 	public CustomMessageName2EditPart(View view) {
 		super(view);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart#createDefaultEditPolicies()
 	 */
 	@Override
@@ -77,7 +77,7 @@ public class CustomMessageName2EditPart extends MessageAsyncNameEditPart impleme
 
 	@Override
 	public int getDirectEditionType() {
-		return IDirectEdition.DEFAULT_DIRECT_EDITOR;
+		return IDirectEdition.EXTENDED_DIRECT_EDITOR;
 	}
 
 	/**
@@ -186,6 +186,7 @@ public class CustomMessageName2EditPart extends MessageAsyncNameEditPart impleme
 				firstDirectEditListener.listenObject(message);
 			}
 		}
+		initExtendedEditorConfiguration();
 		super.performDirectEditRequest(request);
 	}
 

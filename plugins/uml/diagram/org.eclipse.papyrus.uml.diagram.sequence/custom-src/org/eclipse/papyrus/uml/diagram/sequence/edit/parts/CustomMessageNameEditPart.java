@@ -20,6 +20,9 @@ import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.notation.FontStyle;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.extensionpoints.editors.Activator;
+import org.eclipse.papyrus.extensionpoints.editors.utils.DirectEditorsUtil;
+import org.eclipse.papyrus.extensionpoints.editors.utils.IDirectEditorsIds;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultSemanticEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.IDirectEdition;
@@ -43,9 +46,22 @@ public class CustomMessageNameEditPart extends MessageSyncNameEditPart implement
 		super(view);
 	}
 
+	@Override
+	protected void updateExtendedEditorConfiguration() {
+		String languagePreferred = Activator.getDefault().getPreferenceStore().getString(
+				IDirectEditorsIds.EDITOR_FOR_ELEMENT + resolveSemanticElement().eClass().getInstanceClassName());
+		if (languagePreferred != null && !languagePreferred.equals("")
+				&& (configuration == null || !languagePreferred.equals(configuration.getLanguage()))) {
+			configuration = DirectEditorsUtil.findEditorConfiguration(languagePreferred, resolveSemanticElement(),
+					this);
+		} else if (IDirectEditorsIds.SIMPLE_DIRECT_EDITOR.equals(languagePreferred)) {
+			configuration = null;
+		}
+	}
+
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart#createDefaultEditPolicies()
 	 */
 	@Override
@@ -53,10 +69,10 @@ public class CustomMessageNameEditPart extends MessageSyncNameEditPart implement
 		super.createDefaultEditPolicies();
 		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new DefaultSemanticEditPolicy());
 	}
-	
+
 	@Override
 	public int getDirectEditionType() {
-		return IDirectEdition.DEFAULT_DIRECT_EDITOR;
+		return IDirectEdition.EXTENDED_DIRECT_EDITOR;
 	}
 
 	@Override
