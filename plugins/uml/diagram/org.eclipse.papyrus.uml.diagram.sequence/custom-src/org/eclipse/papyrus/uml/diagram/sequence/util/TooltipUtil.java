@@ -331,6 +331,7 @@ public class TooltipUtil {
 					} else if (message.getReceiveEvent() == null) {
 						return "Lost Message";
 					}
+					return "Asynchronous Message";
 				}
 				case CREATE_MESSAGE_LITERAL:
 					return "Create Message";
