@@ -592,6 +592,10 @@ SequenceDiagram Message[messageSort="asynchCall"] {
 	targetDecoration: open_arrow;
 }
 
+SequenceDiagram Message[messageSort="asynchSignal"] {
+	targetDecoration: open_arrow;
+}
+
 /*Message Found */
 SequenceDiagram Message[messageSort="asynchCall"][sendEvent=""] {
 	targetDecoration: open_arrow;
