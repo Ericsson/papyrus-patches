@@ -26,6 +26,7 @@ import org.eclipse.gmf.runtime.common.ui.services.parser.IParserEditStatus;
 import org.eclipse.gmf.runtime.common.ui.services.parser.ParserEditStatus;
 import org.eclipse.gmf.runtime.emf.ui.services.parser.ISemanticParser;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.MessageLabelHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.parsers.MessageFormatParser;
 import org.eclipse.papyrus.uml.diagram.sequence.util.MessageLabelUtil;
 import org.eclipse.uml2.uml.Element;
@@ -50,7 +51,7 @@ public class MessageCustomParser extends MessageFormatParser implements IParser,
 			return "";
 		}
 		Message msg = (Message) obj;
-		return MessageLabelUtil.getMessageLabel(msg);
+		return MessageLabelUtil.getMessageLabel(msg, MessageLabelHelper.DEFAULT_LABEL_DISPLAY);
 	}
 
 	@Override

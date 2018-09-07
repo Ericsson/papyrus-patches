@@ -17,7 +17,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.edit.helpers;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.eclipse.emf.ecore.EObject;
@@ -26,13 +26,18 @@ import org.eclipse.gmf.runtime.diagram.ui.editparts.LabelEditPart;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.helper.StereotypedElementLabelHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.util.IMessageAppearance;
 import org.eclipse.papyrus.uml.diagram.sequence.util.MessageLabelUtil;
-import org.eclipse.papyrus.uml.tools.utils.ICustomAppearance;
 import org.eclipse.uml2.uml.Message;
 
 public class MessageLabelHelper extends StereotypedElementLabelHelper {
 
-	public static final Collection<String> DEFAULT_LABEL_DISPLAY = Arrays.asList(ICustomAppearance.DISP_NAME, ICustomAppearance.DISP_PARAMETER_NAME, ICustomAppearance.DISP_PARAMETER_TYPE, ICustomAppearance.DISP_RT_TYPE);
+	public static final Collection<String> DEFAULT_LABEL_DISPLAY = Arrays.asList(
+			IMessageAppearance.DISP_ARGUMENTS,
+			IMessageAppearance.DISP_ARGUMENT_NAMES,
+			IMessageAppearance.DISP_ARGUMENT_VALUES,
+			IMessageAppearance.DISP_ASSIGNMENT_TARGET,
+			IMessageAppearance.DISP_RETURN_VALUES);
 
 	/**
 	 * singelton instance
@@ -40,21 +45,18 @@ public class MessageLabelHelper extends StereotypedElementLabelHelper {
 	private static MessageLabelHelper labelHelper;
 
 	/** Map for masks */
-	protected final Map<String, String> masks = new HashMap<>();
+	protected final Map<String, String> masks = new LinkedHashMap<>();
 
 	protected MessageLabelHelper() {
 		// initialize the map
-		masks.put(ICustomAppearance.DISP_VISIBILITY, "Visibility");
-		masks.put(ICustomAppearance.DISP_NAME, "Name");
-		masks.put(ICustomAppearance.DISP_PARAMETER_NAME, "Parameters Name");
-		masks.put(ICustomAppearance.DISP_PARAMETER_DIRECTION, "Parameters Direction");
-		masks.put(ICustomAppearance.DISP_PARAMETER_TYPE, "Parameters Type");
-		masks.put(ICustomAppearance.DISP_RT_TYPE, "Return Type");
-		masks.put(ICustomAppearance.DISP_PARAMETER_MULTIPLICITY, "Parameters Multiplicity");
-		masks.put(ICustomAppearance.DISP_PARAMETER_DEFAULT, "Parameters Default Value");
-		masks.put(ICustomAppearance.DISP_DERIVE, "Parameters Value");
-		masks.put(ICustomAppearance.DISP_PARAMETER_MODIFIERS, "Parameters Modifiers");
-		masks.put(ICustomAppearance.DISP_MODIFIERS, "Modifiers");
+
+		masks.put(IMessageAppearance.DISP_ARGUMENTS, "Show Arguments");
+		masks.put(IMessageAppearance.DISP_DEFAULT_ARGUMENTS, "Show wildcarded / undefined arguments");
+		masks.put(IMessageAppearance.DISP_ARGUMENT_NAMES, "Show Argument Names");
+		masks.put(IMessageAppearance.DISP_ARGUMENT_VALUES, "Show Argument Values");
+
+		masks.put(IMessageAppearance.DISP_ASSIGNMENT_TARGET, "Show Assignment Targets");
+		masks.put(IMessageAppearance.DISP_RETURN_VALUES, "Show Return Values");
 	}
 
 	/**
@@ -105,7 +107,7 @@ public class MessageLabelHelper extends StereotypedElementLabelHelper {
 		 * return getMessageLabel(e, displayValue);
 		 */
 
-		return MessageLabelUtil.getMessageLabel(e);
+		return MessageLabelUtil.getMessageLabel(e, displayValue);
 	}
 
 	/*

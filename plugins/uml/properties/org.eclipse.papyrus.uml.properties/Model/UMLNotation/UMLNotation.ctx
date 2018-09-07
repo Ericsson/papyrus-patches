@@ -38,6 +38,18 @@
       </constraints>
     </constraints>
   </views>
+  <views xmi:id="_LsE_wLJzEei1H6bCeLbgng" elementMultiplicity="-1" name="Message Label" sections="_rOLJUpLDEeWbp4A9_-WIrQ">
+    <constraints xsi:type="constraints:CompositeConstraint" xmi:id="_a5i5YLl2Eef_KeKGi--b8w" name="isLabelAndInstanceOfMessage">
+      <constraints xmi:id="_ZMJjcbl2Eef_KeKGi--b8w" name="isLabel">
+        <constraintType href="ppe:/environment/org.eclipse.papyrus.infra.gmfdiag.properties/model/Environment.xmi#//@constraintTypes.1"/>
+        <properties xsi:type="constraints:ValueProperty" xmi:id="_ZMJjcrl2Egf_KeKGi--b8w" name="editPolicy" value="MaskManagedLabelPolicy"/>
+      </constraints>
+      <constraints xmi:id="_gE_DgLl2Eeg_KeKGi--b8w" name="isInstanceOfMessage">
+        <constraintType href="ppe:/environment/org.eclipse.papyrus.uml.properties/Model/Environment.xmi#//@constraintTypes.0"/>
+        <properties xsi:type="constraints:ValueProperty" xmi:id="_nmAk8Ll2Egg_KeKGi--b8w" name="umlClassName" value="Message"/>
+      </constraints>
+    </constraints>
+  </views>
   <views xmi:id="_rOLJWZLDEeWbp4A9_-WIrQ" elementMultiplicity="-1" name="StereotypeDisplay" sections="_rOLJU5LDEeWbp4A9_-WIrQ">
     <constraints xsi:type="constraints:CompositeConstraint" xmi:id="_rOLJWpLDEeWbp4A9_-WIrQ" name="isElementWithEditPart" overrideable="false">
       <constraints xmi:id="_rOLJW5LDEeWbp4A9_-WIrQ" name="isEditPart">

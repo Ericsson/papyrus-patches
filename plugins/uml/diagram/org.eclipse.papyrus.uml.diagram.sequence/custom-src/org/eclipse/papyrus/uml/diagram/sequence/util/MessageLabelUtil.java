@@ -72,22 +72,103 @@ import org.eclipse.uml2.uml.util.UMLUtil;
  *
  */
 public class MessageLabelUtil {
-	public static String getMessageLabel(Message msg) {
+	public static String getMessageLabel(Message msg, Collection<String> mask) {
 		String name = getNameValue(msg);
 		if (name == null || name.equals("")) {
 			return "";
 		}
 
-		if (msg.getMessageSort() == MessageSort.DELETE_MESSAGE_LITERAL ||
-				msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL) {
-			return "";
+		StringBuffer buf = new StringBuffer();
+		boolean isReply = msg.getMessageSort() == MessageSort.REPLY_LITERAL;
+
+		Map<String, ConnectableElement> msgParameters = getMessageParameters(msg);
+		boolean usingNames = areParametersUsingNames(msg, new ArrayList<>(msgParameters.values()));
+		List<ArgumentPair> msg_args = getMessageArguments(msg, msgParameters, usingNames);
+
+
+		ArgumentPair ret_arg = null;
+
+		if (isReply) {
+			// Add <assignment-target>
+			if (mask.contains(IMessageAppearance.DISP_ASSIGNMENT_TARGET) && msg_args != null) {
+				ret_arg = findReturnParameter(msg_args);
+				if (ret_arg != null && ret_arg.value instanceof Expression) {
+					String symbol = ((Expression) ret_arg.value).getSymbol();
+					if (symbol != null) {
+						buf.append(symbol + "=");
+					}
+				}
+			}
 		}
-		return getMessageSequenceNumber(msg) + ". " + getEditLabel(msg);
+
+		buf.append(name);
+
+		if (!mask.contains(IMessageAppearance.DISP_ARGUMENTS) || msg_args.isEmpty()) {
+			return getMessageSequenceNumber(msg) + ". " + buf.toString();
+		}
+
+		boolean first = true;
+		boolean closed = false;
+		boolean addSep = true;
+		for (ArgumentPair arg : msg_args) {
+
+			if (isReply && arg.parameter instanceof Parameter && ((Parameter) arg.parameter).getDirection() == ParameterDirectionKind.RETURN_LITERAL) {
+				if (closed) {
+					if (addSep) {
+						buf.append(", ");
+					}
+				}
+				if (!first && !closed) {
+					buf.append(") : ");
+					closed = true;
+				}
+
+				String argLabel = getMessageArgumentLabel(arg.value, arg.parameter, isReply, usingNames, mask);
+				if (argLabel == null || argLabel.isEmpty()) {
+					addSep = false;
+					continue;
+				}
+				buf.append(argLabel);
+				addSep = true;
+				continue;
+			}
+
+			if (arg.value == null && !mask.contains(IMessageAppearance.DISP_DEFAULT_ARGUMENTS)) {
+				continue;
+			}
+
+			if (first) {
+				buf.append("(");
+			}
+
+			if (!first) {
+				if (addSep) {
+					buf.append(", ");
+				}
+			}
+
+			first = false;
+
+			String argLabel = getMessageArgumentLabel(arg.value, arg.parameter, isReply, usingNames, mask);
+			if (argLabel == null || argLabel.isEmpty()) {
+				addSep = false;
+				continue;
+			}
+			buf.append(argLabel);
+			addSep = true;
+		}
+
+		if (!first && !closed) {
+			buf.append(")");
+		}
+		return getMessageSequenceNumber(msg) + ". " + buf.toString();
 	}
 
 	public static String getEditLabel(Message msg) {
 		StringBuffer buf = new StringBuffer();
-		List<ArgumentPair> values = MessageLabelUtil.getArgumentValues(msg);
+		Map<String, ConnectableElement> msgParameters = getMessageParameters(msg);
+		boolean usingNames = areParametersUsingNames(msg, new ArrayList<>(msgParameters.values()));
+		List<ArgumentPair> values = getMessageArguments(msg, msgParameters, usingNames);
 		ArgumentPair returnPair = null;
 		boolean isReply = msg.getMessageSort() == MessageSort.REPLY_LITERAL;
 		if (isReply) {
@@ -231,14 +312,84 @@ public class MessageLabelUtil {
 
 
 	private static class ArgumentPair {
-		public ArgumentPair(NamedElement parameter, ValueSpecification value) {
+		public ArgumentPair(ConnectableElement parameter, ValueSpecification value) {
 			super();
 			this.parameter = parameter;
 			this.value = value;
 		}
 
-		public NamedElement parameter;
+		public ConnectableElement parameter;
 		public ValueSpecification value;
+	}
+
+	private static boolean areParametersUsingNames(Message message, List<ConnectableElement> sigParamsByIndex) {
+		int retParams = 0;
+		for (int i = sigParamsByIndex.size() - 1; i >= 0; i--) {
+			ConnectableElement ce = sigParamsByIndex.get(i);
+			if (!(ce instanceof Parameter)) {
+				break;
+			}
+			Parameter p = (Parameter) ce;
+			if (p.getDirection() != ParameterDirectionKind.RETURN_LITERAL) {
+				break;
+			}
+
+			retParams++;
+		}
+		List<ValueSpecification> args = message.getArguments();
+		args = args.subList(0, args.size() - retParams);
+		return args.stream().allMatch(d -> d.getName() != null && !d.getName().isEmpty());
+	}
+
+	private static List<ArgumentPair> getMessageArguments(Message message, Map<String, ConnectableElement> msgParams, boolean usingNames) {
+		List<ValueSpecification> values = message.getArguments();
+		List<ConnectableElement> sigParamsByIndex = new ArrayList<>(msgParams.values());
+		return usingNames ? getMessageArgumentsByName(values, msgParams, sigParamsByIndex) : getMessageArgumentsByIndex(values, sigParamsByIndex);
+	}
+
+	private static List<ArgumentPair> getMessageArgumentsByIndex(List<ValueSpecification> values, List<ConnectableElement> sigParamsByIndex) {
+		List<ArgumentPair> params = new ArrayList<>();
+		int index = 0;
+		for (ConnectableElement param : sigParamsByIndex) {
+			ValueSpecification spec = null;
+			if (index < values.size()) {
+				spec = values.get(index);
+			}
+			params.add(new ArgumentPair(param, spec));
+			index++;
+		}
+
+		for (int i = sigParamsByIndex.size(); i < values.size(); i++) {
+			params.add(new ArgumentPair(null, values.get(i)));
+		}
+
+		return params;
+
+	}
+
+	private static List<ArgumentPair> getMessageArgumentsByName(List<ValueSpecification> values, Map<String, ConnectableElement> sigParams, List<ConnectableElement> sigParamsByIndex) {
+		List<ArgumentPair> params = new ArrayList<>();
+		int index = 0;
+		for (ValueSpecification spec : values) {
+			String name = spec.getName();
+			ConnectableElement param = null;
+			if (name != null && !name.isEmpty()) {
+				param = sigParams.remove(name);
+			} else {
+				if (index < sigParams.size()) {
+					param = sigParamsByIndex.get(index);
+					sigParams.remove(param.getName());
+				}
+			}
+			params.add(new ArgumentPair(param, spec));
+			index++;
+		}
+
+		for (ConnectableElement param : sigParams.values()) {
+			params.add(new ArgumentPair(param, null));
+		}
+
+		return params;
 	}
 
 	private static ArgumentPair findReturnParameter(List<ArgumentPair> values) {
@@ -252,64 +403,6 @@ public class MessageLabelUtil {
 			}
 		}
 		return null;
-	}
-
-	private static List<ArgumentPair> getArgumentValues(Message message) {
-		List<ArgumentPair> params = new ArrayList<>();
-		NamedElement signature = message.getSignature();
-		List<ValueSpecification> values = message.getArguments();
-		if (signature instanceof Operation) {
-			Operation operation = (Operation) signature;
-			int index = 0;
-			if (message.getMessageSort() == MessageSort.REPLY_LITERAL) {
-				for (Parameter param : operation.getOwnedParameters()) {
-					if (param.getDirection() == ParameterDirectionKind.IN_LITERAL ||
-							param.getDirection() == ParameterDirectionKind.INOUT_LITERAL) {
-						if (index < values.size()) {
-							params.add(new ArgumentPair(param, values.get(index)));
-						} else {
-							params.add(new ArgumentPair(param, null));
-						}
-						index++;
-					}
-				}
-			} else {
-				for (Parameter param : operation.getOwnedParameters()) {
-					if (param.getDirection() == ParameterDirectionKind.RETURN_LITERAL ||
-							param.getDirection() == ParameterDirectionKind.OUT_LITERAL ||
-							param.getDirection() == ParameterDirectionKind.INOUT_LITERAL) {
-						if (index < values.size()) {
-							params.add(new ArgumentPair(param, values.get(index)));
-						} else {
-							params.add(new ArgumentPair(param, null));
-						}
-						index++;
-					}
-				}
-			}
-		} else if (signature instanceof Signal) {
-			// Not ordered
-			Signal signal = (Signal) signature;
-			int index = 0;
-			for (Property param : signal.getAllAttributes()) {
-				if (index < values.size()) {
-					params.add(new ArgumentPair(param, values.get(index)));
-				} else {
-					params.add(new ArgumentPair(param, null));
-				}
-				index++;
-			}
-		} else {
-			for (ValueSpecification val : message.getArguments()) {
-				params.add(new ArgumentPair(null, val));
-			}
-		}
-
-		for (int i = params.size(); i < values.size(); i++) {
-			params.add(new ArgumentPair(null, values.get(i)));
-		}
-
-		return params;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -596,21 +689,51 @@ public class MessageLabelUtil {
 		return ValueSpecificationUtil.getSpecificationValue(value);
 	}
 
-	private static String getMessageArgumentLabel(ValueSpecification specification, boolean isReplay) {
+	private static String getMessageArgumentLabel(ValueSpecification specification, ConnectableElement param, boolean isReply, boolean usingNames, Collection<String> mask) {
 		String assignSpecification = null;
-		String name = specification.getName();
+		String name = null;
+		if (mask.contains(IMessageAppearance.DISP_ARGUMENT_NAMES)) {
+			if (specification != null) {
+				name = specification.getName();
+			} else if (param != null) {
+				name = param.getName();
+			}
+
+		}
+
 		String value = getMessageArgumentValue(specification);
+		if (specification == null && mask.contains(IMessageAppearance.DISP_DEFAULT_ARGUMENTS)) {
+			value = "-";
+		}
+
+		if (value.equals("-") && !mask.contains(IMessageAppearance.DISP_DEFAULT_ARGUMENTS)) {
+			return "";
+		}
+
+		if (!mask.contains(IMessageAppearance.DISP_ARGUMENT_VALUES)) {
+			value = null;
+		}
+
 		StringBuffer buf = new StringBuffer();
-		if (isReplay) {
+		if (isReply) {
 			if (specification instanceof Expression) {
 				Expression exp = (Expression) specification;
+				assignSpecification = exp.getSymbol();
 				if (exp.getOperands().size() == 1) {
-					assignSpecification = exp.getSymbol();
 					value = getMessageArgumentValue(exp.getOperands().get(0));
+					if (value.equals("-") && !mask.contains(IMessageAppearance.DISP_DEFAULT_ARGUMENTS)) {
+						return "";
+					}
+					if (!mask.contains(IMessageAppearance.DISP_ARGUMENT_VALUES)) {
+						value = null;
+					}
 				} else if (exp.getOperands().size() == 0) {
-					assignSpecification = exp.getSymbol();
 					value = "";
 				}
+			}
+
+			if (mask.contains(IMessageAppearance.DISP_ASSIGNMENT_TARGET)) {
+				assignSpecification = null;
 			}
 
 			if (assignSpecification != null && !assignSpecification.isEmpty()) {
@@ -635,7 +758,11 @@ public class MessageLabelUtil {
 			}
 		} else {
 			if (name != null && !name.isEmpty()) {
-				buf.append(name).append("=");
+
+				buf.append(name);
+			}
+			if (name != null && !name.isEmpty() && value != null && !value.isEmpty()) {
+				buf.append("=");
 			}
 			if (value != null && !value.isEmpty()) {
 				buf.append(value);
