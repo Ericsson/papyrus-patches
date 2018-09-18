@@ -78,6 +78,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramEditPartsUtil;
 import org.eclipse.papyrus.uml.diagram.common.helper.DurationConstraintHelper;
 import org.eclipse.papyrus.uml.diagram.common.helper.InteractionFragmentHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CCombinedCompartmentEditPart;
@@ -697,7 +698,7 @@ public class SequenceUtil {
 		List<?> children = lifelineEditPart.getChildren();
 		for (Object child : children) {
 			// children executions
-			if (child instanceof CCombinedCompartmentEditPart || child instanceof BehaviorExecutionSpecificationEditPart) {
+			if (child instanceof CCombinedCompartmentEditPart || child instanceof AbstractExecutionSpecificationEditPart) {
 				EObject element = ((GraphicalEditPart) child).resolveSemanticElement();
 				if (element instanceof ExecutionSpecification) {
 					// find start and finish events of the execution

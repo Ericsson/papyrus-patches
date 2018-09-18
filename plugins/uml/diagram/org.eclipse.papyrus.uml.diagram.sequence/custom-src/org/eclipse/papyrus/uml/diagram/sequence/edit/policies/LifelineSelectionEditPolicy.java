@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010, 2017 CEA List, ALL4TEC and others
+ * Copyright (c) 2010, 2017-2018 CEA List, ALL4TEC and others
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,10 +11,12 @@
  * Contributors:
  *   CEA List - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 522228
+ *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 538466
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.draw2d.Cursors;
@@ -28,29 +30,167 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Handle;
 import org.eclipse.gef.RequestConstants;
+import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.handles.MoveHandle;
 import org.eclipse.gef.handles.MoveHandleLocator;
 import org.eclipse.gef.handles.RelativeHandleLocator;
 import org.eclipse.gef.handles.ResizeHandle;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.tools.ResizeTracker;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IPrimaryEditPart;
+import org.eclipse.gmf.runtime.draw2d.ui.figures.PolylineConnectionEx;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.infra.gmfdiag.common.SemanticFromGMFElement;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusResizableShapeEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure;
+import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineEditPartUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineMessageDeleteHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Lifeline;
+import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
+import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 public class LifelineSelectionEditPolicy extends PapyrusResizableShapeEditPolicy {
 
 	public LifelineSelectionEditPolicy() {
-		setResizeDirections(PositionConstants.WEST | PositionConstants.EAST);
+		setResizeDirections(PositionConstants.WEST | PositionConstants.EAST | PositionConstants.SOUTH);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusResizableShapeEditPolicy#getResizeCommand(org.eclipse.gef.requests.ChangeBoundsRequest)
+	 */
+	@Override
+	protected Command getResizeCommand(final ChangeBoundsRequest request) {
+		LifelineEditPart llEditPart = (LifelineEditPart) getHost();
+		if (!LifelineMessageDeleteHelper.hasIncomingMessageDelete(llEditPart)) {
+
+			final Dimension sizeDelta = request.getSizeDelta();
+			final int moveHeight = sizeDelta.height();
+
+			if (moveHeight != 0) {
+
+				final Rectangle absoluteBounds = SequenceUtil.getAbsoluteBounds(llEditPart);
+				final Point pointFromWhichOneSearch = new Point(absoluteBounds.x + (absoluteBounds.width / 2), absoluteBounds.y + absoluteBounds.height);
+
+				// Get the last Y position of elements on life line
+				final int maxY = getLastPointOfLifeLineChildren(llEditPart, pointFromWhichOneSearch);
+
+				// Compare the last Y position with the current move to determinate if the resize can be done
+				if (maxY > (absoluteBounds.y + absoluteBounds.height() + moveHeight)) {
+					return null;
+				}
+			}
+
+			return super.getResizeCommand(request);
+		}
+		return null;
+	}
+
+	/**
+	 * This allows to calculate the last Y position of elements on life line.
+	 *
+	 * @param lifelineEditPart
+	 *            The life line edit part.
+	 * @param pointFromWhichOneSearch
+	 *            The last point of the life line.
+	 * @return the last Y position of the last event on the life line.
+	 */
+	protected int getLastPointOfLifeLineChildren(final LifelineEditPart lifelineEditPart, final Point pointFromWhichOneSearch) {
+		int maxY = 0;
+
+		final List<OccurrenceSpecification> previousEvents = LifelineEditPartUtil.getPreviousEventsFromPosition(pointFromWhichOneSearch, lifelineEditPart);
+
+		if (previousEvents != null && !previousEvents.isEmpty()) {
+			final OccurrenceSpecification lastPreviousEvent = previousEvents.get(previousEvents.size() - 1);
+			if (lastPreviousEvent instanceof ExecutionOccurrenceSpecification) {
+				final ExecutionSpecification execSpec = ((ExecutionOccurrenceSpecification) lastPreviousEvent).getExecution();
+				final IGraphicalEditPart editPart = getEditPartFromSemantic(execSpec);
+				if (editPart instanceof AbstractExecutionSpecificationEditPart) {
+					final EObject element = ((View) ((AbstractExecutionSpecificationEditPart) editPart).getAdapter(View.class)).getElement();
+
+					if (element instanceof ExecutionSpecification && null != ((ExecutionSpecification) element).getStart() && ((ExecutionSpecification) element).getStart().equals(lastPreviousEvent)) {
+						final Rectangle absoluteBounds = SequenceUtil.getAbsoluteBounds(editPart);
+
+						if (maxY < (absoluteBounds.y + absoluteBounds.height())) {
+							maxY = absoluteBounds.y + absoluteBounds.height();
+						}
+					}
+				}
+
+			} else if (lastPreviousEvent instanceof MessageOccurrenceSpecification) {
+				final Message message = ((MessageOccurrenceSpecification) lastPreviousEvent).getMessage();
+				final IGraphicalEditPart editPart = getEditPartFromSemantic(message);
+				if (editPart instanceof ConnectionEditPart) {
+					final EObject element = ((View) ((AbstractMessageEditPart) editPart).getAdapter(View.class)).getElement();
+					if (element instanceof Message && null != ((Message) element).getSendEvent() && ((Message) element).getSendEvent().equals(lastPreviousEvent)
+							|| element instanceof Message && null != ((Message) element).getReceiveEvent() && ((Message) element).getReceiveEvent().equals(lastPreviousEvent)) {
+
+						PolylineConnectionEx polyline = (PolylineConnectionEx) ((ConnectionEditPart) editPart).getFigure();
+						Point anchorPositionOnScreen;
+						if (((Message) element).getSendEvent().equals(lastPreviousEvent)) {
+							anchorPositionOnScreen = polyline.getSourceAnchor().getReferencePoint();
+						} else {
+							anchorPositionOnScreen = polyline.getTargetAnchor().getReferencePoint();
+						}
+
+						if (maxY < anchorPositionOnScreen.y) {
+							maxY = anchorPositionOnScreen.y;
+						}
+					}
+				}
+			}
+		}
+
+		return maxY;
+	}
+
+	/**
+	 * This method return the controller attached to the semantic element.
+	 * The complexity of this algorithm is N (N the number of controller in the opened sequence diagram).
+	 *
+	 * @param semanticElement
+	 *            This must be different from null.
+	 * @return The reference to the controller or null.
+	 */
+	protected IGraphicalEditPart getEditPartFromSemantic(final Object semanticElement) {
+		IGraphicalEditPart researchedEditPart = null;
+		final SemanticFromGMFElement semanticFromGMFElement = new SemanticFromGMFElement();
+		final EditPartViewer editPartViewer = getHost().getViewer();
+		if (editPartViewer != null) {
+			// look for all edit part if the semantic is contained in the list
+			final Iterator<?> iter = editPartViewer.getEditPartRegistry().values().iterator();
+
+			while (iter.hasNext() && researchedEditPart == null) {
+				final Object currentEditPart = iter.next();
+				// look only amidst IPrimary editpart to avoid compartment and labels of links
+				if (currentEditPart instanceof IPrimaryEditPart) {
+					final Object currentElement = semanticFromGMFElement.getSemanticElement(currentEditPart);
+					if (semanticElement.equals(currentElement)) {
+						researchedEditPart = ((IGraphicalEditPart) currentEditPart);
+					}
+				}
+			}
+		}
+		return researchedEditPart;
 	}
 
 	@Override

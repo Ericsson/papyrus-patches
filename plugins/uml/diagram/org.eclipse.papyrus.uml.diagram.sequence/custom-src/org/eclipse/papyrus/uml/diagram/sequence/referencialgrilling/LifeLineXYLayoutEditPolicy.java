@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 CEA LIST and others.
+ * Copyright (c) 2016, 2018 CEA LIST and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  * Contributors:
  *   CEA LIST - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 526079
+ *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 538466
  *****************************************************************************/
 
 package org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling;
@@ -62,7 +63,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceE
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
 import org.eclipse.papyrus.uml.diagram.sequence.preferences.CustomDiagramGeneralPreferencePage;
 import org.eclipse.papyrus.uml.diagram.sequence.util.ExecutionSpecificationUtil;
-import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineEditPartUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineMessageDeleteHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.util.LogOptions;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
@@ -282,15 +283,15 @@ public class LifeLineXYLayoutEditPolicy extends XYLayoutWithConstrainedResizedEd
 				newBounds.setLocation(new Point((parentBound.width / 2) - (AbstractExecutionSpecificationEditPart.DEFAUT_WIDTH / 2), newBounds.getLocation().y));
 
 				// Manage a collection of edit parts to skip during the calculation of new bounds (because the strong references are moved with the execution specification and the weak references can be moved with the execution specification)
-				final Collection<EditPart> editPartsToSkipForCalculation = new HashSet<EditPart>();
-				if(((EditPart) child).getEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE) != null) {
+				final Collection<EditPart> editPartsToSkipForCalculation = new HashSet<>();
+				if (child.getEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE) != null) {
 					final AbstractExecutionSpecificationEditPart execSpecEditPart = (AbstractExecutionSpecificationEditPart) child;
 					final SequenceReferenceEditPolicy references = (SequenceReferenceEditPolicy) execSpecEditPart.getEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE);
 					editPartsToSkipForCalculation.addAll(references.getStrongReferences().keySet());
-					
+
 					boolean mustMoveBelowAtMovingDown = UMLDiagramEditorPlugin.getInstance().getPreferenceStore().getBoolean(CustomDiagramGeneralPreferencePage.PREF_MOVE_BELOW_ELEMENTS_AT_MESSAGE_DOWN);
-					
-					if(mustMoveBelowAtMovingDown) {
+
+					if (mustMoveBelowAtMovingDown) {
 						editPartsToSkipForCalculation.addAll(references.getWeakReferences().keySet());
 					}
 				}
@@ -301,7 +302,7 @@ public class LifeLineXYLayoutEditPolicy extends XYLayoutWithConstrainedResizedEd
 
 				Rectangle boundsToRectangle = null;
 				CompoundCommand compoundCommand = null;
-				
+
 				// Loop until found command for the execution specifications bounds (because by moving other execution specification, the first one can be moved another time).
 				do {
 					// Calculate the moved execution specification bounds
@@ -383,36 +384,43 @@ public class LifeLineXYLayoutEditPolicy extends XYLayoutWithConstrainedResizedEd
 	public Command getCommand(Request request) {
 
 		CompoundCommand cmd = new CompoundCommand();
-		Command superCmd = super.getCommand(request);
-		if (null != superCmd && superCmd.canExecute()) {
-			cmd.add(superCmd);
-		}
 
-		// When resizing Lifeline, move the ES accordingly (only on the x direction)
-		if (REQ_RESIZE.equals(request.getType()) && request instanceof ChangeBoundsRequest) {
-			ChangeBoundsRequest boundsReq = (ChangeBoundsRequest) request;
-			Dimension sizeDelta = boundsReq.getSizeDelta();
+		LifelineEditPart llEditPart = (LifelineEditPart) getHost();
+		if (!LifelineMessageDeleteHelper.hasIncomingMessageDelete(llEditPart)) {
 
-			List children = getHost().getChildren();
-			Iterator iter = children.iterator();
-			while (iter.hasNext()) {
-				EditPart child = (EditPart) iter.next();
-				Command moveChildrenCmd = null;
-				if (child instanceof AbstractExecutionSpecificationEditPart) {
-					AbstractExecutionSpecificationEditPart ES = (AbstractExecutionSpecificationEditPart) child;
-					// Building the new Request for the ES
-					ChangeBoundsRequest moveESRequest = new ChangeBoundsRequest(REQ_RESIZE);
-					moveESRequest.setEditParts(ES);
-					moveESRequest.setResizeDirection(boundsReq.getResizeDirection());
-					moveESRequest.setMoveDelta(new Point(sizeDelta.width() / 2, 0));
-					// Get the according command
-					moveChildrenCmd = ES.getCommand(moveESRequest);
+			Command superCmd = super.getCommand(request);
+			if (null != superCmd && superCmd.canExecute()) {
+				cmd.add(superCmd);
+			}
 
-				}
+			// When resizing Lifeline, move the ES accordingly (only on the x direction)
+			if (REQ_RESIZE.equals(request.getType()) && request instanceof ChangeBoundsRequest) {
+				ChangeBoundsRequest boundsReq = (ChangeBoundsRequest) request;
+				Dimension sizeDelta = boundsReq.getSizeDelta();
 
-				// for all the ES, add the get command
-				if (null != moveChildrenCmd && moveChildrenCmd.canExecute()) {
-					cmd.add(moveChildrenCmd);
+				if (sizeDelta.width > 0) {
+					List children = getHost().getChildren();
+					Iterator iter = children.iterator();
+					while (iter.hasNext()) {
+						EditPart child = (EditPart) iter.next();
+						Command moveChildrenCmd = null;
+						if (child instanceof AbstractExecutionSpecificationEditPart) {
+							AbstractExecutionSpecificationEditPart ES = (AbstractExecutionSpecificationEditPart) child;
+							// Building the new Request for the ES
+							ChangeBoundsRequest moveESRequest = new ChangeBoundsRequest(REQ_RESIZE);
+							moveESRequest.setEditParts(ES);
+							moveESRequest.setResizeDirection(boundsReq.getResizeDirection());
+							moveESRequest.setMoveDelta(new Point(sizeDelta.width() / 2, 0));
+							// Get the according command
+							moveChildrenCmd = ES.getCommand(moveESRequest);
+
+						}
+
+						// for all the ES, add the get command
+						if (null != moveChildrenCmd && moveChildrenCmd.canExecute()) {
+							cmd.add(moveChildrenCmd);
+						}
+					}
 				}
 			}
 		}
@@ -436,8 +444,8 @@ public class LifeLineXYLayoutEditPolicy extends XYLayoutWithConstrainedResizedEd
 	protected Command createAddCommand(ChangeBoundsRequest request, EditPart child, Object constraint) {
 		if (child instanceof LifelineEditPart || child instanceof CombinedFragmentEditPart || child instanceof InteractionUseEditPart) {
 			return UnexecutableCommand.INSTANCE;
-		// The reparent of execution specification in another life line is not allowed
-		} else if(child instanceof AbstractExecutionSpecificationEditPart && getHost() instanceof CLifeLineEditPart) {
+			// The reparent of execution specification in another life line is not allowed
+		} else if (child instanceof AbstractExecutionSpecificationEditPart && getHost() instanceof CLifeLineEditPart) {
 			final LifelineEditPart parentLifeLine = SequenceUtil.getParentLifelinePart(child);
 			if (null != parentLifeLine && !parentLifeLine.equals(getHost())) {
 				return UnexecutableCommand.INSTANCE;
