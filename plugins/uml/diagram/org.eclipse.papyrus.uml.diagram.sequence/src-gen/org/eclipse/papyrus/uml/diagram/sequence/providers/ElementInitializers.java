@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2009 Atos Origin.
+ * Copyright (c) 2009, 2018 Atos Origin, Christian W. Damus, CEA LIST, and others.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -11,6 +11,7 @@
  *
  * Contributors:
  *   Atos Origin - Initial API and implementation
+ *   Christian W. Damus - bug 536486
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.providers;
@@ -154,56 +155,6 @@ public class ElementInitializers {
 	}
 
 	/**
-	 * @generated NOT init Time Interval
-	 */
-	public void init_TimeConstraint_Shape(TimeConstraint instance) {
-		try {
-			TimeInterval newInstance_0_0 = UMLFactory.eINSTANCE.createTimeInterval();
-			instance.setSpecification(newInstance_0_0);
-			Object value_0_0_0 = name_specification_TimeConstraint_Shape(newInstance_0_0);
-			newInstance_0_0.setName((String) value_0_0_0);
-			// init Time Interval
-			init_TimeInterval(newInstance_0_0);
-			Object value_1 = name_TimeConstraint_Shape(instance);
-			instance.setName((String) value_1);
-		} catch (RuntimeException e) {
-			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
-		}
-	}
-
-	/**
-	 * @generated
-	 */
-	public void init_TimeObservation_Shape(TimeObservation instance) {
-		try {
-			Object value_0 = name_TimeObservation_Shape(instance);
-			if (value_0 != null) {
-				instance.setName((String) value_0);
-			}
-		} catch (RuntimeException e) {
-			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
-		}
-	}
-
-	/**
-	 * @generated NOT init Duration Interval
-	 */
-	public void init_DurationConstraint_Shape(DurationConstraint instance) {
-		try {
-			DurationInterval newInstance_0_0 = UMLFactory.eINSTANCE.createDurationInterval();
-			instance.setSpecification(newInstance_0_0);
-			Object value_0_0_0 = name_specification_DurationConstraint_Shape(newInstance_0_0);
-			newInstance_0_0.setName((String) value_0_0_0);
-			// init Duration Interval
-			init_DurationInterval(newInstance_0_0);
-			Object value_1 = name_DurationConstraint_Shape(instance);
-			instance.setName((String) value_1);
-		} catch (RuntimeException e) {
-			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
-		}
-	}
-
-	/**
 	 * @generated
 	 */
 	public void init_DestructionOccurrenceSpecification_Shape(DestructionOccurrenceSpecification instance) {
@@ -241,6 +192,34 @@ public class ElementInitializers {
 			Object value_0 = UMLOCLFactory.getExpression(0, UMLPackage.eINSTANCE.getComment(), null).evaluate(instance);
 			if (value_0 != null) {
 				instance.setBody((String) value_0);
+			}
+		} catch (RuntimeException e) {
+			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
+		}
+	}
+
+	/**
+	 * @generated
+	 */
+	public void init_TimeConstraint_Shape(TimeConstraint instance) {
+		try {
+			Object value_0 = name_TimeConstraint_Shape(instance);
+			if (value_0 != null) {
+				instance.setName((String) value_0);
+			}
+		} catch (RuntimeException e) {
+			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
+		}
+	}
+
+	/**
+	 * @generated
+	 */
+	public void init_TimeObservation_Shape(TimeObservation instance) {
+		try {
+			Object value_0 = name_TimeObservation_Shape(instance);
+			if (value_0 != null) {
+				instance.setName((String) value_0);
 			}
 		} catch (RuntimeException e) {
 			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
@@ -294,29 +273,11 @@ public class ElementInitializers {
 	}
 
 	/**
-	 * @generated NOT init Duration Interval
-	 */
-	public void init_DurationConstraint_Shape_CN(DurationConstraint instance) {
-		try {
-			DurationInterval newInstance_0_0 = UMLFactory.eINSTANCE.createDurationInterval();
-			instance.setSpecification(newInstance_0_0);
-			Object value_0_0_0 = name_specification_DurationConstraint_Shape_CN(newInstance_0_0);
-			newInstance_0_0.setName((String) value_0_0_0);
-			// init Duration Interval
-			init_DurationInterval(newInstance_0_0);
-			Object value_1 = name_DurationConstraint_Shape_CN(instance);
-			instance.setName((String) value_1);
-		} catch (RuntimeException e) {
-			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
-		}
-	}
-
-	/**
 	 * @generated
 	 */
-	public void init_DurationObservation_Shape(DurationObservation instance) {
+	public void init_GeneralOrdering_Edge(GeneralOrdering instance) {
 		try {
-			Object value_0 = name_DurationObservation_Shape(instance);
+			Object value_0 = name_GeneralOrdering_Edge(instance);
 			if (value_0 != null) {
 				instance.setName((String) value_0);
 			}
@@ -328,9 +289,23 @@ public class ElementInitializers {
 	/**
 	 * @generated
 	 */
-	public void init_GeneralOrdering_Edge(GeneralOrdering instance) {
+	public void init_DurationConstraint_Edge(DurationConstraint instance) {
 		try {
-			Object value_0 = name_GeneralOrdering_Edge(instance);
+			Object value_0 = name_DurationConstraint_Edge(instance);
+			if (value_0 != null) {
+				instance.setName((String) value_0);
+			}
+		} catch (RuntimeException e) {
+			UMLDiagramEditorPlugin.getInstance().logError("Element initialization failed", e); //$NON-NLS-1$
+		}
+	}
+
+	/**
+	 * @generated
+	 */
+	public void init_DurationObservation_Edge(DurationObservation instance) {
+		try {
+			Object value_0 = name_DurationObservation_Edge(instance);
 			if (value_0 != null) {
 				instance.setName((String) value_0);
 			}
@@ -391,41 +366,6 @@ public class ElementInitializers {
 	/**
 	 * @generated
 	 */
-	private String name_TimeConstraint_Shape(TimeConstraint it) {
-		return getNamedElement(it, "", it.eClass().getName(), "");
-	}
-
-	/**
-	 * @generated
-	 */
-	private String name_specification_TimeConstraint_Shape(TimeInterval it) {
-		return getNamedElement(it, "", it.eClass().getName(), "");
-	}
-
-	/**
-	 * @generated
-	 */
-	private String name_TimeObservation_Shape(TimeObservation it) {
-		return getNamedElement(it, "", "t", "");
-	}
-
-	/**
-	 * @generated
-	 */
-	private String name_DurationConstraint_Shape(DurationConstraint it) {
-		return getNamedElement(it, "", it.eClass().getName(), "");
-	}
-
-	/**
-	 * @generated
-	 */
-	private String name_specification_DurationConstraint_Shape(DurationInterval it) {
-		return getNamedElement(it, "", it.eClass().getName(), "");
-	}
-
-	/**
-	 * @generated
-	 */
 	private String name_DestructionOccurrenceSpecification_Shape(DestructionOccurrenceSpecification it) {
 		return getNamedElement(it, "", it.eClass().getName(), "");
 	}
@@ -440,28 +380,35 @@ public class ElementInitializers {
 	/**
 	 * @generated
 	 */
-	private String name_DurationConstraint_Shape_CN(DurationConstraint it) {
+	private String name_TimeConstraint_Shape(TimeConstraint it) {
 		return getNamedElement(it, "", it.eClass().getName(), "");
 	}
 
 	/**
 	 * @generated
 	 */
-	private String name_specification_DurationConstraint_Shape_CN(DurationInterval it) {
+	private String name_TimeObservation_Shape(TimeObservation it) {
 		return getNamedElement(it, "", it.eClass().getName(), "");
-	}
-
-	/**
-	 * @generated
-	 */
-	private String name_DurationObservation_Shape(DurationObservation it) {
-		return getNamedElement(it, "", "d", "");
 	}
 
 	/**
 	 * @generated
 	 */
 	private String name_GeneralOrdering_Edge(GeneralOrdering it) {
+		return getNamedElement(it, "", it.eClass().getName(), "");
+	}
+
+	/**
+	 * @generated
+	 */
+	private String name_DurationConstraint_Edge(DurationConstraint it) {
+		return getNamedElement(it, "", it.eClass().getName(), "");
+	}
+
+	/**
+	 * @generated
+	 */
+	private String name_DurationObservation_Edge(DurationObservation it) {
 		return getNamedElement(it, "", it.eClass().getName(), "");
 	}
 

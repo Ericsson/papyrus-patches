@@ -17,6 +17,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling;
 
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.EObject;
@@ -27,6 +28,7 @@ import org.eclipse.gmf.runtime.diagram.core.listener.NotificationListener;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
+import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.emf.core.util.EObjectAdapter;
 import org.eclipse.gmf.runtime.notation.Bounds;
 import org.eclipse.gmf.runtime.notation.DecorationNode;
@@ -391,17 +393,20 @@ public class ConnectRectangleToGridEditPolicy extends ConnectToGridEditPolicy im
 	 */
 	protected void updateAnchorFromHeight(IdentityAnchor anchor, Node node, int deltaHeight) {
 		if (null != anchor) {
-			double yPercent = IdentityAnchorHelper.getYPercentage(anchor);
-			double xPercent = IdentityAnchorHelper.getXPercentage(anchor);
+			PrecisionPoint anchorLocation = BaseSlidableAnchor.parseTerminalString(anchor.getId());
+			if (anchorLocation != null) {
+				double yPercent = anchorLocation.preciseY();
+				double xPercent = anchorLocation.preciseX();
 
-			// calculate bounds from notation
-			int nodeHeight = BoundForEditPart.getHeightFromView(node);
-			double oldHeight = nodeHeight - deltaHeight;
-			double preciseHeight = nodeHeight;
+				// calculate bounds from notation
+				int nodeHeight = BoundForEditPart.getHeightFromView(node);
+				double oldHeight = nodeHeight - deltaHeight;
+				double preciseHeight = nodeHeight;
 
-			double newPercentY = (yPercent * oldHeight) / preciseHeight;
-			final String newIdValue = IdentityAnchorHelper.createNewAnchorIdValue(xPercent, newPercentY);
-			execute(new SetCommand(getDiagramEditPart(getHost()).getEditingDomain(), anchor, NotationPackage.eINSTANCE.getIdentityAnchor_Id(), newIdValue));
+				double newPercentY = (yPercent * oldHeight) / preciseHeight;
+				final String newIdValue = IdentityAnchorHelper.createNewAnchorIdValue(xPercent, newPercentY);
+				execute(new SetCommand(getDiagramEditPart(getHost()).getEditingDomain(), anchor, NotationPackage.eINSTANCE.getIdentityAnchor_Id(), newIdValue));
+			}
 		}
 	}
 
@@ -419,8 +424,12 @@ public class ConnectRectangleToGridEditPolicy extends ConnectToGridEditPolicy im
 	 */
 	protected void updateAnchorFromY(IdentityAnchor anchor, Node node, int oldY, int newY) {
 		if (null != anchor && !anchor.getId().trim().equals("")) { //$NON-NLS-1$
-			double yPercent = IdentityAnchorHelper.getYPercentage(anchor);
-			double xPercent = IdentityAnchorHelper.getXPercentage(anchor);
+			PrecisionPoint anchorLocation = BaseSlidableAnchor.parseTerminalString(anchor.getId());
+			if (anchorLocation == null) {
+				return;
+			}
+			double yPercent = anchorLocation.preciseY();
+			double xPercent = anchorLocation.preciseX();
 
 			// calculate bounds from notation
 			double height = BoundForEditPart.getHeightFromView(node);

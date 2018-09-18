@@ -1,6 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010 CEA
- *
+ * Copyright (c) 2010, 2018 CEA List, EclipseSource, Christian W. Damus, and others
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,17 +10,19 @@
  *
  * Contributors:
  *   Soyatec - Initial API and implementation
+ *   EclipseSource - Bug 536641
+ *   Christian W. Damus - bug 536486
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.providers;
 
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
-import org.eclipse.gmf.runtime.notation.Connector;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpart.SilentEditpart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationBehaviorEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CCombinedFragmentCombinedFragmentCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CCombinedFragmentEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CDestructionOccurrenceSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionOperandEditPart;
@@ -29,8 +30,8 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentCombinedFragmentCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ConsiderIgnoreFragmentEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationObservationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationConstraintLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationObservationLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomGeneralOrderingEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName2EditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName3EditPart;
@@ -41,8 +42,11 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName7Edi
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomStateInvariantEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomStateInvariantLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomTimeConstraintBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomTimeObservationBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GeneralOrderingEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
@@ -56,12 +60,12 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageFoundNameEditP
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageLostNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ObservationLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantLabelEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationBorderNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.GrillingEditpart;
-import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 
 /**
  * @author Jin Liu (jin.liu@soyatec.com)
@@ -86,11 +90,6 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 			return new InteractionOperandGuardEditPart(view);
 		} else if (BehaviorExecutionSpecificationBehaviorEditPart.BEHAVIOR_TYPE.equals(view.getType())) {
 			return new BehaviorExecutionSpecificationBehaviorEditPart(view);
-		}
-		if (view instanceof Connector) {
-			if (((Connector) view).getType().equals(SequenceUtil.OBSERVATION_LINK_TYPE)) {
-				return new ObservationLinkEditPart(view);
-			}
 		}
 		switch (UMLVisualIDRegistry.getVisualID(view)) {
 		// case SequenceDiagramEditPart.VISUAL_ID:
@@ -130,24 +129,22 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 			return new CustomStateInvariantEditPart(view);
 		// case CombinedFragment2EditPart.VISUAL_ID:
 		// return new CustomCombinedFragment2EditPart(view);
-		// case TimeConstraintEditPart.VISUAL_ID:
-		// return new CustomTimeConstraintEditPart(view);
+		case TimeConstraintBorderNodeEditPart.VISUAL_ID:
+			return new CustomTimeConstraintBorderNodeEditPart(view);
 		// case TimeConstraintAppliedStereotypeEditPart.VISUAL_ID:
 		// return new CustomTimeConstraintAppliedStereotypeEditPart(view);
 		// case TimeConstraintLabelEditPart.VISUAL_ID:
 		// return new CustomTimeConstraintLabelEditPart(view);
-		// case TimeObservationEditPart.VISUAL_ID:
-		// return new CustomTimeObservationEditPart(view);
+		case TimeObservationBorderNodeEditPart.VISUAL_ID:
+			return new CustomTimeObservationBorderNodeEditPart(view);
 		// case TimeObservationLabelEditPart.VISUAL_ID:
 		// return new CustomTimeObservationLabelEditPart(view);
 		// case TimeObservationAppliedStereotypeEditPart.VISUAL_ID:
 		// return new CustomTimeObservationAppliedStereotypeEditPart(view);
-		// case DurationConstraintEditPart.VISUAL_ID:
-		// return new CustomDurationConstraintEditPart(view);
 		// case DurationConstraintAppliedStereotypeEditPart.VISUAL_ID:
 		// return new CustomDurationConstraintAppliedStereotypeEditPart(view);
-		// case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
-		// return new CustomDestructionOccurrenceSpecificationEditPart(view);
+		case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
+			return new CDestructionOccurrenceSpecificationEditPart(view);
 		// case ConstraintEditPart.VISUAL_ID:
 		// return new CustomConstraintEditPart(view);
 		// case Constraint2EditPart.VISUAL_ID:
@@ -160,10 +157,6 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 		// return new CustomDurationConstraintInMessageEditPart(view);
 		// case DurationConstraintInMessageAppliedStereotypeEditPart.VISUAL_ID:
 		// return new CustomDurationConstraintInMessageAppliedStereotypeEditPart(view);
-		case DurationObservationEditPart.VISUAL_ID:
-			return new CustomDurationObservationEditPart(view);
-		case DurationObservationAppliedStereotypeEditPart.VISUAL_ID:
-			return new CustomDurationObservationAppliedStereotypeEditPart(view);
 		case InteractionInteractionCompartmentEditPart.VISUAL_ID:
 			return new CInteractionInteractionCompartmentEditPart(view);
 		// case CombinedFragmentCombinedFragmentCompartmentEditPart.VISUAL_ID:
@@ -206,6 +199,10 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 		// return new MessageEndEditPart(view);
 		case StateInvariantLabelEditPart.VISUAL_ID:
 			return new CustomStateInvariantLabelEditPart(view);
+		case DurationConstraintLinkEditPart.VISUAL_ID:
+			return new CustomDurationConstraintLinkEditPart(view);
+		case DurationObservationLinkEditPart.VISUAL_ID:
+			return new CustomDurationObservationLinkEditPart(view);
 		}
 		return null;
 	}

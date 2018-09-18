@@ -25,13 +25,8 @@ import org.eclipse.gef.commands.UnexecutableCommand;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
-import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
-import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest.ViewAndElementDescriptor;
-import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionFragmentContainerCreationEditPolicy;
-import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
-import org.eclipse.papyrus.uml.service.types.utils.ElementUtil;
 
 /**
  * @author Celine JANSSENS
@@ -63,15 +58,6 @@ public class CInteractionInteractionCompartmentEditPart extends InteractionInter
 	 */
 	@Override
 	public Command getCommand(Request request) {
-		if (request instanceof CreateViewAndElementRequest && request.getType().equals(REQ_CREATE)) {
-			CreateViewAndElementRequest createrequest = (CreateViewAndElementRequest) request;
-			ViewAndElementDescriptor descriptor = createrequest.getViewAndElementDescriptor();
-			IElementType elementType = descriptor.getElementAdapter().getAdapter(IElementType.class);
-			if (ElementUtil.isTypeOf(elementType, UMLDIElementTypes.DURATION_CONSTRAINT_SHAPE)) {
-				return null;
-			}
-		}
-
 		// ExecutionSpecification can't be drop into Interaction
 		if (request instanceof ChangeBoundsRequest) {
 			List<?> editParts = ((ChangeBoundsRequest) request).getEditParts();

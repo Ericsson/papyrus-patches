@@ -1,5 +1,6 @@
 Manifest-Version: 1.0
 Export-Package: org.eclipse.papyrus.uml.diagram.sequence,
+ org.eclipse.papyrus.uml.diagram.sequence.anchors,
  org.eclipse.papyrus.uml.diagram.sequence.edit.parts,
  org.eclipse.papyrus.uml.diagram.sequence.edit.policies,
  org.eclipse.papyrus.uml.diagram.sequence.figures,
@@ -15,7 +16,7 @@ Bundle-ClassPath: .
 Bundle-Name: %pluginName
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Require-Bundle: org.eclipse.ui.navigator;bundle-version="[3.6.0,4.0.0)";visibility:=reexport,
+Require-Bundle: org.eclipse.ui.navigator;visibility:=reexport;bundle-version="[3.6.0,4.0.0)",
  org.eclipse.ui.navigator.resources;bundle-version="[3.5.0,4.0.0)",
  org.eclipse.gmf.runtime.diagram.ui.render;bundle-version="[1.7.0,2.0.0)",
  org.eclipse.gmf.runtime.diagram.ui.resources.editor.ide;bundle-version="[1.7.0,2.0.0)",
@@ -25,10 +26,10 @@ Require-Bundle: org.eclipse.ui.navigator;bundle-version="[3.6.0,4.0.0)";visibili
  org.eclipse.gmf.runtime.diagram.ui.providers.ide;bundle-version="[1.7.0,2.0.0)",
  org.eclipse.papyrus.uml.service.types;bundle-version="[4.0.0,5.0.0)",
  org.eclipse.papyrus.uml.appearance;bundle-version="[2.0.0,3.0.0)",
- org.eclipse.emf.ecore;bundle-version="[2.12.0,3.0.0)";visibility:=reexport,
- org.eclipse.emf.ecore;bundle-version="[2.12.0,3.0.0)";visibility:=reexport,
- org.eclipse.emf.ecore.edit;bundle-version="[2.9.0,3.0.0)";visibility:=reexport,
- org.eclipse.emf.validation;bundle-version="[1.8.0,2.0.0)";visibility:=reexport,
+ org.eclipse.emf.ecore;visibility:=reexport;bundle-version="[2.12.0,3.0.0)",
+ org.eclipse.emf.ecore;visibility:=reexport;bundle-version="[2.12.0,3.0.0)",
+ org.eclipse.emf.ecore.edit;visibility:=reexport;bundle-version="[2.9.0,3.0.0)",
+ org.eclipse.emf.validation;visibility:=reexport;bundle-version="[1.8.0,2.0.0)",
  org.eclipse.papyrus.infra.gmfdiag.hyperlink;bundle-version="[3.0.0,4.0.0)",
  org.eclipse.papyrus.uml.internationalization.utils;bundle-version="[1.0.0,2.0.0)",
  org.eclipse.papyrus.infra.internationalization.utils;bundle-version="[1.0.0,2.0.0)",
@@ -53,8 +54,8 @@ Require-Bundle: org.eclipse.ui.navigator;bundle-version="[3.6.0,4.0.0)";visibili
  org.eclipse.gmf.runtime.diagram.ui.properties,
  org.eclipse.gmf.runtime.diagram.ui.providers,
  org.eclipse.gmf.runtime.diagram.ui.resources.editor,
- org.eclipse.uml2.uml;bundle-version="[5.3.0,6.0.0)";visibility:=reexport,
- org.eclipse.uml2.uml.edit;bundle-version="[5.3.0,6.0.0)";visibility:=reexport,
+ org.eclipse.uml2.uml;visibility:=reexport;bundle-version="[5.3.0,6.0.0)",
+ org.eclipse.uml2.uml.edit;visibility:=reexport;bundle-version="[5.3.0,6.0.0)",
  org.eclipse.gmf.runtime.draw2d.ui;visibility:=reexport,
  org.eclipse.gef,
  org.eclipse.papyrus.extensionpoints.editors;bundle-version="[3.0.0,4.0.0)",

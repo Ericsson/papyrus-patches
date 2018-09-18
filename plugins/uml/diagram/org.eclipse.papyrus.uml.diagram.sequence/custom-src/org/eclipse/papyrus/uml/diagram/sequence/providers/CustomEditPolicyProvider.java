@@ -34,7 +34,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.AnnotatedConnectio
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.AnnotatedLinkEndEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.AnnotatedLinkStartEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceConnectionHandleEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.TooltipUtil;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Constraint;
@@ -69,7 +68,6 @@ public class CustomEditPolicyProvider implements IEditPolicyProvider {
 			editPart.installEditPolicy(EditPolicyRoles.CONNECTION_HANDLES_ROLE, new SequenceConnectionHandleEditPolicy());
 		}
 		installHighlightPolicy(editPart);
-		SequenceUtil.installObservationLinkPolicy(editPart);
 		// install annotated link edit policy.
 		if (editPart instanceof IGraphicalEditPart) {
 			Object model = editPart.getModel();

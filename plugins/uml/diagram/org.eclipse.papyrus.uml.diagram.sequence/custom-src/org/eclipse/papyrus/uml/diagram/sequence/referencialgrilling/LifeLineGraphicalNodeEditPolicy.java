@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2017 CEA LIST, ALL4TEC and others.
+ * Copyright (c) 2017 CEA LIST, ALL4TEC, EclipseSource and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *   CEA LIST - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 519621, 519756, 526191
  *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 531596
+ *   EclipseSource - Bug 536641
  *
  *****************************************************************************/
 
@@ -517,6 +518,10 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 			relativeSnappedLocation = SequenceUtil.getSnappedLocation(getHost(), relativeSnappedLocation);
 			getHostFigure().getParent().translateToRelative(relativeSnappedLocation);
 
+			if (false == request.getTargetEditPart() instanceof LifelineEditPart) {
+				// TODO This may happen when creating e.g. a Context link
+				return null;
+			}
 			if (LifelineEditPartUtil.getNextEventsFromPosition(relativeSnappedLocation, (LifelineEditPart) request.getTargetEditPart()).isEmpty()) {
 
 				NodeEditPart targetEditPart = (NodeEditPart) request.getTargetEditPart();
@@ -696,7 +701,7 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 
 		// Check if the target is lower than the source
 		Point sourceLocation = SequenceUtil.getAbsoluteEdgeExtremity((ConnectionNodeEditPart) request.getConnectionEditPart(), true);
-		if (!isTargetLowerThanSource(sourceLocation, request.getLocation().getCopy())) {
+		if (sourceLocation != null && !isTargetLowerThanSource(sourceLocation, request.getLocation().getCopy())) {
 			Object object = request.getExtendedData().get(SequenceUtil.DO_NOT_CHECK_HORIZONTALITY);
 			if (!(object instanceof Boolean) || ((object instanceof Boolean) && !((Boolean) object))) {// If not HorizontalMove parameter true
 				return UnexecutableCommand.INSTANCE;

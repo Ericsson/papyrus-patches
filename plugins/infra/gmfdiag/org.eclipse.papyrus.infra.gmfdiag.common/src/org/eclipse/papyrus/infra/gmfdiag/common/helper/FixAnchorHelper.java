@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.draw2d.AbstractPointListShape;
+import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
@@ -38,6 +39,7 @@ import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.INodeEditPart;
+import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.PolylineConnectionEx;
 import org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
@@ -141,6 +143,22 @@ public class FixAnchorHelper {
 	protected Point getRealAnchorPoint(final AbstractConnectionEditPart edgeEP, final boolean sourcePoint) {
 		final IFigure figure = edgeEP.getFigure();
 		Point point = null;
+		if (figure instanceof Connection) {
+			// Bug 536638: We now have specific Anchors that are dynamically computed, and not based on a X/Y Ratio
+			// We *don't* want to "fix" these!
+			Connection connection = (Connection) figure;
+			if (sourcePoint && connection.getSourceAnchor() != null) {
+				ConnectionAnchor sourceAnchor = connection.getSourceAnchor();
+				if (false == sourceAnchor instanceof BaseSlidableAnchor) {
+					return null;
+				}
+			} else if (!sourcePoint && connection.getTargetAnchor() != null) {
+				ConnectionAnchor targetAnchor = connection.getTargetAnchor();
+				if (false == targetAnchor instanceof BaseSlidableAnchor) {
+					return null;
+				}
+			}
+		}
 		if (figure instanceof AbstractPointListShape) {
 			if (sourcePoint) {
 				point = ((AbstractPointListShape) figure).getStart().getCopy();
@@ -345,12 +363,12 @@ public class FixAnchorHelper {
 
 	/**
 	 * Return the side of the point on the included Rectangle
-	 * 
+	 *
 	 * @since 3.1
 	 * @param pt
 	 *            Point with absolute position
 	 * @return integer representing the position from PositionConstants.
-	 * 
+	 *
 	 */
 	protected int getSideFromRectangle(Point pt) {
 		while (getIncludedRect().contains(pt)) {

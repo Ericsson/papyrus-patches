@@ -10,7 +10,7 @@
  *
  * Contributors:
  *   CEA LIST - Initial API and implementation
- *   Christian W. Damus - bug 530201
+ *   Christian W. Damus - bugs 530201, 536486
  *
  *****************************************************************************/
 
@@ -121,7 +121,7 @@ public class LifelineCreationEditPolicy extends DefaultCreationEditPolicy implem
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy#getReparentCommand(org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart)
 	 */
 	@Override
@@ -136,7 +136,7 @@ public class LifelineCreationEditPolicy extends DefaultCreationEditPolicy implem
 
 		return super.getReparentCommand(gep);
 	}
-	
+
 	/**
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy#getReparentViewCommand(org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart)
 	 *
@@ -173,6 +173,8 @@ public class LifelineCreationEditPolicy extends DefaultCreationEditPolicy implem
 		} else if (ElementUtil.isTypeOf(elementType, UMLDIElementTypes.BEHAVIOR_EXECUTION_SPECIFICATION_SHAPE)) {
 			controlledByLifeline = true;
 		} else if (ElementUtil.isTypeOf(elementType, UMLDIElementTypes.TIME_CONSTRAINT_SHAPE)) {
+			controlledByLifeline = true;
+		} else if (ElementUtil.isTypeOf(elementType, UMLDIElementTypes.TIME_OBSERVATION_SHAPE)) {
 			controlledByLifeline = true;
 		} else if (ElementUtil.isTypeOf(elementType, UMLDIElementTypes.STATE_INVARIANT_SHAPE)) {
 			controlledByLifeline = true;

@@ -86,43 +86,18 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContinuationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionOperandEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionUseEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateAppliedStereotypeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageFoundAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageFoundEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageFoundNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageLostAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageLostEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageLostNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncNameEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ObservationLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.ObservationLinkPolicy;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.uml2.common.util.CacheAdapter;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Continuation;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
-import org.eclipse.uml2.uml.DurationConstraint;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -536,6 +511,10 @@ public class SequenceUtil {
 				// get position from anchor id
 				String oldTerminal = ((IdentityAnchor) idAnchor).getId();
 				PrecisionPoint pp = BaseSlidableAnchor.parseTerminalString(oldTerminal);
+				if (pp == null) {
+					// Not a BaseSlidableAnchor
+					return null;
+				}
 				if (pp.preciseX() <= 1 && pp.preciseX() >= 0 && pp.preciseY() >= 0 && pp.preciseY() <= 1) {
 					int xPos = linkedPartBounds.x + delta.width + (int) Math.round(anchorOwningFigure.getBounds().width * pp.preciseX());
 					int yPos = linkedPartBounds.y + delta.height + (int) Math.round(anchorOwningFigure.getBounds().height * pp.preciseY());
@@ -826,32 +805,6 @@ public class SequenceUtil {
 		} else if (timeElement instanceof TimeConstraint) {
 			if (((TimeConstraint) timeElement).getConstrainedElements().contains(occSpec)) {
 				return PositionConstants.CENTER;
-			} else {
-				return PositionConstants.NONE;
-			}
-		} else if (timeElement instanceof DurationConstraint) {
-			if (((DurationConstraint) timeElement).getConstrainedElements().contains(occSpec)) {
-				List<Element> events = ((DurationConstraint) timeElement).getConstrainedElements();
-				LifelineEditPart lifelinePart = getParentLifelinePart(timeElementPart);
-				if (lifelinePart != null && events.size() >= 2) {
-					OccurrenceSpecification otherEvent = null;
-					if (!occSpec.equals(events.get(0)) && events.get(0) instanceof OccurrenceSpecification) {
-						otherEvent = (OccurrenceSpecification) events.get(0);
-					} else if (!occSpec.equals(events.get(1)) && events.get(1) instanceof OccurrenceSpecification) {
-						otherEvent = (OccurrenceSpecification) events.get(1);
-					}
-					if (otherEvent != null) {
-						Point otherLoc = findLocationOfEvent(lifelinePart, otherEvent);
-						Point thisLoc = findLocationOfEvent(lifelinePart, occSpec);
-						if (otherLoc != null && thisLoc != null) {
-							if (otherLoc.y > thisLoc.y) {
-								return PositionConstants.TOP;
-							} else {
-								return PositionConstants.BOTTOM;
-							}
-						}
-					}
-				}
 			} else {
 				return PositionConstants.NONE;
 			}
@@ -1649,50 +1602,6 @@ public class SequenceUtil {
 	}
 
 	/**
-	 * Find Time Observations editpart which are related to specific OccurenceSpecification
-	 *
-	 * @param lifelinePart
-	 * @param oss
-	 * @return List<TimeObservationLabelEditPart>
-	 */
-	public static List<TimeObservationLabelEditPart> findOccurenceSpecificationRelatedTimeObservationPart(LifelineEditPart lifelinePart, List<OccurrenceSpecification> oss) {
-		List<TimeObservationLabelEditPart> list = new ArrayList<>();
-		if (oss == null || oss.size() == 0) {
-			return list;
-		}
-		if (lifelinePart != null && lifelinePart.getTargetConnections().size() > 0) {
-			for (Object targetConnection : lifelinePart.getTargetConnections()) {
-				if (targetConnection instanceof ObservationLinkEditPart) {
-					ObservationLinkEditPart observationLinkEditPart = (ObservationLinkEditPart) targetConnection;
-					if (observationLinkEditPart.getSource() instanceof TimeObservationLabelEditPart) {
-						TimeObservationLabelEditPart source = (TimeObservationLabelEditPart) observationLinkEditPart.getSource();
-						EObject timeElement = source.resolveSemanticElement();
-						if (timeElement instanceof TimeObservation) {
-							if (oss.contains(((TimeObservation) timeElement).getEvent())) {
-								list.add(source);
-							}
-						}
-					}
-				}
-			}
-		}
-		return list;
-	}
-
-	/**
-	 * Find Time Observations editpart which are related to specific OccurenceSpecification
-	 *
-	 * @param lifelinePart
-	 * @param os
-	 * @return List<TimeObservationLabelEditPart>
-	 */
-	public static List<TimeObservationLabelEditPart> findOccurenceSpecificationRelatedTimeObservationPart(LifelineEditPart lifelinePart, OccurrenceSpecification os) {
-		List<OccurrenceSpecification> oss = new ArrayList<>();
-		oss.add(os);
-		return findOccurenceSpecificationRelatedTimeObservationPart(lifelinePart, oss);
-	}
-
-	/**
 	 * Find specific editpart by semantic model
 	 *
 	 * @param editPart
@@ -1720,32 +1629,6 @@ public class SequenceUtil {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Intall observation link policy to specific editpart
-	 *
-	 * @param editPart
-	 */
-	public static void installObservationLinkPolicy(EditPart editPart) {
-		String editPolicy = "observationlink";
-		if (editPart instanceof LifelineEditPart || editPart instanceof TimeObservationLabelEditPart) {
-			editPart.installEditPolicy(editPolicy, new ObservationLinkPolicy(editPart));
-		}
-		if (editPart instanceof DurationObservationEditPart) {
-			editPart.installEditPolicy(editPolicy, new ObservationLinkPolicy(editPart));
-		}
-		if (editPart instanceof MessageSyncEditPart || editPart instanceof MessageAsyncEditPart || editPart instanceof MessageReplyEditPart || editPart instanceof MessageCreateEditPart || editPart instanceof MessageDeleteEditPart
-				|| editPart instanceof MessageLostEditPart
-				|| editPart instanceof MessageFoundEditPart) {
-			editPart.installEditPolicy(editPolicy, new ObservationLinkPolicy(editPart));
-		} else if (editPart instanceof MessageSyncNameEditPart || editPart instanceof MessageAsyncNameEditPart || editPart instanceof MessageReplyNameEditPart || editPart instanceof MessageCreateNameEditPart || editPart instanceof MessageDeleteNameEditPart
-				|| editPart instanceof MessageLostNameEditPart || editPart instanceof MessageFoundNameEditPart) {
-			editPart.getParent().installEditPolicy(editPolicy, new ObservationLinkPolicy(editPart));
-		} else if (editPart instanceof MessageSyncAppliedStereotypeEditPart || editPart instanceof MessageAsyncAppliedStereotypeEditPart || editPart instanceof MessageReplyAppliedStereotypeEditPart || editPart instanceof MessageCreateAppliedStereotypeEditPart
-				|| editPart instanceof MessageDeleteAppliedStereotypeEditPart || editPart instanceof MessageLostAppliedStereotypeEditPart || editPart instanceof MessageFoundAppliedStereotypeEditPart) {
-			editPart.getParent().installEditPolicy(editPolicy, new ObservationLinkPolicy(editPart));
-		}
 	}
 
 	/**

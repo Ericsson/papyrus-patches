@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2009 Atos Origin.
+ * Copyright (c) 2009, 2018 Atos Origin, Christian W. Damus, CEA LIST, and others.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -11,6 +11,7 @@
  *
  * Contributors:
  *   Atos Origin - Initial API and implementation
+ *   Christian W. Damus - bug 536486
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.part;
@@ -35,15 +36,12 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContextLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContinuationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContinuationNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLabelEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkNameEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GeneralOrderingAppliedStereotypeEditPart;
@@ -83,11 +81,11 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantEditPar
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantLabelEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintLabelEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationLabelEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.expressions.UMLOCLFactory;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.Package;
@@ -193,9 +191,6 @@ public class UMLVisualIDRegistry {
 				}
 				break;
 			case InteractionEditPart.VISUAL_ID:
-				if (UMLPackage.eINSTANCE.getDurationConstraint().isSuperTypeOf(domainElement.eClass())) {
-					return DurationConstraintInMessageEditPart.VISUAL_ID;
-				}
 				if (UMLPackage.eINSTANCE.getGate().isSuperTypeOf(domainElement.eClass())) {
 					return GateEditPart.VISUAL_ID;
 				}
@@ -234,18 +229,39 @@ public class UMLVisualIDRegistry {
 				if (UMLPackage.eINSTANCE.getStateInvariant().isSuperTypeOf(domainElement.eClass())) {
 					return StateInvariantEditPart.VISUAL_ID;
 				}
-				if (UMLPackage.eINSTANCE.getTimeConstraint().isSuperTypeOf(domainElement.eClass())) {
-					return TimeConstraintEditPart.VISUAL_ID;
-				}
-				if (UMLPackage.eINSTANCE.getTimeObservation().isSuperTypeOf(domainElement.eClass())) {
-					return TimeObservationEditPart.VISUAL_ID;
-				}
-				if (UMLPackage.eINSTANCE.getDurationConstraint().isSuperTypeOf(domainElement.eClass())) {
-					return DurationConstraintEditPart.VISUAL_ID;
-				}
 				if (UMLPackage.eINSTANCE.getDestructionOccurrenceSpecification()
 						.isSuperTypeOf(domainElement.eClass())) {
 					return DestructionOccurrenceSpecificationEditPart.VISUAL_ID;
+				}
+				if (UMLPackage.eINSTANCE.getTimeConstraint().isSuperTypeOf(domainElement.eClass())) {
+					return TimeConstraintBorderNodeEditPart.VISUAL_ID;
+				}
+				if (UMLPackage.eINSTANCE.getTimeObservation().isSuperTypeOf(domainElement.eClass())) {
+					return TimeObservationBorderNodeEditPart.VISUAL_ID;
+				}
+				break;
+			case ActionExecutionSpecificationEditPart.VISUAL_ID:
+				if (UMLPackage.eINSTANCE.getTimeConstraint().isSuperTypeOf(domainElement.eClass())) {
+					return TimeConstraintBorderNodeEditPart.VISUAL_ID;
+				}
+				if (UMLPackage.eINSTANCE.getTimeObservation().isSuperTypeOf(domainElement.eClass())) {
+					return TimeObservationBorderNodeEditPart.VISUAL_ID;
+				}
+				break;
+			case BehaviorExecutionSpecificationEditPart.VISUAL_ID:
+				if (UMLPackage.eINSTANCE.getTimeConstraint().isSuperTypeOf(domainElement.eClass())) {
+					return TimeConstraintBorderNodeEditPart.VISUAL_ID;
+				}
+				if (UMLPackage.eINSTANCE.getTimeObservation().isSuperTypeOf(domainElement.eClass())) {
+					return TimeObservationBorderNodeEditPart.VISUAL_ID;
+				}
+				break;
+			case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
+				if (UMLPackage.eINSTANCE.getTimeConstraint().isSuperTypeOf(domainElement.eClass())) {
+					return TimeConstraintBorderNodeEditPart.VISUAL_ID;
+				}
+				if (UMLPackage.eINSTANCE.getTimeObservation().isSuperTypeOf(domainElement.eClass())) {
+					return TimeObservationBorderNodeEditPart.VISUAL_ID;
 				}
 				break;
 			case InteractionInteractionCompartmentEditPart.VISUAL_ID:
@@ -266,9 +282,6 @@ public class UMLVisualIDRegistry {
 				}
 				if (UMLPackage.eINSTANCE.getComment().isSuperTypeOf(domainElement.eClass())) {
 					return CommentEditPart.VISUAL_ID;
-				}
-				if (UMLPackage.eINSTANCE.getDurationObservation().isSuperTypeOf(domainElement.eClass())) {
-					return DurationObservationEditPart.VISUAL_ID;
 				}
 				break;
 			case CombinedFragmentCombinedFragmentCompartmentEditPart.VISUAL_ID:
@@ -313,9 +326,6 @@ public class UMLVisualIDRegistry {
 					return true;
 				}
 				if (InteractionInteractionCompartmentEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationConstraintInMessageEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
 				if (GateEditPart.VISUAL_ID.equals(nodeVisualID)) {
@@ -373,16 +383,29 @@ public class UMLVisualIDRegistry {
 				if (StateInvariantEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
-				if (TimeConstraintEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (TimeObservationEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationConstraintEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
 				if (DestructionOccurrenceSpecificationEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeConstraintBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeObservationBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
+			case ActionExecutionSpecificationEditPart.VISUAL_ID:
+				if (TimeConstraintBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeObservationBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
+			case BehaviorExecutionSpecificationEditPart.VISUAL_ID:
+				if (TimeConstraintBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeObservationBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
 				break;
@@ -394,27 +417,11 @@ public class UMLVisualIDRegistry {
 					return true;
 				}
 				break;
-			case TimeConstraintEditPart.VISUAL_ID:
-				if (TimeConstraintLabelEditPart.VISUAL_ID.equals(nodeVisualID)) {
+			case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
+				if (TimeConstraintBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
-				if (TimeConstraintAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				break;
-			case TimeObservationEditPart.VISUAL_ID:
-				if (TimeObservationLabelEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (TimeObservationAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				break;
-			case DurationConstraintEditPart.VISUAL_ID:
-				if (DurationConstraintLabelEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationConstraintAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+				if (TimeObservationBorderNodeEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
 				break;
@@ -431,24 +438,24 @@ public class UMLVisualIDRegistry {
 					return true;
 				}
 				break;
-			case DurationConstraintInMessageEditPart.VISUAL_ID:
-				if (DurationConstraintInMessageLabelEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationConstraintInMessageAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				break;
-			case DurationObservationEditPart.VISUAL_ID:
-				if (DurationObservationLabelEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationObservationAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				break;
 			case GateEditPart.VISUAL_ID:
 				if (GateNameEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
+			case TimeConstraintBorderNodeEditPart.VISUAL_ID:
+				if (TimeConstraintNameEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeConstraintAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
+			case TimeObservationBorderNodeEditPart.VISUAL_ID:
+				if (TimeObservationNameEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (TimeObservationAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
 				break;
@@ -469,9 +476,6 @@ public class UMLVisualIDRegistry {
 					return true;
 				}
 				if (CommentEditPart.VISUAL_ID.equals(nodeVisualID)) {
-					return true;
-				}
-				if (DurationObservationEditPart.VISUAL_ID.equals(nodeVisualID)) {
 					return true;
 				}
 				break;
@@ -546,6 +550,22 @@ public class UMLVisualIDRegistry {
 					return true;
 				}
 				break;
+			case DurationConstraintLinkEditPart.VISUAL_ID:
+				if (DurationConstraintLinkNameEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (DurationConstraintLinkAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
+			case DurationObservationLinkEditPart.VISUAL_ID:
+				if (DurationObservationLinkNameEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				if (DurationObservationLinkAppliedStereotypeEditPart.VISUAL_ID.equals(nodeVisualID)) {
+					return true;
+				}
+				break;
 			}
 		}
 		return false;
@@ -588,6 +608,12 @@ public class UMLVisualIDRegistry {
 		}
 		if (UMLPackage.eINSTANCE.getGeneralOrdering().isSuperTypeOf(domainElement.eClass())) {
 			return GeneralOrderingEditPart.VISUAL_ID;
+		}
+		if (UMLPackage.eINSTANCE.getDurationConstraint().isSuperTypeOf(domainElement.eClass())) {
+			return DurationConstraintLinkEditPart.VISUAL_ID;
+		}
+		if (UMLPackage.eINSTANCE.getDurationObservation().isSuperTypeOf(domainElement.eClass())) {
+			return DurationObservationLinkEditPart.VISUAL_ID;
 		}
 		return "";
 	}
@@ -696,19 +722,13 @@ public class UMLVisualIDRegistry {
 			switch (visualID) {
 			case SequenceDiagramEditPart.VISUAL_ID:
 				return false;
-			case BehaviorExecutionSpecificationEditPart.VISUAL_ID:
-			case ActionExecutionSpecificationEditPart.VISUAL_ID:
 			case ConsiderIgnoreFragmentEditPart.VISUAL_ID:
 			case ConstraintEditPart.VISUAL_ID:
 			case CommentEditPart.VISUAL_ID:
 			case ContinuationEditPart.VISUAL_ID:
 			case StateInvariantEditPart.VISUAL_ID:
-			case TimeConstraintEditPart.VISUAL_ID:
-			case TimeObservationEditPart.VISUAL_ID:
-			case DurationConstraintEditPart.VISUAL_ID:
-			case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
-			case DurationConstraintInMessageEditPart.VISUAL_ID:
-			case DurationObservationEditPart.VISUAL_ID:
+			case TimeConstraintBorderNodeEditPart.VISUAL_ID:
+			case TimeObservationBorderNodeEditPart.VISUAL_ID:
 			case GateEditPart.VISUAL_ID:
 				return true;
 			}

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2018 CEA LIST and others.
+ * Copyright (c) 2018 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -8,6 +8,7 @@
  *
  * Contributors:
  *   CEA LIST - Initial API and implementation
+ *   Christian W. Damus - bug 539373
  *
  *****************************************************************************/
 
@@ -34,10 +35,14 @@ public class LifelineNodeFigure extends SelectableBorderedNodeFigure {
 
 	@Override
 	public boolean containsPoint(int x, int y) {
-		if (Math.abs(this.getBounds().x + this.getBounds().width / 2 - x) < 20) {
-			return super.containsPoint(x, y); // check also the other bounds
+		// Hit test the lifeline itself with execution specifications
+		boolean result = getMainFigure().containsPoint(x, y);
+		if (!result) {
+			// Try the border items (e.g., time observations)
+			result = FigureHitTestUtil.INSTANCE.anyChildContainsPoint(
+					getBorderItemContainer(), x, y);
 		}
-		return false;
+		return result;
 	}
 
 	@Override
@@ -45,7 +50,7 @@ public class LifelineNodeFigure extends SelectableBorderedNodeFigure {
 		if (search.prune(this)) {
 			return null;
 		}
-		IFigure result = getBorderItemContainer().findFigureAt(x, y, search);
+		IFigure result = FigureHitTestUtil.INSTANCE.findChildAt(getBorderItemContainer(), x, y, search);
 		if (result != null) {
 			return result;
 		}

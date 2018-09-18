@@ -1,6 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010 CEA
- *
+ * Copyright (c) 2010, 2018 CEA List, EclipseSource and others
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +10,7 @@
  *
  * Contributors:
  *   Soyatec - Initial API and implementation
+ *   EclipseSource - Bug 536641
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.providers;
@@ -25,6 +25,7 @@ import org.eclipse.gmf.runtime.diagram.core.services.view.CreateNodeViewOperatio
 import org.eclipse.gmf.runtime.diagram.core.services.view.CreateViewForKindOperation;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.notation.Bounds;
+import org.eclipse.gmf.runtime.notation.Connector;
 import org.eclipse.gmf.runtime.notation.DecorationNode;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.Location;
@@ -41,20 +42,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentCombi
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CommentAnnotatedElementEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ConsiderIgnoreFragmentEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLabelEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionOperandGuardEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationAppliedStereotypeEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationLabelEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
 import org.eclipse.uml2.uml.CombinedFragment;
@@ -71,17 +59,6 @@ public class CustomViewProvider extends UMLViewProvider {
 		if (op.getContainerView() == null) {
 			return false;
 		}
-		String visualID = UMLVisualIDRegistry.getVisualID(op.getSemanticHint());
-		if (DurationConstraintEditPart.VISUAL_ID.equals(visualID)) {
-			// avoid to
-			// modify
-			// UMLVisualIDRegistry.getNodeVisualID(View,
-			// EObject)
-			if (InteractionInteractionCompartmentEditPart.VISUAL_ID.equals(UMLVisualIDRegistry
-					.getVisualID(op.getContainerView()))) {
-				return true;
-			}
-		}
 		return super.provides(op);
 	}
 
@@ -89,16 +66,6 @@ public class CustomViewProvider extends UMLViewProvider {
 	protected boolean provides(CreateViewForKindOperation op) {
 		if (op.getContainerView() == null) {
 			return false;
-		}
-		String visualID = UMLVisualIDRegistry.getVisualID(op.getSemanticHint());
-		if (DurationConstraintEditPart.VISUAL_ID.equals(visualID)) { // avoid to
-			// modify
-			// UMLVisualIDRegistry.getNodeVisualID(View,
-			// EObject)
-			if (InteractionInteractionCompartmentEditPart.VISUAL_ID.equals(UMLVisualIDRegistry
-					.getVisualID(op.getContainerView()))) {
-				return true;
-			}
 		}
 		return super.provides(op);
 	}
@@ -109,7 +76,7 @@ public class CustomViewProvider extends UMLViewProvider {
 			PreferencesHint preferencesHint) {
 		Edge edge = super.createEdge(semanticAdapter, containerView,
 				semanticHint, index, persisted, preferencesHint);
-		if (edge != null) {
+		if (edge != null && false == edge instanceof Connector) {
 			edge.getStyles().add(NotationFactory.eINSTANCE.createLineStyle());
 			final IPreferenceStore prefStore = (IPreferenceStore) preferencesHint
 					.getPreferenceStore();
@@ -119,92 +86,12 @@ public class CustomViewProvider extends UMLViewProvider {
 		return edge;
 	}
 
-	@Override
-	public Node createTimeObservation_Shape(EObject domainElement,
-			View containerView, int index, boolean persisted,
-			PreferencesHint preferencesHint) {
-		Shape node = NotationFactory.eINSTANCE.createShape();
-		node.setLayoutConstraint(NotationFactory.eINSTANCE.createBounds());
-		node.setType(UMLVisualIDRegistry
-				.getType(TimeObservationEditPart.VISUAL_ID));
-		ViewUtil.insertChildView(containerView, node, index, persisted);
-		node.setElement(domainElement);
-		// initializeFromPreferences
-		final IPreferenceStore prefStore = (IPreferenceStore) preferencesHint
-				.getPreferenceStore();
-		PreferenceInitializerForElementHelper.initForegroundFromPrefs(node,
-				prefStore, "TimeObservation");
-		PreferenceInitializerForElementHelper.initFontStyleFromPrefs(node,
-				prefStore, "TimeObservation");
-		PreferenceInitializerForElementHelper.initBackgroundFromPrefs(node,
-				prefStore, "TimeObservation");
-		Node timeObservation_NameLabel = createLabel(node,
-				UMLVisualIDRegistry
-						.getType(TimeObservationLabelEditPart.VISUAL_ID),
-				true);
-		timeObservation_NameLabel.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location timeObservation_NameLabel_Location = (Location) timeObservation_NameLabel.getLayoutConstraint();
-		timeObservation_NameLabel_Location.setX(0);
-		timeObservation_NameLabel_Location.setY(0);
-		Node timeObservation_StereotypeLabel = createLabel(
-				node,
-				UMLVisualIDRegistry
-						.getType(TimeObservationAppliedStereotypeEditPart.VISUAL_ID),
-				true);
-		timeObservation_StereotypeLabel.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location timeObservation_StereotypeLabel_Location = (Location) timeObservation_StereotypeLabel.getLayoutConstraint();
-		timeObservation_StereotypeLabel_Location.setX(0);
-		timeObservation_StereotypeLabel_Location.setY(0);
-		return node;
-	}
-
 	protected Node createLabel(View owner, String hint,
 			boolean isTimeObservationLable) {
 		Shape node = NotationFactory.eINSTANCE.createShape();
 		node.setLayoutConstraint(NotationFactory.eINSTANCE.createBounds());
 		node.setType(hint);
 		ViewUtil.insertChildView(owner, node, ViewUtil.APPEND, true);
-		return node;
-	}
-
-	@Override
-	public Node createDurationConstraint_Shape(EObject domainElement,
-			View containerView, int index, boolean persisted,
-			PreferencesHint preferencesHint) {
-		Shape node = NotationFactory.eINSTANCE.createShape();
-		node.setLayoutConstraint(NotationFactory.eINSTANCE.createBounds());
-		node.setType(UMLVisualIDRegistry
-				.getType(DurationConstraintEditPart.VISUAL_ID));
-		ViewUtil.insertChildView(containerView, node, index, persisted);
-		node.setElement(domainElement);
-		// initializeFromPreferences
-		final IPreferenceStore prefStore = (IPreferenceStore) preferencesHint
-				.getPreferenceStore();
-		PreferenceInitializerForElementHelper.initForegroundFromPrefs(node,
-				prefStore, "DurationConstraint");
-		PreferenceInitializerForElementHelper.initFontStyleFromPrefs(node,
-				prefStore, "DurationConstraint");
-		PreferenceInitializerForElementHelper.initBackgroundFromPrefs(node,
-				prefStore, "DurationConstraint");
-		Node durationConstraint_BodyLabel = createLabel(node,
-				UMLVisualIDRegistry
-						.getType(DurationConstraintLabelEditPart.VISUAL_ID));
-		durationConstraint_BodyLabel.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location durationConstraint_BodyLabel_Location = (Location) durationConstraint_BodyLabel.getLayoutConstraint();
-		durationConstraint_BodyLabel_Location.setX(25);
-		durationConstraint_BodyLabel_Location.setY(0);
-		Node durationConstraint_StereotypeLabel = createLabel(
-				node,
-				UMLVisualIDRegistry
-						.getType(DurationConstraintAppliedStereotypeEditPart.VISUAL_ID));
-		durationConstraint_StereotypeLabel.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location durationConstraint_StereotypeLabel_Location = (Location) durationConstraint_StereotypeLabel.getLayoutConstraint();
-		durationConstraint_StereotypeLabel_Location.setX(0);
-		durationConstraint_StereotypeLabel_Location.setY(-22);
 		return node;
 	}
 
@@ -259,82 +146,6 @@ public class CustomViewProvider extends UMLViewProvider {
 			i++;
 		}
 		return i;
-	}
-
-
-	@Override
-	public Node createDurationConstraint_Shape_CN(EObject domainElement,
-			View containerView, int index, boolean persisted,
-			PreferencesHint preferencesHint) {
-		Node node = NotationFactory.eINSTANCE.createShape();
-		node.getStyles()
-				.add(NotationFactory.eINSTANCE.createDescriptionStyle());
-		node.getStyles().add(NotationFactory.eINSTANCE.createFillStyle());
-		node.setLayoutConstraint(NotationFactory.eINSTANCE.createBounds());
-		node.setType(UMLVisualIDRegistry
-				.getType(DurationConstraintInMessageEditPart.VISUAL_ID));
-		ViewUtil.insertChildView(containerView, node, index, persisted);
-		node.setElement(domainElement);
-		// custom layout for location
-		Location durationConstraint_Shape_CN_Location = (Location) node.getLayoutConstraint();
-		durationConstraint_Shape_CN_Location.setX(0);
-		durationConstraint_Shape_CN_Location.setY(20);
-		// initializeFromPreferences
-		final IPreferenceStore prefStore = (IPreferenceStore) preferencesHint
-				.getPreferenceStore();
-		PreferenceInitializerForElementHelper.initBackgroundFromPrefs(node,
-				prefStore, "DurationConstraint");
-		Node durationConstraint_BodyLabel_CN = createLabel(
-				node,
-				UMLVisualIDRegistry
-						.getType(DurationConstraintInMessageLabelEditPart.VISUAL_ID));
-		Node durationConstraint_StereotypeLabel_CN = createLabel(
-				node,
-				UMLVisualIDRegistry
-						.getType(DurationConstraintInMessageAppliedStereotypeEditPart.VISUAL_ID));
-		durationConstraint_StereotypeLabel_CN.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location durationConstraint_StereotypeLabel_CN_Location = (Location) durationConstraint_StereotypeLabel_CN.getLayoutConstraint();
-		durationConstraint_StereotypeLabel_CN_Location.setX(0);
-		durationConstraint_StereotypeLabel_CN_Location.setY(-22);
-		return node;
-	}
-
-	@Override
-	public Node createDurationObservation_Shape(EObject domainElement,
-			View containerView, int index, boolean persisted,
-			PreferencesHint preferencesHint) {
-		Node node = NotationFactory.eINSTANCE.createShape();
-		node.getStyles()
-				.add(NotationFactory.eINSTANCE.createDescriptionStyle());
-		node.getStyles().add(NotationFactory.eINSTANCE.createFillStyle());
-		node.setLayoutConstraint(NotationFactory.eINSTANCE.createBounds());
-		node.setType(UMLVisualIDRegistry
-				.getType(DurationObservationEditPart.VISUAL_ID));
-		ViewUtil.insertChildView(containerView, node, index, persisted);
-		node.setElement(domainElement);
-		// custom layout for location
-		Location durationObservation_Shape_Location = (Location) node.getLayoutConstraint();
-		durationObservation_Shape_Location.setX(0);
-		durationObservation_Shape_Location.setY(0);
-		// initializeFromPreferences
-		final IPreferenceStore prefStore = (IPreferenceStore) preferencesHint
-				.getPreferenceStore();
-		PreferenceInitializerForElementHelper.initBackgroundFromPrefs(node,
-				prefStore, "DurationObservation");
-		Node durationObservation_NameLabel = createLabel(node,
-				UMLVisualIDRegistry
-						.getType(DurationObservationLabelEditPart.VISUAL_ID));
-		Node durationObservation_StereotypeLabel = createLabel(
-				node,
-				UMLVisualIDRegistry
-						.getType(DurationObservationAppliedStereotypeEditPart.VISUAL_ID));
-		durationObservation_StereotypeLabel.setLayoutConstraint(NotationFactory.eINSTANCE
-				.createLocation());
-		Location durationObservation_StereotypeLabel_Location = (Location) durationObservation_StereotypeLabel.getLayoutConstraint();
-		durationObservation_StereotypeLabel_Location.setX(0);
-		durationObservation_StereotypeLabel_Location.setY(0);
-		return node;
 	}
 
 	@Override

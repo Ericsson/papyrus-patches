@@ -141,63 +141,9 @@ public class AnnotatedLinkEndEditPolicy extends GraphicalNodeEditPolicy {
 			return UnexecutableCommand.INSTANCE;
 		}
 		command.setTarget(getHost());
-		// update bendpoints
-		// if((request.getSourceEditPart() instanceof CustomDurationConstraintEditPart) && !(request.getTargetEditPart() instanceof CustomDurationConstraintEditPart)) {
-		// updateConnectionBendpoints(request, proxy);
-		// }
 		return proxy;
 	}
 
-	// private void updateConnectionBendpoints(CreateConnectionRequest request, ICommandProxy proxy) {
-	// ICommand iCommand = proxy.getICommand();
-	// if(!(iCommand instanceof CompositeCommand)) {
-	// return;
-	// }
-	// INodeEditPart targetEP = getConnectionCompleteEditPart(request);
-	// if(targetEP == null) {
-	// return;
-	// }
-	// CompositeCommand cc = (CompositeCommand)iCommand;
-	// SetConnectionAnchorsCommand scaCommand = null;
-	// SetConnectionBendpointsCommand sbbCommand = null;
-	// Iterator it = cc.iterator();
-	// while(it.hasNext()) {
-	// Object next = it.next();
-	// if(next instanceof SetConnectionBendpointsCommand) {
-	// sbbCommand = (SetConnectionBendpointsCommand)next;
-	// } else if(next instanceof SetConnectionAnchorsCommand) {
-	// scaCommand = (SetConnectionAnchorsCommand)next;
-	// }
-	// if(sbbCommand != null && scaCommand != null) {
-	// break;
-	// }
-	// }
-	// if(sbbCommand == null || scaCommand == null) {
-	// return;
-	// }
-	// ConnectionAnchor targetAnchor = targetEP.getTargetConnectionAnchor(request);
-	// INodeEditPart sourceEditPart = (INodeEditPart)request.getSourceEditPart();
-	// ConnectionAnchor sourceAnchor = sourceEditPart.getSourceConnectionAnchor(request);// sourceEditPart.mapTerminalToConnectionAnchor(scaCommand.getNewSourceTerminal());
-	// Point sourcePoint = sourceAnchor.getLocation(sourceAnchor.getReferencePoint());
-	// Point targetPoint = targetAnchor.getLocation(targetAnchor.getReferencePoint());
-	//
-	// if(sourcePoint.y != targetPoint.y) {
-	// PointList newList = new PointList(3);
-	// newList.addPoint(sourcePoint);
-	// Point p = new Point(DurationConstraintAutomaticRouter.BENDPOINT_GATE,0);//addBendpoint(sourcePoint.x, targetPoint.x, sourcePoint.y);
-	// newList.addPoint(p);
-	// newList.addPoint(targetPoint);
-	// sbbCommand.setNewPointList(newList, sourceAnchor.getReferencePoint(), targetAnchor.getReferencePoint());
-	// }
-	// }
-	//
-	// private Point addBendpoint(int x, int x2, int y) {
-	// if(Math.abs(x - x2) > 20) {
-	// return new PrecisionPoint(x2 + 20 * Math.signum(x - x2), y);
-	// } else {
-	// return new PrecisionPoint(x2 + (x - x2) * 0.5, y);
-	// }
-	// }
 	@Override
 	public void eraseTargetFeedback(Request request) {
 		if (REQ_ANNOTATED_LINK_END.equals(request.getType())) {

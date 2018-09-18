@@ -21,17 +21,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.runtime.IAdaptable;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature.Setting;
-import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.RequestConstants;
@@ -39,31 +34,18 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
-import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
-import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.ConnectionEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IBorderItemEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.INodeEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.ShapeNodeEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.BorderedNodeFigure;
-import org.eclipse.gmf.runtime.diagram.ui.l10n.DiagramUIMessages;
-import org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand;
-import org.eclipse.gmf.runtime.emf.core.util.EObjectAdapter;
-import org.eclipse.gmf.runtime.notation.IdentityAnchor;
-import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
-import org.eclipse.gmf.runtime.notation.impl.ConnectorImpl;
 import org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramEditPartsUtil;
-import org.eclipse.papyrus.uml.diagram.sequence.command.SetResizeAndLocationCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationConstraintEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ObservationLinkEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationLabelEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.OLDLifelineXYLayoutEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SenderRequestUtils;
 import org.eclipse.uml2.common.util.CacheAdapter;
@@ -134,91 +116,11 @@ public class OccurrenceSpecificationMoveHelper {
 		if (command != null) {
 			globalCmd.add(command);
 		}
-		// reconnect the corresponding general ordering(s) if necessary
-		command = getReconnectGeneralOrderingCommand(movedOccurrenceSpecification1, yLocation1, lifelinePart, notToMoveEditParts);
-		if (command != null) {
-			globalCmd.add(command);
-		}
-		if (movedOccurrenceSpecification2 != null) {
-			command = getReconnectGeneralOrderingCommand(movedOccurrenceSpecification2, yLocation2, lifelinePart, notToMoveEditParts);
-			if (command != null) {
-				globalCmd.add(command);
-			}
-		}
 		// return null rather than an empty non executable command
 		if (globalCmd.isEmpty()) {
 			return null;
 		}
 		return globalCmd;
-	}
-
-	/**
-	 * Get the command to reconnect general ordering attached to a moved occurrence specification
-	 *
-	 * @param movedOccurrenceSpecification
-	 *            moving occurrence specification
-	 * @param yLocation
-	 *            y location where occurrence specification is moved
-	 * @param lifelinePart
-	 *            lifeline edit part containing the moved element
-	 * @param notToMoveEditParts
-	 *            list of edit parts which must not be moved in the created command
-	 * @return command to reconnect general ordering edit parts linked to the occurrence specification or null
-	 */
-	private static Command getReconnectGeneralOrderingCommand(OccurrenceSpecification movedOccurrenceSpecification, int yLocation, LifelineEditPart lifelinePart, List<EditPart> notToMoveEditParts) {
-		// the global command which shall be completed and returned
-		CompoundCommand command = new CompoundCommand();
-		Point referencePoint = getReferencePoint(lifelinePart, movedOccurrenceSpecification, yLocation);
-		EditPart childToReconnectTo = SequenceUtil.findPartToReconnectTo(lifelinePart, referencePoint);
-		// if referencePoint is on a moved part, it must be translated with the location delta of this part
-		if (!notToMoveEditParts.isEmpty() && childToReconnectTo != lifelinePart) {
-			Point oldLoc = SequenceUtil.findLocationOfEvent(lifelinePart, movedOccurrenceSpecification);
-			if (oldLoc == null) {
-				return null;
-			}
-			referencePoint.y = oldLoc.y;
-		}
-		// reconnect general ordering from the event
-		for (GeneralOrdering go : movedOccurrenceSpecification.getToAfters()) {
-			Collection<Setting> settings = CacheAdapter.getInstance().getNonNavigableInverseReferences(go);
-			for (Setting ref : settings) {
-				if (NotationPackage.eINSTANCE.getView_Element().equals(ref.getEStructuralFeature())) {
-					View view = (View) ref.getEObject();
-					EditPart part = DiagramEditPartsUtil.getEditPartFromView(view, lifelinePart);
-					// the general ordering part must start or finish on the lifeline (with the event)
-					if (part instanceof ConnectionEditPart && !notToMoveEditParts.contains(part)) {
-						Request reconnectRequest = makeReconnectRequest((ConnectionEditPart) part, true, referencePoint, childToReconnectTo);
-						Command reconnect = childToReconnectTo.getCommand(reconnectRequest);
-						if (reconnect.canExecute()) {
-							command.add(reconnect);
-						}
-					}
-				}
-			}
-		}
-		// reconnect general ordering to the event
-		for (GeneralOrdering go : movedOccurrenceSpecification.getToBefores()) {
-			Collection<Setting> settings = CacheAdapter.getInstance().getNonNavigableInverseReferences(go);
-			for (Setting ref : settings) {
-				if (NotationPackage.eINSTANCE.getView_Element().equals(ref.getEStructuralFeature())) {
-					View view = (View) ref.getEObject();
-					EditPart part = DiagramEditPartsUtil.getEditPartFromView(view, lifelinePart);
-					// the general ordering part must start or finish on the lifeline (with the event)
-					if (part instanceof ConnectionEditPart && !notToMoveEditParts.contains(part)) {
-						Request reconnectRequest = makeReconnectRequest((ConnectionEditPart) part, false, referencePoint, childToReconnectTo);
-						Command reconnect = childToReconnectTo.getCommand(reconnectRequest);
-						if (reconnect.canExecute()) {
-							command.add(reconnect);
-						}
-					}
-				}
-			}
-		}
-		// return null rather than an empty non executable command
-		if (command.isEmpty()) {
-			return null;
-		}
-		return command;
 	}
 
 	/**
@@ -329,15 +231,6 @@ public class OccurrenceSpecificationMoveHelper {
 				}
 			}
 		}
-		// relocate each observation linked time element
-		for (Object targetConnection : lifelinePart.getTargetConnections()) {
-			if (targetConnection instanceof ObservationLinkEditPart) {
-				Command cmd = getMoveSingleTimeRelatedElementCommand((ObservationLinkEditPart) targetConnection, movedOccurrenceSpecification1, movedOccurrenceSpecification2, yLocation1, yLocation2, lifelinePart);
-				if (cmd != null) {
-					globalCmd.add(cmd);
-				}
-			}
-		}
 		// refresh layout commands :
 		// one before the commands for the undo and one after for classic execution
 		if (!globalCmd.isEmpty() && lifelineFigure instanceof BorderedNodeFigure) {
@@ -356,57 +249,6 @@ public class OccurrenceSpecificationMoveHelper {
 			return null;
 		}
 		return globalCmd;
-	}
-
-	private static Command getMoveSingleTimeRelatedElementCommand(final ObservationLinkEditPart targetConnection, final OccurrenceSpecification movedOccurrenceSpecification1, final OccurrenceSpecification movedOccurrenceSpecification2, final int yLocation1,
-			final int yLocation2, final LifelineEditPart lifelinePart) {
-		AbstractTransactionalCommand updateTargetAnchorCommand = new AbstractTransactionalCommand(((IGraphicalEditPart) targetConnection).getEditingDomain(), "update target anchor", null) {
-
-			@Override
-			protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
-				// both bounds may have changed
-				Point referencePoint1 = getReferencePoint(lifelinePart, movedOccurrenceSpecification1, yLocation1);
-				Point referencePoint2 = getReferencePoint(lifelinePart, movedOccurrenceSpecification2, yLocation2);
-				int position1 = PositionConstants.NONE;
-				int position2 = PositionConstants.NONE;
-				TimeObservationLabelEditPart tolEP = (TimeObservationLabelEditPart) targetConnection.getSource();
-				if (tolEP == null) {
-					return CommandResult.newCancelledCommandResult();
-				}
-				if (movedOccurrenceSpecification1 != null) {
-					position1 = SequenceUtil.positionWhereEventIsLinkedToPart(movedOccurrenceSpecification1, tolEP);
-				}
-				if (movedOccurrenceSpecification2 != null) {
-					position2 = SequenceUtil.positionWhereEventIsLinkedToPart(movedOccurrenceSpecification2, tolEP);
-				}
-				ConnectionAnchor targetAnchor = null;
-				if (position1 == PositionConstants.CENTER) {
-					targetAnchor = LifelineEditPartUtil.getNodeFigure(lifelinePart).getSourceConnectionAnchorAt(referencePoint1);
-				} else if (position2 == PositionConstants.CENTER) {
-					targetAnchor = LifelineEditPartUtil.getNodeFigure(lifelinePart).getSourceConnectionAnchorAt(referencePoint2);
-				}
-				if (targetAnchor != null) {
-					String newTargetTerminal = lifelinePart.mapConnectionAnchorToTerminal(targetAnchor);
-					ConnectorImpl c = (ConnectorImpl) targetConnection.getModel();
-					if (newTargetTerminal != null) {
-						if (newTargetTerminal.length() == 0) {
-							c.setTargetAnchor(null);
-						} else {
-							IdentityAnchor a = (IdentityAnchor) c.getTargetAnchor();
-							if (a == null) {
-								a = NotationFactory.eINSTANCE.createIdentityAnchor();
-							}
-							a.setId(newTargetTerminal);
-							c.setTargetAnchor(a);
-						}
-					}
-				}
-				return CommandResult.newOKCommandResult();
-			}
-		};
-		// return the resize command
-		ICommandProxy resize = new ICommandProxy(updateTargetAnchorCommand);
-		return resize;
 	}
 
 	/**
@@ -515,16 +357,6 @@ public class OccurrenceSpecificationMoveHelper {
 				// top and bottom may have been inverted during the move.
 				newBounds = new Rectangle(referencePoint2.x, Math.min(top, bottom), -1, Math.abs(bottom - top));
 			}
-		}
-		if (newBounds != null) {
-			TransactionalEditingDomain editingDomain = timePart.getEditingDomain();
-			if (timePart instanceof CustomDurationConstraintEditPart) {
-				CustomDurationConstraintEditPart dcep = (CustomDurationConstraintEditPart) timePart;
-				newBounds = dcep.updateMoveBounds(newBounds);
-			}
-			// return the resize command
-			ICommandProxy resize = new ICommandProxy(new SetResizeAndLocationCommand(editingDomain, DiagramUIMessages.SetLocationCommand_Label_Resize, new EObjectAdapter((View) timePart.getModel()), newBounds));
-			return resize;
 		}
 		return null;
 	}
@@ -1119,7 +951,7 @@ public class OccurrenceSpecificationMoveHelper {
 		if (timeElement instanceof TimeObservation) {
 			NamedElement occurence = ((TimeObservation) timeElement).getEvent();
 			occurrences = Collections.singletonList(occurence);
-		} else if (timeElement instanceof TimeConstraint || timeElement instanceof DurationConstraint) {
+		} else if (timeElement instanceof TimeConstraint) {
 			occurrences = ((IntervalConstraint) timeElement).getConstrainedElements();
 		}
 		// check whether one of the time occurrences correspond to a DestructionEvent

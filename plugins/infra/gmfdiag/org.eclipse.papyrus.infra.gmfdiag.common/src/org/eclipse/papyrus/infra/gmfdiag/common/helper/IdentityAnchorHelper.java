@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014 CEA LIST.
+ * Copyright (c) 2014, 2018 CEA LIST, EclipseSource and others.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -11,10 +11,13 @@
  *
  * Contributors:
  *  Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - Initial API and implementation
+ *  EclipseSource - Bug 536638
  *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.helper;
 
+import org.eclipse.draw2d.geometry.PrecisionPoint;
+import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 
 /**
@@ -43,7 +46,7 @@ public class IdentityAnchorHelper {
 	/**
 	 * the char separating percentage as string in ids of {@link IdentityAnchor}
 	 */
-	public static final String X_Y_SEPARATOR_AS_STRING = new String(new char[] { X_Y_SEPARATOR });
+	public static final String X_Y_SEPARATOR_AS_STRING = Character.toString(X_Y_SEPARATOR);
 
 	/**
 	 *
@@ -57,14 +60,21 @@ public class IdentityAnchorHelper {
 	/**
 	 *
 	 * @param anchor
-	 *            an anchor
+	 *            an {@link IdentityAnchor} representing a {@link BaseSlidableAnchor}
 	 * @return
-	 *         the value of x percentage
+	 * 		the value of x percentage
+	 * @deprecated
+	 * 			This method only supports {@link IdentityAnchor IdentityAnchors} representing a {@link BaseSlidableAnchor}. Other
+	 *             anchors would cause an exception. Use {@link BaseSlidableAnchor#parseTerminalString(String)} instead; and check if the
+	 *             resulting point is != null (If null, then the {@link IdentityAnchor} doesn't represent a {@link BaseSlidableAnchor})
 	 */
+	@Deprecated
 	public static final double getXPercentage(final IdentityAnchor anchor) {
-		String id = anchor.getId();
-		id = id.substring(1, id.indexOf(X_Y_SEPARATOR_AS_STRING));
-		return Double.parseDouble(id);
+		PrecisionPoint point = BaseSlidableAnchor.parseTerminalString(anchor.getId());
+		if (point == null) {
+			throw new IllegalArgumentException("Anchor " + anchor.getId() + " is not a valid BaseSlidableAnchor");
+		}
+		return point.preciseX();
 	}
 
 	/**
@@ -72,18 +82,19 @@ public class IdentityAnchorHelper {
 	 * @param anchor
 	 *            an anchor
 	 * @return
-	 *         the value of y percentage
+	 * 		the value of y percentage
+	 * @deprecated
+	 * 			This method only supports {@link IdentityAnchor IdentityAnchors} representing a {@link BaseSlidableAnchor}. Other
+	 *             anchors would cause an exception. Use {@link BaseSlidableAnchor#parseTerminalString(String)} instead; and check if the
+	 *             resulting point is != null (If null, then the {@link IdentityAnchor} doesn't represent a {@link BaseSlidableAnchor})
 	 */
+	@Deprecated
 	public static final double getYPercentage(final IdentityAnchor anchor) {
-		String id = anchor.getId();
-		if(id.indexOf(X_Y_SEPARATOR_AS_STRING)==-1) {
-			return 0;
+		PrecisionPoint point = BaseSlidableAnchor.parseTerminalString(anchor.getId());
+		if (point == null) {
+			throw new IllegalArgumentException("Anchor " + anchor.getId() + " is not a valid BaseSlidableAnchor");
 		}
-		id = id.substring(id.indexOf(X_Y_SEPARATOR_AS_STRING) + 1, id.length() - 1);
-		if(id.indexOf(END_ID)!=-1){
-			id = id.substring(0, id.indexOf(END_ID));
-		}
-		return Double.parseDouble(id);
+		return point.preciseY();
 	}
 
 
@@ -94,15 +105,15 @@ public class IdentityAnchorHelper {
 	 * @param percentageOnY
 	 *            the percentage on y
 	 * @return
-	 *         the string representing the new id for an anchor
+	 * 		the string representing the new id for an anchor
 	 */
 	public static final String createNewAnchorIdValue(final double percentageOnX, final double percentageOnY) {
-		final StringBuffer buffer = new StringBuffer();
-		buffer.append(START_ID);
-		buffer.append(Double.toString(percentageOnX));
-		buffer.append(X_Y_SEPARATOR_AS_STRING);
-		buffer.append(Double.toString(percentageOnY));
-		buffer.append(END_ID);
-		return buffer.toString();
+		final StringBuilder builder = new StringBuilder();
+		builder.append(START_ID);
+		builder.append(Double.toString(percentageOnX));
+		builder.append(X_Y_SEPARATOR_AS_STRING);
+		builder.append(Double.toString(percentageOnY));
+		builder.append(END_ID);
+		return builder.toString();
 	}
 }
