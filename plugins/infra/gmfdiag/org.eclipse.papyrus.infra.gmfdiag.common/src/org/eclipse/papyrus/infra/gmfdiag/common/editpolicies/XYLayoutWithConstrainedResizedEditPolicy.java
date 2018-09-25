@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
@@ -66,16 +67,35 @@ public class XYLayoutWithConstrainedResizedEditPolicy extends XYLayoutEditPolicy
 	private FixAnchorHelper helper = null;
 
 	/**
-	 * Overrided {@link org.eclipse.gef.editpolicies.XYLayoutEditPolicy}#getCurrentConstraintFor()
-	 * to the fixing NPE of parent.getLayoutManager().getConstraint(fig) row
-	 * parent.getLayoutManager() can be null for edges
+	 * <p>
+	 * Overriden {@link org.eclipse.gef.editpolicies.XYLayoutEditPolicy#getCurrentConstraintFor},
+	 * because the child may have a different (non-rectangle) layout constraint, or be owned by a parent
+	 * without a layout manager (e.g. for connections). All these cases would cause exceptions in the default
+	 * implementation (Typically when reparenting a Node from a non-XYLayout to a XYLayout compartment)
+	 * </p>
+	 * <p>
+	 * The reparenting use case was not initially intended for XYLayoutEditPolicy (Which is why it always
+	 * expects either a Rectangle or null), see https://bugs.eclipse.org/bugs/show_bug.cgi?id=86473
+	 * </p>
 	 */
 	@Override
 	protected Rectangle getCurrentConstraintFor(GraphicalEditPart child) {
 		if (child instanceof ConnectionEditPart && child.getParent() instanceof DiagramRootEditPart) {
 			return null;
 		}
-		return super.getCurrentConstraintFor(child);
+
+		IFigure fig = child.getFigure();
+		if (fig.getParent() == null || fig.getParent().getLayoutManager() == null) {
+			return null;
+		}
+		Object constraint = fig.getParent().getLayoutManager().getConstraint(fig);
+		if (constraint instanceof Rectangle) {
+			return (Rectangle) constraint;
+		}
+
+		// This method is typically used to retrieve the current size of the child; so
+		// let's return its current bounds.
+		return fig.getBounds().getCopy();
 	}
 
 	/**
@@ -109,7 +129,7 @@ public class XYLayoutWithConstrainedResizedEditPolicy extends XYLayoutEditPolicy
 				DiagramRootEditPart drep = (DiagramRootEditPart) getHost().getRoot();
 				double spacing = drep.getGridSpacing();
 				final double max_value = spacing * 20;
-				final SnapToHelper helper = (SnapToHelper) getHost().getAdapter(SnapToHelper.class);
+				final SnapToHelper helper = getHost().getAdapter(SnapToHelper.class);
 				if (helper != null) {
 					final LayoutHelper layoutHelper = new LayoutHelper();
 					while (add < max_value) {// we define a max value to do test
@@ -245,7 +265,7 @@ public class XYLayoutWithConstrainedResizedEditPolicy extends XYLayoutEditPolicy
 
 	/**
 	 * Get the Command to Fix the Edge Anchor when moving the children
-	 * 
+	 *
 	 * @param notBeingMovedConnections
 	 *            List of not being moved Connections
 	 * @return The proxy Command to Fix the Edge Anchor
@@ -262,14 +282,14 @@ public class XYLayoutWithConstrainedResizedEditPolicy extends XYLayoutEditPolicy
 	private Set<Object> getConnectionsToElementsNotBeingMoved(ChangeBoundsRequest request, EditPart child) {
 		List<?> sources = ((INodeEditPart) child).getSourceConnections();
 		List<?> targets = ((INodeEditPart) child).getTargetConnections();
-		Set<Object> connections = new HashSet<Object>();
+		Set<Object> connections = new HashSet<>();
 		connections.addAll(sources);
 		connections.addAll(targets);
 		if (connections.isEmpty()) {
 			return Collections.emptySet();
 		}
 		PapyrusResizableShapeEditPolicy.CachedEditPartsSet movedEditPartsSet = PapyrusResizableShapeEditPolicy.getMovedEditPartsSet(request);
-		final Set<Object> result = new HashSet<Object>();
+		final Set<Object> result = new HashSet<>();
 		final Iterator<?> connectionsIter = connections.iterator();
 		while (connectionsIter.hasNext()) {
 			final Object nextConnection = connectionsIter.next();
