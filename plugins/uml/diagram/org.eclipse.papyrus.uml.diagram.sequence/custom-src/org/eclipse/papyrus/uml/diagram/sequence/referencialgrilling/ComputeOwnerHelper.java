@@ -137,6 +137,14 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 							}
 						}
 					}
+				} else {
+					if (!(aFragment instanceof InteractionOperand)) {
+						elementForInteraction.add(aFragment);
+						if (aFragment instanceof ExecutionOccurrenceSpecification) {
+							Optional<ExecutionSpecification> exec = getStartedExecution((OccurrenceSpecification) aFragment);
+							exec.ifPresent(elementForInteraction::add);
+						}
+					}
 				}
 
 
@@ -223,10 +231,24 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 						});
 					}
 				}
+			} else if (row.getElement() instanceof InteractionOperand) {
+				// Sort the fragment owning the operand (The position of the CF is the position of its first operand)
+				InteractionOperand operand = (InteractionOperand) row.getElement();
+				CombinedFragment fragment = getOwningFragment(operand);
+				if (fragment != null && fragments.contains(fragment) && !sortedList.contains(fragment)) {
+					sortedList.add(fragment);
+				}
 			}
-
 		}
+
 		return sortedList;
+	}
+
+	private CombinedFragment getOwningFragment(InteractionOperand operand) {
+		if (operand.getOwner() instanceof CombinedFragment) {
+			return (CombinedFragment) operand.getOwner();
+		}
+		return null;
 	}
 
 	/**
@@ -238,7 +260,7 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 	protected static void simplifyOwnerInteractionOperand(ArrayList<InteractionOperand> operandList) {
 		/*
 		 * while (operandList.size() > 1) {
-		 * 
+		 *
 		 * InteractionOperand last = operandList.get(operandList.size() - 1);
 		 * EObject parent = last.eContainer();
 		 * while (parent != null) {
