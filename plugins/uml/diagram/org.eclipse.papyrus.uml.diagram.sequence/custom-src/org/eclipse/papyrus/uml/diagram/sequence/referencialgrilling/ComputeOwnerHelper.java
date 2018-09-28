@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.emf.ecore.EObject;
@@ -69,21 +70,26 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 	}
 
 
-	protected static void fillVerticalMatch(ArrayList<DecorationNode> rows, HashMap<Element, ArrayList<InteractionOperand>> verticalElementToOperand) {
+	protected static void fillVerticalMatch(ArrayList<DecorationNode> rows, Map<Element, ArrayList<InteractionOperand>> verticalElementToOperand) {
 		ArrayList<InteractionOperand> interactionOperandStack = new ArrayList<>();
 		for (DecorationNode row : rows) {
 			if (row.getElement() instanceof InteractionOperand) {
-				if (interactionOperandStack.contains(row.getElement())) {
+				InteractionOperand operand = (InteractionOperand) row.getElement();
+				if (interactionOperandStack.remove(operand)) { // End of Operand
 					UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "update " + ((InteractionOperand) row.getElement()).getName());//$NON-NLS-1$
-					interactionOperandStack.remove(row.getElement());
-				} else {
-					interactionOperandStack.add((InteractionOperand) row.getElement());
+					continue;
+				} else { // Start of Operand
+					CombinedFragment fragment = getOwningFragment(operand);
+					if (fragment != null && !fragment.getOperands().isEmpty() && fragment.getOperands().get(0) == operand) {
+						// Order the CombinedFragment at the location of its first operand
+						verticalElementToOperand.put(fragment, new ArrayList<>(interactionOperandStack));
+					}
+					interactionOperandStack.add(operand);
 				}
 			} else if (row.getElement() instanceof Element) {
 				verticalElementToOperand.put((Element) row.getElement(), new ArrayList<>(interactionOperandStack));
 			}
 		}
-
 	}
 
 	@Override
@@ -97,7 +103,6 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 		fillVerticalMatch(rows, verticalElementToOperand);
 		UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "vertical parsing done " + verticalElementToOperand);//$NON-NLS-1$
 
-
 		// list of element for the interaction
 
 		ArrayList<InteractionFragment> elementForInteraction = new ArrayList<>();
@@ -109,22 +114,24 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 			if (element instanceof InteractionFragment) {
 				InteractionFragment aFragment = (InteractionFragment) element;
 				if (verticalElementToOperand.containsKey(aFragment)) {
-					Iterator<Lifeline> iterLifeline = horizontalLifeLinetoOperand.keySet().iterator();
-					while (iterLifeline.hasNext()) {
-						Lifeline currentLifeline = iterLifeline.next();
+					for (Lifeline currentLifeline : horizontalLifeLinetoOperand.keySet()) {
 						if (currentLifeline.getCoveredBys().contains(aFragment)) {
-							ArrayList<InteractionOperand> potentialoperand = intersection(verticalElementToOperand.get(element), horizontalLifeLinetoOperand.get(currentLifeline));
+							List<InteractionOperand> potentialoperand = intersection(verticalElementToOperand.get(aFragment), horizontalLifeLinetoOperand.get(currentLifeline));
 							if (potentialoperand.size() >= 1) {
 								simplifyOwnerInteractionOperand(potentialoperand);
-								if (potentialoperand.size() == 1) {
-									if (elementForInteractionOp.get(potentialoperand.get(0)) == null) {
-										elementForInteractionOp.put(potentialoperand.get(0), new ArrayList<InteractionFragment>());
+
+								InteractionOperand lastOperand = potentialoperand.get(potentialoperand.size() - 1);
+
+								if (aFragment instanceof InteractionOperand) {
+									CombinedFragment owningFragment = getOwningFragment((InteractionOperand) aFragment);
+									if (owningFragment != null) {
+										aFragment = owningFragment;
 									}
-									elementForInteractionOp.get(potentialoperand.get(0)).add(aFragment);
-									if (aFragment instanceof OccurrenceSpecification) {
-										Optional<ExecutionSpecification> exec = getStartedExecution((OccurrenceSpecification) aFragment);
-										exec.ifPresent(elementForInteractionOp.get(potentialoperand.get(0))::add);
-									}
+								}
+								elementForInteractionOp.computeIfAbsent(lastOperand, f -> new ArrayList<>()).add(aFragment);
+								if (aFragment instanceof OccurrenceSpecification) {
+									Optional<ExecutionSpecification> exec = getStartedExecution((OccurrenceSpecification) aFragment);
+									exec.ifPresent(elementForInteractionOp.get(lastOperand)::add);
 								}
 							} else {
 								if (!(aFragment instanceof InteractionOperand)) {
@@ -146,10 +153,7 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 						}
 					}
 				}
-
-
 			}
-
 		}
 
 		// update fragments of interaction operrands
@@ -244,7 +248,7 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 		return sortedList;
 	}
 
-	private CombinedFragment getOwningFragment(InteractionOperand operand) {
+	private static CombinedFragment getOwningFragment(InteractionOperand operand) {
 		if (operand.getOwner() instanceof CombinedFragment) {
 			return (CombinedFragment) operand.getOwner();
 		}
@@ -257,7 +261,7 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 	 *
 	 * @param operandList
 	 */
-	protected static void simplifyOwnerInteractionOperand(ArrayList<InteractionOperand> operandList) {
+	protected static void simplifyOwnerInteractionOperand(List<InteractionOperand> operandList) {
 		/*
 		 * while (operandList.size() > 1) {
 		 *
@@ -279,14 +283,8 @@ public class ComputeOwnerHelper implements IComputeOwnerHelper {
 	 * @return
 	 */
 	protected static <T> ArrayList<T> intersection(List<T> list1, List<T> list2) {
-		ArrayList<T> list = new ArrayList<>();
-
-		for (T t : list1) {
-			if (list2.contains(t)) {
-				list.add(t);
-			}
-		}
-
+		ArrayList<T> list = new ArrayList<>(list1);
+		list.retainAll(list2);
 		return list;
 	}
 }
