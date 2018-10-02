@@ -3,11 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-	    <groupId>org.eclipse.papyrus</groupId>
-	    <artifactId>org.eclipse.papyrus.uml-properties</artifactId>
-	    <version>0.0.1-SNAPSHOT</version>
+	  <groupId>com.ericsson.papyrus.nwa</groupId>
+	  <artifactId>papyrus-patches</artifactId>
+	  <version>3.0.0-SNAPSHOT</version>
+	  <relativePath>../../../../../tea-nwa-papyrus-ext/papyrus-patches</relativePath>
 	</parent>
 	<artifactId>org.eclipse.papyrus.uml.properties</artifactId>
-	<version>3.1.500-SNAPSHOT</version>
+	<version>3.2.500-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 </project>

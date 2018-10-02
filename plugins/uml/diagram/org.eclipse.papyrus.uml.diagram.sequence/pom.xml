@@ -2,9 +2,10 @@
 <project>
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-	    <groupId>org.eclipse.papyrus</groupId>
-	    <artifactId>org.eclipse.papyrus.uml-diagrams</artifactId>
-	    <version>0.0.1-SNAPSHOT</version>
+	  <groupId>com.ericsson.papyrus.nwa</groupId>
+	  <artifactId>papyrus-patches</artifactId>
+	  <version>3.0.0-SNAPSHOT</version>
+	  <relativePath>../../../../../tea-nwa-papyrus-ext/papyrus-patches</relativePath>
 	</parent>
 	<artifactId>org.eclipse.papyrus.uml.diagram.sequence</artifactId>
 	<version>5.1.500-SNAPSHOT</version>
