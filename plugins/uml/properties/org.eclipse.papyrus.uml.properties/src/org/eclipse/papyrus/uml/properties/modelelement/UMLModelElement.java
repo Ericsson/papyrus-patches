@@ -207,7 +207,7 @@ public class UMLModelElement extends EMFModelElement {
 					.map(interaction -> element -> isAncestor(interaction, element));
 		}
 
-		return isValid.map(
+		return isValid.<UMLContentProvider> map(
 				valid -> new UMLContentProvider(source, feature, null, resourceSet) {
 					@Override
 					public boolean isValidValue(Object element) {
@@ -236,7 +236,7 @@ public class UMLModelElement extends EMFModelElement {
 		EReference reference = (EReference) feature;
 		if (reference == UMLPackage.eINSTANCE.getMessage_Argument()) {
 			if (source instanceof Message) {
-				Set<ParameterDirectionKind> directions = new HashSet<ParameterDirectionKind>();
+				Set<ParameterDirectionKind> directions = new HashSet<>();
 				switch (((Message) source).getMessageSort()) {
 				case REPLY_LITERAL:
 					directions.add(OUT_LITERAL);
@@ -279,7 +279,7 @@ public class UMLModelElement extends EMFModelElement {
 				protected List<EClass> getAvailableEClasses() {
 					// according to the UML norm 2.5, section 17.4.3.1
 					// The signature of a Message refers to either an Operation or a Signal.
-					final List<EClass> eClasses = new ArrayList<EClass>();
+					final List<EClass> eClasses = new ArrayList<>();
 					eClasses.add(UMLPackage.eINSTANCE.getOperation());
 					eClasses.add(UMLPackage.eINSTANCE.getSignal());
 					return eClasses;
@@ -325,7 +325,7 @@ public class UMLModelElement extends EMFModelElement {
 	/**
 	 * The set of all EStructuralFeature representing subsets of {@link Namespace#getOwnedRules()}
 	 */
-	public static final Set<EStructuralFeature> ownedRuleSubsets = new HashSet<EStructuralFeature>();
+	public static final Set<EStructuralFeature> ownedRuleSubsets = new HashSet<>();
 
 	static {
 		// Behavior
