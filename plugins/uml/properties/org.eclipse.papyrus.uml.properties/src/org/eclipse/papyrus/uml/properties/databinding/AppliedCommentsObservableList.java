@@ -120,7 +120,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 
 		if (value instanceof Comment) {
 
-			addAppliedCommentCommand = new CompoundCommand("Add applied comment");
+			addAppliedCommentCommand = new CompoundCommand("Add applied comment"); //$NON-NLS-1$
 
 			// Add the comment to source#ownedComment
 			SetRequest setRequest = new SetRequest((TransactionalEditingDomain) editingDomain, source, feature, value);
@@ -179,7 +179,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 	public Command getRemoveAllCommand(Collection<?> values) {
 		Iterator<?> itr = values.iterator();
 		Element value;
-		CompoundCommand removeAppliedCommentCommand = new CompoundCommand("Remove applied comment");
+		CompoundCommand removeAppliedCommentCommand = new CompoundCommand("Remove applied comment"); //$NON-NLS-1$
 		while (itr.hasNext()) {
 			value = (Element) itr.next();
 			Assert.isTrue(value instanceof Comment);

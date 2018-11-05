@@ -10,7 +10,7 @@
  *
  * Contributors:
  * 	Fanch BONNABESSE (ALL4TEC) fanch.bonnabesse@all4tec.net - Initial API and implementation
- *  
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.databinding.custom;
 
@@ -25,6 +25,7 @@ import org.eclipse.gmf.runtime.notation.View;
 /**
  *
  * Implementation for an ObservableValue associated to a GMF custom style (DoubleValueStyle).
+ *
  * @since 3.0
  *
  */
@@ -36,7 +37,7 @@ public class CustomDoubleStyleObservableValue extends AbstractCustomStyleObserva
 	private final static double DEFAULT_VALUE = 0.0;
 
 	/**
-	 * 
+	 *
 	 * Constructor.
 	 *
 	 * @param source
@@ -85,6 +86,6 @@ public class CustomDoubleStyleObservableValue extends AbstractCustomStyleObserva
 			BigDecimal number = new BigDecimal((Float) value);
 			return super.getCommand(number.doubleValue());
 		}
-		throw new IllegalArgumentException("The value " + value + " is not a valid Double Value"); //$NON-NLS-1$ //$NON-NLS-2$
+		throw new IllegalArgumentException(String.format("The value %s is not a valid Double Value", value == null ? "null" : value.toString())); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 }

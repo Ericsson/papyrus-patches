@@ -47,6 +47,6 @@ public class CustomEObjectStyleObservableValue extends AbstractCustomStyleObserv
 		if (value instanceof EObject) {
 			return super.getCommand(value);
 		}
-		throw new IllegalArgumentException("The value " + value + " is not a valid EObject Value");
+		throw new IllegalArgumentException(String.format("The value %s is not a valid EObject Value", value == null ? "null" : value.toString())); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 }

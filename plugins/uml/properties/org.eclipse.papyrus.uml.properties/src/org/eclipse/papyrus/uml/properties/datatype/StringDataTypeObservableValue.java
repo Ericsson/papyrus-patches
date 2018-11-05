@@ -42,6 +42,6 @@ public class StringDataTypeObservableValue extends PapyrusObservableValue implem
 
 	@Override
 	public String toString() {
-		return getValue() == null ? "" : getValue().toString();
+		return getValue() == null ? "" : getValue().toString(); //$NON-NLS-1$
 	}
 }

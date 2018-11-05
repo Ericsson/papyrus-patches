@@ -17,6 +17,7 @@ package org.eclipse.papyrus.uml.properties.databinding;
 import org.eclipse.core.databinding.observable.value.AbstractObservableValue;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.papyrus.uml.properties.messages.Messages;
 import org.eclipse.uml2.uml.Package;
 
 /**
@@ -28,7 +29,7 @@ import org.eclipse.uml2.uml.Package;
 public class ImportedPackageLocationObservableValue extends AbstractObservableValue {
 
 	/** The Constant UNKNOWN_LOCATION. */
-	private static final String UNKNOWN_LOCATION = "Unknown";
+	private static final String UNKNOWN_LOCATION = Messages.ImportedPackageLocationObservableValue_Unknown;
 
 	/** The imported package. */
 	private Package importedPackage = null;

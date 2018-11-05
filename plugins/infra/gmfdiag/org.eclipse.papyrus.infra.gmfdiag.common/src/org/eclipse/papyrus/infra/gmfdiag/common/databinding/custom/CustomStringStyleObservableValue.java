@@ -46,6 +46,6 @@ public class CustomStringStyleObservableValue extends AbstractCustomStyleObserva
 		if (value instanceof String) {
 			return super.getCommand(value);
 		}
-		throw new IllegalArgumentException("The value " + value + " is not a valid String Value");
+		throw new IllegalArgumentException(String.format("The value %s is not a valid String Value", value == null ? "null" : value.toString())); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 }
