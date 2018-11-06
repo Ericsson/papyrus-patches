@@ -26,7 +26,6 @@ import org.eclipse.papyrus.infra.emf.utils.EMFHelper;
 import org.eclipse.papyrus.infra.tools.databinding.AggregatedObservable;
 import org.eclipse.papyrus.infra.tools.databinding.CommandBasedObservableValue;
 import org.eclipse.papyrus.uml.properties.Activator;
-import org.eclipse.papyrus.uml.tools.databinding.AbstractUMLAggregatedObservableValue;
 
 /**
  * An IObservableValue for custom Papyrus properties.
@@ -65,6 +64,7 @@ public class ElementCustomizationObservableValue extends AbstractUMLAggregatedOb
 
 	// TODO : The value is not correctly refreshed when someone else edits it
 	// Some listeners need to be added
+	@Override
 	public Object getValueType() {
 		switch (property) {
 		case QUALIFIED_NAME:
@@ -106,6 +106,7 @@ public class ElementCustomizationObservableValue extends AbstractUMLAggregatedOb
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Command getCommand(Object value) {
 		switch (property) {
 		case ELEMENT_ICON:

@@ -13,9 +13,9 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.modelelement;
 
-import static org.eclipse.papyrus.uml.tools.databinding.ImageKindObservableValue.KIND_ICON;
-import static org.eclipse.papyrus.uml.tools.databinding.ImageKindObservableValue.KIND_SHAPE;
-import static org.eclipse.papyrus.uml.tools.databinding.ImageKindObservableValue.KIND_UNDEFINED;
+import static org.eclipse.papyrus.uml.properties.databinding.ImageKindObservableValue.KIND_ICON;
+import static org.eclipse.papyrus.uml.properties.databinding.ImageKindObservableValue.KIND_SHAPE;
+import static org.eclipse.papyrus.uml.properties.databinding.ImageKindObservableValue.KIND_UNDEFINED;
 
 import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.emf.edit.domain.EditingDomain;
@@ -24,9 +24,9 @@ import org.eclipse.papyrus.infra.widgets.providers.AbstractStaticContentProvider
 import org.eclipse.papyrus.infra.widgets.providers.EmptyContentProvider;
 import org.eclipse.papyrus.infra.widgets.providers.IStaticContentProvider;
 import org.eclipse.papyrus.uml.properties.Activator;
-import org.eclipse.papyrus.uml.tools.databinding.ImageExpressionObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.ImageKindObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.ImageNameObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ImageExpressionObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ImageKindObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ImageNameObservableValue;
 import org.eclipse.uml2.uml.Image;
 
 /**
@@ -101,6 +101,7 @@ public class CustomImageModelElement extends AbstractModelElement {
 		if (propertyPath.equals(KIND)) {
 			return new AbstractStaticContentProvider() {
 
+				@Override
 				public Object[] getElements() {
 					return new String[] { KIND_UNDEFINED, KIND_ICON, KIND_SHAPE };
 				}

@@ -1,6 +1,6 @@
 /*****************************************************************************
  * Copyright (c) 2014 CEA LIST.
- * 
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -24,7 +24,7 @@ import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.SetRequest;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.UMLPackage;
@@ -35,15 +35,15 @@ import org.eclipse.uml2.uml.UMLPackage;
  *
  * @author Gabriel Pascual
  */
-public class OwnedCommentsObservableList extends PapyrusObservableList {
+public class OwnedCommentsObservableList extends GMFObservableList {
 
 	/**
 	 * Constructor.
 	 *
 	 * @param domain
-	 *        the domain
+	 *            the domain
 	 * @param source
-	 *        the source
+	 *            the source
 	 */
 	public OwnedCommentsObservableList(EditingDomain domain, EObject source) {
 		super(getOwnedComments(source), domain, source, UMLPackage.eINSTANCE.getElement_OwnedComment());
@@ -53,19 +53,19 @@ public class OwnedCommentsObservableList extends PapyrusObservableList {
 	 * Gets the owned comments.
 	 *
 	 * @param source
-	 *        the source
+	 *            the source
 	 * @return the owned comments
 	 */
 	private static List<Comment> getOwnedComments(EObject source) {
-		List<Comment> result = new LinkedList<Comment>();
+		List<Comment> result = new LinkedList<>();
 
-		if(source instanceof Element) {
+		if (source instanceof Element) {
 
-			EList<Comment> allOwnedComments = ((Element)source).getOwnedComments();
+			EList<Comment> allOwnedComments = ((Element) source).getOwnedComments();
 
-			// Filter owned comments list 
-			for(Comment comment : allOwnedComments) {
-				if(!comment.getAnnotatedElements().contains(source)) {
+			// Filter owned comments list
+			for (Comment comment : allOwnedComments) {
+				if (!comment.getAnnotatedElements().contains(source)) {
 					result.add(comment);
 				}
 			}
@@ -80,18 +80,18 @@ public class OwnedCommentsObservableList extends PapyrusObservableList {
 	 * <p>
 	 * Redefine method to add filtered list.
 	 * </p>
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.infra.ui.emf.databinding.EMFObservableList#refreshCacheList()
 	 *
 	 */
 	@Override
 	protected void refreshCacheList() {
-		if(isDisposed()) {
-			//This observable can be disposed, but the commands might still be
-			//in the command stack. Undo() or Redo() will call this method, which
-			//should be ignored. The command should probably not call refresh directly ;
-			//we should have listeners on the concrete list... but it is not necessarily
-			//observable
+		if (isDisposed()) {
+			// This observable can be disposed, but the commands might still be
+			// in the command stack. Undo() or Redo() will call this method, which
+			// should be ignored. The command should probably not call refresh directly ;
+			// we should have listeners on the concrete list... but it is not necessarily
+			// observable
 			return;
 		}
 		wrappedList.clear();
@@ -100,30 +100,30 @@ public class OwnedCommentsObservableList extends PapyrusObservableList {
 	}
 
 	/**
-	 * @see org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList#getAddCommand(java.lang.Object)
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList#getAddCommand(java.lang.Object)
 	 *
 	 * @param value
 	 * @return
 	 */
 	@Override
 	public Command getAddCommand(Object value) {
-		assert value instanceof Comment : "Added value is not a Comment";
+		assert value instanceof Comment : "Added value is not a Comment"; //$NON-NLS-1$
 
-		SetRequest setRequest = new SetRequest((TransactionalEditingDomain)editingDomain, source, feature, value);
+		SetRequest setRequest = new SetRequest((TransactionalEditingDomain) editingDomain, source, feature, value);
 		return getCommandFromRequests(getProvider(), Collections.singletonList(setRequest));
 	}
 
 	/**
-	 * @see org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList#getRemoveCommand(java.lang.Object)
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList#getRemoveCommand(java.lang.Object)
 	 *
 	 * @param value
 	 * @return
 	 */
 	@Override
 	public Command getRemoveCommand(Object value) {
-		assert value instanceof Comment : "Deleted value is not a Comment";
+		assert value instanceof Comment : "Deleted value is not a Comment"; //$NON-NLS-1$
 
-		DestroyElementRequest destroyRequest = new DestroyElementRequest((TransactionalEditingDomain)editingDomain, (EObject)value, false);
+		DestroyElementRequest destroyRequest = new DestroyElementRequest((TransactionalEditingDomain) editingDomain, (EObject) value, false);
 		return getCommandFromRequests(getProvider(), Collections.singletonList(destroyRequest));
 	}
 }

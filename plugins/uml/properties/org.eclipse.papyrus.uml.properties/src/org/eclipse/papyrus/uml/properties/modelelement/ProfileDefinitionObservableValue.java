@@ -17,7 +17,6 @@ package org.eclipse.papyrus.uml.properties.modelelement;
 
 import java.util.List;
 
-import org.eclipse.core.databinding.observable.IObservable;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -25,9 +24,9 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
 import org.eclipse.papyrus.uml.tools.commands.DefineProfileCommand;
 import org.eclipse.papyrus.uml.tools.commands.UndefineProfileCommand;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
 import org.eclipse.papyrus.uml.tools.profile.definition.IPapyrusVersionConstants;
 import org.eclipse.papyrus.uml.tools.profile.definition.PapyrusDefinitionAnnotation;
 import org.eclipse.papyrus.uml.tools.util.IPapyrusProfileDefinition;
@@ -36,7 +35,7 @@ import org.eclipse.uml2.uml.Profile;
 /**
  * Observable for Profile Definition list of a profile.
  */
-public class ProfileDefinitionObservableValue extends PapyrusObservableList implements IObservable {
+public class ProfileDefinitionObservableValue extends GMFObservableList {
 
 	/** The profile which contains definitions. */
 	private Profile profile = null;

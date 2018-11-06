@@ -17,10 +17,10 @@ import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.edit.domain.EditingDomain;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 
 
-public class StringDataTypeObservableValue extends PapyrusObservableValue implements DataTypeObservableValue {
+public class StringDataTypeObservableValue extends GMFObservableValue implements DataTypeObservableValue {
 
 	protected EDataType type;
 
@@ -33,6 +33,7 @@ public class StringDataTypeObservableValue extends PapyrusObservableValue implem
 		return type.getInstanceClass();
 	}
 
+	@Override
 	public void setOwner(EObject owner, EStructuralFeature feature, EditingDomain domain, EDataType type) {
 		this.eObject = owner;
 		this.eStructuralFeature = feature;

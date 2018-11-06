@@ -13,7 +13,7 @@
  *  Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - bug 435174
  *  Gabriel Pascual (ALL4TEC)  -  Bug 441511
  *  Christian W. Damus (CEA) - Bug 441227
- *  
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.databinding;
 
@@ -33,7 +33,7 @@ import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.SetRequest;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
 import org.eclipse.uml2.common.util.UML2Util;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Element;
@@ -42,7 +42,7 @@ import org.eclipse.uml2.uml.UMLPackage;
 /**
  * Observable list for applied comments.
  */
-public class AppliedCommentsObservableList extends PapyrusObservableList {
+public class AppliedCommentsObservableList extends GMFObservableList {
 
 	public AppliedCommentsObservableList(EditingDomain domain, Element source) {
 		super(getAppliedCommentsList(source), domain, source, UMLPackage.eINSTANCE.getElement_OwnedComment());
@@ -56,7 +56,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 	 * @return the applied comments list
 	 */
 	private static List<Comment> getAppliedCommentsList(Element source) {
-		List<Comment> result = new LinkedList<Comment>();
+		List<Comment> result = new LinkedList<>();
 		Iterator<Setting> it = UML2Util.getNonNavigableInverseReferences(source).iterator();
 		while (it.hasNext()) {
 			Setting setting = it.next();
@@ -109,7 +109,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 
 
 	/**
-	 * @see org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList#getAddCommand(java.lang.Object)
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList#getAddCommand(java.lang.Object)
 	 *
 	 * @param value
 	 * @return
@@ -138,7 +138,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 	}
 
 	/**
-	 * @see org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList#getRemoveCommand(java.lang.Object)
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList#getRemoveCommand(java.lang.Object)
 	 *
 	 * @param value
 	 * @return
@@ -153,7 +153,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 
 			if (comment.getAnnotatedElements().size() > 1) {
 				// Remove on link between source and comment
-				List<Element> values = new LinkedList<Element>(comment.getAnnotatedElements());
+				List<Element> values = new LinkedList<>(comment.getAnnotatedElements());
 				values.remove(source);
 				SetRequest setRequest = new SetRequest(comment, UMLPackage.eINSTANCE.getComment_AnnotatedElement(), values);
 				removeAppliedCommentCommand = getCommandFromRequests(getProvider(), Collections.singletonList(setRequest));
@@ -170,7 +170,7 @@ public class AppliedCommentsObservableList extends PapyrusObservableList {
 	}
 
 	/**
-	 * @see org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList#getRemoveAllCommand(java.util.Collection)
+	 * @see org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList#getRemoveAllCommand(java.util.Collection)
 	 *
 	 * @param values
 	 * @return
