@@ -56,9 +56,9 @@ public class DefaultDiagramPasteCommand extends AbstractTransactionalCommand {
 	/** the new container for the shape */
 	protected View container = null;
 
-	protected List<EObject> semanticList = new ArrayList<EObject>();
+	protected List<EObject> semanticList = new ArrayList<>();
 
-	protected List<EObject> viewList = new ArrayList<EObject>();
+	protected List<EObject> viewList = new ArrayList<>();
 
 	protected ICommand editCommand;
 
@@ -101,7 +101,7 @@ public class DefaultDiagramPasteCommand extends AbstractTransactionalCommand {
 		Map<Object, EObject> transtypeCopier = CopyPasteUtil.transtypeCopier(copier);
 		papyrusClipboard.addAllInternalToTargetCopy(transtypeCopier);
 		List<EObject> semanticRootList = EcoreUtil.filterDescendants(semanticList);
-		MoveRequest moveRequest = new MoveRequest(container.getElement(), semanticRootList);
+		MoveRequest moveRequest = new MoveRequest(editingDomain, container.getElement(), semanticRootList);
 		this.elementsToMove = semanticRootList;
 		IElementEditService provider = ElementEditServiceUtils.getCommandProvider(container.getElement());
 		if (provider != null) {
@@ -188,10 +188,10 @@ public class DefaultDiagramPasteCommand extends AbstractTransactionalCommand {
 
 	/**
 	 * Construct the drop request to control created views, duplicated views will be created at the cursor position
-	 * 
+	 *
 	 * @param targetEditPart
 	 * @param viewsToDrop
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	protected void constructViewDropRequest(GraphicalEditPart targetEditPart, List<EObject> viewsToDrop) {
