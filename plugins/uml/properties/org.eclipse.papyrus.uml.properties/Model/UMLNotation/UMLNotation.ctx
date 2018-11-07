@@ -14,28 +14,10 @@
       <widget href="ui/NamedElementDisplay.xwt#/"/>
     </sections>
   </tabs>
-  <views xmi:id="_rOLJVpLDEeWbp4A9_-WIrQ" elementMultiplicity="-1" name="Property Label" sections="_rOLJUpLDEeWbp4A9_-WIrQ">
-    <constraints xsi:type="constraints:CompositeConstraint" xmi:id="_bja80Ll2Eee_KeKGi--b8w" name="isLabelAndInstanceOfProperty">
-      <constraints xmi:id="_rOLJV5LDEeWbp4A9_-WIrQ" name="isLabel">
-        <constraintType href="ppe:/environment/org.eclipse.papyrus.infra.gmfdiag.properties/model/Environment.xmi#//@constraintTypes.1"/>
-        <properties xsi:type="constraints:ValueProperty" xmi:id="_rOLJWJLDEeWbp4A9_-WIrQ" name="editPolicy" value="MaskManagedLabelPolicy"/>
-      </constraints>
-      <constraints xmi:id="_cNB6gLl2Eee_KeKGi--b8w" name="isInstanceOfProperty">
-        <constraintType href="ppe:/environment/org.eclipse.papyrus.uml.properties/Model/Environment.xmi#//@constraintTypes.0"/>
-        <properties xsi:type="constraints:ValueProperty" xmi:id="_pNKwALl2Eee_KeKGi--b8w" name="umlClassName" value="Property"/>
-      </constraints>
-    </constraints>
-  </views>
-  <views xmi:id="_ZMJjcLl2Eee_KeKGi--b8w" elementMultiplicity="-1" name="Operation Label" sections="_rOLJUpLDEeWbp4A9_-WIrQ">
-    <constraints xsi:type="constraints:CompositeConstraint" xmi:id="_a5i5YLl2Eee_KeKGi--b8w" name="isLabelAndInstanceOfOperation">
-      <constraints xmi:id="_ZMJjcbl2Eee_KeKGi--b8w" name="isLabel">
-        <constraintType href="ppe:/environment/org.eclipse.papyrus.infra.gmfdiag.properties/model/Environment.xmi#//@constraintTypes.1"/>
-        <properties xsi:type="constraints:ValueProperty" xmi:id="_ZMJjcrl2Eee_KeKGi--b8w" name="editPolicy" value="MaskManagedLabelPolicy"/>
-      </constraints>
-      <constraints xmi:id="_gE_DgLl2Eee_KeKGi--b8w" name="isInstanceOfOperation">
-        <constraintType href="ppe:/environment/org.eclipse.papyrus.uml.properties/Model/Environment.xmi#//@constraintTypes.0"/>
-        <properties xsi:type="constraints:ValueProperty" xmi:id="_nmAk8Ll2Eee_KeKGi--b8w" name="umlClassName" value="Operation"/>
-      </constraints>
+  <views xmi:id="_rOLJVpLDEeWbp4A9_-WIrQ" elementMultiplicity="-1" name="Label" sections="_rOLJUpLDEeWbp4A9_-WIrQ">
+    <constraints xsi:type="constraints:SimpleConstraint" xmi:id="_rOLJV5LDEeWbp4A9_-WIrQ" name="isLabel">
+      <constraintType href="ppe:/environment/org.eclipse.papyrus.infra.gmfdiag.properties/model/Environment.xmi#//@constraintTypes.1"/>
+      <properties xsi:type="constraints:ValueProperty" xmi:id="_rOLJWJLDEeWbp4A9_-WIrQ" name="editPolicy" value="MaskManagedLabelPolicy"/>
     </constraints>
   </views>
   <views xmi:id="_rOLJWZLDEeWbp4A9_-WIrQ" elementMultiplicity="-1" name="StereotypeDisplay" sections="_rOLJU5LDEeWbp4A9_-WIrQ">
