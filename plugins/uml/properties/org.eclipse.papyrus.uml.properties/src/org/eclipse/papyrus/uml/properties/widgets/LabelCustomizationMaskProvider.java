@@ -10,6 +10,7 @@
  *
  * Contributors:
  *  Camille Letavernier (CEA LIST) camille.letavernier@cea.fr - Initial API and implementation
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 515967
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.widgets;
 
@@ -25,6 +26,7 @@ import org.eclipse.papyrus.infra.properties.ui.modelelement.DataSource;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.ModelElement;
 import org.eclipse.papyrus.infra.properties.ui.providers.XWTCompliantMaskProvider;
 import org.eclipse.papyrus.infra.properties.ui.providers.XWTCompliantMaskProviderListener;
+import org.eclipse.papyrus.infra.properties.ui.providers.XWTCompliantMaskProviderUpdater;
 import org.eclipse.papyrus.uml.diagram.common.editparts.FloatingLabelEditPart;
 import org.eclipse.papyrus.uml.properties.modelelement.UMLNotationModelElement;
 
@@ -34,7 +36,7 @@ import org.eclipse.papyrus.uml.properties.modelelement.UMLNotationModelElement;
  *
  * @author Camille Letavernier
  */
-public class LabelCustomizationMaskProvider implements XWTCompliantMaskProvider {
+public class LabelCustomizationMaskProvider implements XWTCompliantMaskProvider, XWTCompliantMaskProviderUpdater {
 
 	private IMaskManagedLabelEditPolicy editPolicy;
 
@@ -42,11 +44,12 @@ public class LabelCustomizationMaskProvider implements XWTCompliantMaskProvider 
 
 	private String propertyPath;
 
-	private final Set<XWTCompliantMaskProviderListener> listeners = new HashSet<XWTCompliantMaskProviderListener>();
+	private final Set<XWTCompliantMaskProviderListener> listeners = new HashSet<>();
 
 	public LabelCustomizationMaskProvider() {
 	}
 
+	@Override
 	public Map<String, String> getMasks() {
 		return editPolicy.getMasks();
 	}
@@ -60,7 +63,13 @@ public class LabelCustomizationMaskProvider implements XWTCompliantMaskProvider 
 		return propertyPath;
 	}
 
-	public void setInput(DataSource input) {
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.eclipse.papyrus.infra.properties.ui.providers.XWTCompliantMaskProviderUpdater#setInput(org.eclipse.papyrus.infra.properties.ui.modelelement.DataSource)
+	 */
+	@Override
+	public void setInput(final DataSource input) {
 		this.input = input;
 		checkInput();
 	}
@@ -119,10 +128,12 @@ public class LabelCustomizationMaskProvider implements XWTCompliantMaskProvider 
 		}
 	}
 
+	@Override
 	public void addMaskProviderListener(XWTCompliantMaskProviderListener listener) {
 		listeners.add(listener);
 	}
 
+	@Override
 	public void removeMaskProviderListener(XWTCompliantMaskProviderListener listener) {
 		listeners.remove(listener);
 	}
