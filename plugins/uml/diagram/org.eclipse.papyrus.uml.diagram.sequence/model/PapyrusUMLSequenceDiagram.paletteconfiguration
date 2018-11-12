@@ -92,7 +92,7 @@
     <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageAsync2CreationTool" label="Message Async" description="Create MessageAsync" kind="ConnectionTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_asynchCall.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
-        <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/umldi.elementtypesconfigurations#org.eclipse.papyrus.umldi.Message_AsynchEdge"/>
+        <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.diagram.sequence/model/SequenceDiagram.elementtypesconfigurations#org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge"/>
       </elementDescriptors>
     </ownedConfigurations>
     <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageReply3CreationTool" label="Message Reply" description="Create MessageReply" kind="ConnectionTool">

@@ -183,7 +183,8 @@ public class UMLElementTypes {
 	 * @generated
 	 */
 	public static final IElementType Message_AsynchEdge = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.Message_AsynchEdge"); //$NON-NLS-1$
+			// "org.eclipse.papyrus.umldi.Message_AsynchEdge"); //$NON-NLS-1$
+			"org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge"); //$NON-NLS-1$
 	/**
 	 * @generated
 	 */

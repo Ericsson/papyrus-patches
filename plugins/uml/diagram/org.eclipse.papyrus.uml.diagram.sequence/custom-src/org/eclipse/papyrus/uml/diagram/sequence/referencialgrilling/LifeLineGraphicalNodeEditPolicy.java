@@ -328,9 +328,12 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 	 * {@inheritDoc}
 	 *
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy#getConnectionAndRelationshipCompleteCommand(org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElementRequest)
+	 *
 	 */
+
 	@Override
 	protected Command getConnectionAndRelationshipCompleteCommand(CreateConnectionViewAndElementRequest request) {
+
 		// Snap to grid the request location
 		request.setLocation(SequenceUtil.getSnappedLocation(getHost(), request.getLocation()));
 		// Update request with the real Location of the Event if location next to an Event
@@ -371,8 +374,17 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		}
 
 		return cmd;
+
 	}
 
+	/*
+	 * @Override
+	 * protected Command getConnectionAndRelationshipCompleteCommand(CreateConnectionViewAndElementRequest request) {
+	 * CreateRelationshipRequest semReq = (CreateRelationshipRequest) request.getConnectionViewAndElementDescriptor().getCreateElementRequestAdapter().getAdapter(CreateRelationshipRequest.class);
+	 * Command semCmd = getHost().getCommand(new EditCommandRequestWrapper(semReq));
+	 * return semCmd;
+	 * }
+	 */
 	/**
 	 * This method update the Extended Data of the the Creation Request
 	 * 1) Adding the Previous Event of the Target
