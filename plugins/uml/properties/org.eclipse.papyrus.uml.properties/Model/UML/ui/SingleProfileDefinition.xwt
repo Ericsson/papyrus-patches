@@ -10,14 +10,14 @@
 		<Composite.layout>
 			<ppel:PropertiesLayout numColumns="2"></ppel:PropertiesLayout>
 		</Composite.layout>
-		<ppe:StringLabel input="{Binding}"
+		<ppe:StringEditor input="{Binding}"
 			property="ProfileDefinitionAnnotation:PapyrusVersion:Version"
-			readOnly="true"></ppe:StringLabel>
-		<ppe:StringLabel input="{Binding}"
-			property="ProfileDefinitionAnnotation:PapyrusVersion:Date" readOnly="true"></ppe:StringLabel>
-		<ppe:StringLabel input="{Binding}"
+			readOnly="true"></ppe:StringEditor>
+		<ppe:StringEditor input="{Binding}"
+			property="ProfileDefinitionAnnotation:PapyrusVersion:Date" readOnly="true"></ppe:StringEditor>
+		<ppe:StringEditor input="{Binding}"
 			property="ProfileDefinitionAnnotation:PapyrusVersion:Author"
-			readOnly="true"></ppe:StringLabel>
+			readOnly="true"></ppe:StringEditor>
 	</Composite>
 	<Composite>
 		<Composite.layout>
