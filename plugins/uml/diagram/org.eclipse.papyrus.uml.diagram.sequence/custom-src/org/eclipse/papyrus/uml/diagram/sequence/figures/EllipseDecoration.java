@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2009 Borland Software Corporation
+/*****************************************************************************
+ * Copyright (c) 2009 CEA LIST and Borland Software Corporation
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,7 @@
  *
  * Contributors:
  *    Michael Golubev (Borland) - initial API and implementation
- */
+ *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.figures;
 
 import org.eclipse.draw2d.Ellipse;
