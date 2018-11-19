@@ -10,6 +10,7 @@ Export-Package: org.eclipse.papyrus.uml.diagram.sequence,
  org.eclipse.papyrus.uml.diagram.sequence.preferences,
  org.eclipse.papyrus.uml.diagram.sequence.providers,
  org.eclipse.papyrus.uml.diagram.sequence.requests,
+ org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph,
  org.eclipse.papyrus.uml.diagram.sequence.util
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .

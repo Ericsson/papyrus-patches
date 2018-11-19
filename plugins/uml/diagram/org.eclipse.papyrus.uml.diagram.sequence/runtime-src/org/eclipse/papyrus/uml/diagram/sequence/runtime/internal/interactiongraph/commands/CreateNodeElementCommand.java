@@ -16,6 +16,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -31,10 +32,15 @@ import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
  * @author ETXACAM
  *
  */
-public class CreateProvidedElementCommand extends CreateElementCommand {
-	public CreateProvidedElementCommand(CreateElementRequest request, EObject element) {
+public class CreateNodeElementCommand extends CreateElementCommand {
+	public CreateNodeElementCommand(CreateElementRequest request, EObject element) {
+		this(request, element, -1);
+	}
+
+	public CreateNodeElementCommand(CreateElementRequest request, EObject element, int index) {
 		super(request);
 		this.element = element;
+		this.index = index;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked", "restriction" })
@@ -48,7 +54,12 @@ public class CreateProvidedElementCommand extends CreateElementCommand {
 
 			if (container != null) {
 				if (FeatureMapUtil.isMany(container, containment)) {
-					((Collection) container.eGet(containment)).add(element);
+					Collection col = (Collection) container.eGet(containment);
+					if (index != -1 && col instanceof List) {
+						((List) col).add(index, element);
+					} else {
+						col.add(element);
+					}
 				} else {
 					container.eSet(containment, element);
 				}
@@ -71,4 +82,5 @@ public class CreateProvidedElementCommand extends CreateElementCommand {
 	}
 
 	private EObject element;
+	private int index;
 }

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
  *
- *    
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,7 +24,7 @@ import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.MessageEnd;
 
 public class RowImpl extends SlotImpl implements Row {
-	
+
 	private int ypos;
 
 	@Override
@@ -50,41 +50,47 @@ public class RowImpl extends SlotImpl implements Row {
 	void setYPosition(int y) {
 		this.ypos = y;
 	}
-	
+
 	@Override
 	public void sortNodes() {
-		List<Node> mos = nodes.stream().
-				filter(d -> d.getElement() instanceof MessageEnd).
-				collect(Collectors.toList());
-		if (mos.size() > 0) {			
+		List<Node> mos = nodes.stream().filter(d -> d.getElement() instanceof MessageEnd).collect(Collectors.toList());
+		if (mos.size() > 0) {
 			Collections.sort(nodes, RowImpl.MESSAGE_END_NODE_COMPARATORS);
 		} else {
-			//throw new UnsupportedOperationException(); 
+			// throw new UnsupportedOperationException();
 		}
 	}
-		
+
+	@Override
+	protected void nudge(int delta) {
+		this.ypos += delta;
+	}
+
+	@Override
 	public String toString() {
 		return String.format("Row[%d][y: %d]", index, ypos);
 	}
-	
-	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATORS = new MessageEndNodeComparator(); 
+
+	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATORS = new MessageEndNodeComparator();
+
 	private static class MessageEndNodeComparator implements Comparator<Node> {
 		@Override
 		public int compare(Node o1, Node o2) {
 			return Integer.compare(rank(o1), rank(o2));
 		}
-		
+
 		private int rank(Node n) {
 			if (n.getElement() instanceof MessageEnd) {
-				MessageEnd me = (MessageEnd)n.getElement();
-				if (me.getMessage().getSendEvent() == me)
+				MessageEnd me = (MessageEnd) n.getElement();
+				if (me.getMessage().getSendEvent() == me) {
 					return -1;
-				else if (me.getMessage().getReceiveEvent() == me)
+				} else if (me.getMessage().getReceiveEvent() == me) {
 					return 1;
+				}
 			} else if (n.getElement() instanceof ExecutionSpecification) {
 				return 2;
-			} 
-			
+			}
+
 			return 0;
 		}
 	}

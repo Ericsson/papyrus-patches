@@ -20,12 +20,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
-import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.DiagramLayoutPreferences;
@@ -34,7 +33,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphDiff;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -81,7 +79,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
-	void setView(View vw) {
+	public void setView(View vw) {
 	}
 
 	@Override
@@ -98,8 +96,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return Collections.unmodifiableList(lifelineClusters);
 	}
 
-	void addLifeline(ClusterImpl lifeline) {
-		lifelineClusters.add(lifeline);
+	void addLifeline(ClusterImpl lifeline, ClusterImpl insertBeforeCluster) {
+		int indexNext = insertBeforeCluster == null ? -1 : lifelineClusters.indexOf(insertBeforeCluster);
+		if (indexNext == -1) {
+			lifelineClusters.add(lifeline);
+		} else {
+			lifelineClusters.add(indexNext, lifeline);
+		}
 		lifeline.setParent(this);
 	}
 
@@ -132,6 +135,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return builder.nodeCache.get(element);
 	}
 
+	@SuppressWarnings("unchecked")
 	public void layoutGrid() {
 		rows.clear();
 		columns.clear();
@@ -140,6 +144,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		RowImpl row = new RowImpl();
 		rows.add(row);
 		row.addNodes(lifelineClusters);
+
+		View lifelineContainer = ViewUtilities.getViewWithType(getInteractionView(), InteractionInteractionCompartmentEditPart.VISUAL_ID);
+		Rectangle compRect = ViewUtilities.getClientAreaBounds(viewer, lifelineContainer);
+
+		int y = compRect.y + ViewUtilities.ROW_PADDING + (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
+		row.setYPosition(y);
 
 		NodeOrderResolver orderResolver = new NodeOrderResolver(this);
 
@@ -168,13 +178,18 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			prevNode = node;
 		}
 
+		int prevX = 0;
 		// Layout Columns
-		int index = 0;
 		for (ClusterImpl lfCluster : lifelineClusters) {
 			ColumnImpl column = new ColumnImpl();
 			columns.add(column);
 			column.addNode(lfCluster);
-
+			// Calculate Columns sizes....
+			Rectangle r = lfCluster.getBounds();
+			if (r != null) {
+				prevX = r.getCenter().x;
+				column.setXPosition(prevX);
+			}
 			column.addNodes((List) lfCluster.getAllNodes());
 		}
 
@@ -272,9 +287,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		columns.stream().forEach(d -> d.setIndex(columns.indexOf(d)));
 
 		// TODO: Layout Y Positions.
+		for (RowImpl r : rows) {
+			// y = r.getYPosition();
+			// row.nodes.stream().forEach(d -> d.verticalLayout(y));
+		}
 
 
 		// TODO: Layout X Positions.
+		for (ColumnImpl col : columns) {
+			// int x = col.getXPosition();
+			// col.nodes.stream().forEach(d -> d.horizontalLayout(x));
+		}
+
+		layoutManager.layout();
 	}
 
 	@Override
@@ -284,8 +309,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	@Override
 	public Cluster addLifeline(Lifeline lifeline) {
+		return addLifeline(lifeline, null);
+	}
+
+	@Override
+	public Cluster addLifeline(Lifeline lifeline, Cluster insertBefore) {
 		ClusterImpl cluster = new ClusterImpl(lifeline);
-		lifelineClusters.add(cluster);
+		addLifeline(cluster, (ClusterImpl) insertBefore);
 		builder.nodeCache.put(lifeline, cluster);
 		if (rows.size() == 0) {
 			rows.add(new RowImpl());
@@ -578,11 +608,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return new InteractionGraphDiffBuilder(this).calculateDifferences();
 	}
 
-	@Override
-	public ICommand getEditCommand(TransactionalEditingDomain editingDomain, String label) {
-		return new InteractionGraphCommand(this).build(editingDomain, label);
-	}
-
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
 		if (fromCluster == null || toCluster == null || node == null) {
 			return false;
@@ -648,4 +673,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	private List<RowImpl> rows = new ArrayList<>();
 	private List<ColumnImpl> columns = new ArrayList<>();
 	private DiagramLayoutPreferencesImpl diagramLayoutPrefs = new DiagramLayoutPreferencesImpl();
+	private InteractionLayoutManager layoutManager = new InteractionLayoutManager(this);
+
 }

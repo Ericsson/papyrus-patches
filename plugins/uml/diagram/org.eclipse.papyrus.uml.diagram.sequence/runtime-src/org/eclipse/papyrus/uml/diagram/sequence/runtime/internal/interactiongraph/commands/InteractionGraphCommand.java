@@ -13,40 +13,136 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.edit.command.MoveCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
+import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.common.core.command.CompositeCommand;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.common.core.command.ICompositeCommand;
 import org.eclipse.gmf.runtime.diagram.core.commands.DeleteCommand;
+import org.eclipse.gmf.runtime.diagram.core.edithelpers.CreateElementRequestAdapter;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewRequest.ViewDescriptor;
+import org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand;
 import org.eclipse.gmf.runtime.emf.commands.core.command.CompositeTransactionalCommand;
 import org.eclipse.gmf.runtime.emf.type.core.commands.DestroyElementCommand;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
-import org.eclipse.papyrus.infra.gmfdiag.common.commands.CreateViewCommand;
+import org.eclipse.papyrus.infra.emf.gmf.command.EMFtoGMFCommandWrapper;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.uml2.uml.Lifeline;
+import org.eclipse.uml2.uml.UMLFactory;
+import org.eclipse.uml2.uml.UMLPackage;
 
-public class InteractionGraphCommand {
+public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	/**
 	 * Constructor.
 	 *
-	 * @param interactionGraph
+	 * @param domain
+	 * @param label
+	 * @param affectedFiles
 	 */
-	public InteractionGraphCommand(InteractionGraphImpl interactionGraph) {
-		super();
-		this.interactionGraph = interactionGraph;
+	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph, List affectedFiles) {
+		super(domain, label, affectedFiles);
+		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param domain
+	 * @param label
+	 * @param options
+	 * @param affectedFiles
+	 */
+	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph, Map options, List affectedFiles) {
+		super(domain, label, options, affectedFiles);
+		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
+	}
+
+	public void addLifeline(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+				if (!result.getStatus().isOK()) {
+					return;
+				}
+				elementAdapter.setNewElement(cluster.getElement());
+				descriptor.setView(cluster.getView());
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				int x = rect.x;
+				int offset = rect.width;
+				Cluster nextLifeline = graph.getLifelineClusters().stream().filter(d -> ((ClusterImpl) d).getBounds().x >= x).findFirst().orElse(null);
+				Lifeline lifeline = UMLFactory.eINSTANCE.createLifeline();
+				cluster = graph.addLifeline(lifeline, nextLifeline);
+				Rectangle r = rect.getCopy();
+				((ClusterImpl) cluster).setBounds(r);
+				graph.getColumns().stream().filter(d -> d.getXPosition() > x).map(ColumnImpl.class::cast).forEach(d -> d.nudge(offset));
+				return true;
+			}
+
+			Cluster cluster;
+		});
+	}
+
+	@Override
+	public boolean canExecute() {
+		for (InteractionGraphEditAction action : actions) {
+			if (!action.prepare()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override
+	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
+		if (!canExecute()) {
+			return CommandResult.newCancelledCommandResult();
+		}
+
+		for (InteractionGraphEditAction action : actions) {
+			if (!action.apply(interactionGraph)) {
+				return CommandResult.newErrorCommandResult("Could not apply action.");
+			}
+		}
+
+		ICommand cmd = buildDelegateCommands(getEditingDomain(), getLabel());
+		if (cmd == null || !cmd.canExecute()) {
+			return CommandResult.newCancelledCommandResult();
+		}
+		cmd.execute(monitor, info);
+
+		for (InteractionGraphEditAction action : actions) {
+			action.handleResult(cmd.getCommandResult());
+		}
+
+		return cmd.getCommandResult();
 	}
 
 	/*
@@ -70,7 +166,7 @@ public class InteractionGraphCommand {
 	 * - Finish feature
 	 * - Bounds / Location.
 	 */
-	public ICommand build(TransactionalEditingDomain editingDomain, String label) {
+	protected ICommand buildDelegateCommands(TransactionalEditingDomain editingDomain, String label) {
 		ICompositeCommand command = new CompositeTransactionalCommand(editingDomain, label);
 		calculateLifelinesEditingCommand(editingDomain, command);
 		/*
@@ -87,7 +183,10 @@ public class InteractionGraphCommand {
 		// TODO: index of created element
 		Function<Lifeline, ICommand> addCommandFunction = (d) -> createLifelinesEditingCommand(editingDomain, d);
 		Function<Lifeline, ICommand> removeCommandFunction = (d) -> deleteLifelinesEditingCommand(editingDomain, d);
-		createCommandsForCollectionChanges(command, lifelines, graphLifelines, addCommandFunction, removeCommandFunction);
+		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__LIFELINE,
+				lifelines, graphLifelines, addCommandFunction, removeCommandFunction);
+
+
 		// Check fragments covered...
 		/*
 		 * for (Cluster c : interactionGraph.getLifelineClusters()) {
@@ -105,10 +204,11 @@ public class InteractionGraphCommand {
 	private ICommand createLifelinesEditingCommand(TransactionalEditingDomain editingDomain, Lifeline lifeline) {
 		ICompositeCommand cmd = new CompositeCommand("Create Lifeline");
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), UMLElementTypes.Lifeline_Shape);
-		cmd.add(new CreateProvidedElementCommand(createReq, lifeline));
-		cmd.add(new CreateViewCommand(editingDomain, new ViewDescriptor(
-				new SemanticElementAdapter(lifeline, UMLElementTypes.getElementType(LifelineEditPart.VISUAL_ID)), org.eclipse.gmf.runtime.notation.Node.class, LifelineEditPart.VISUAL_ID,
-				((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
+		cmd.add(new CreateNodeElementCommand(createReq, lifeline));
+		cmd.add(new CreateNodeViewCommand(editingDomain, interactionGraph.getNodeFor(lifeline),
+				new ViewDescriptor(new SemanticElementAdapter(lifeline, UMLElementTypes.getElementType(LifelineEditPart.VISUAL_ID)),
+						org.eclipse.gmf.runtime.notation.Node.class, LifelineEditPart.VISUAL_ID,
+						((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
 				ViewUtil.getChildBySemanticHint(interactionGraph.getInteractionView(), InteractionInteractionCompartmentEditPart.VISUAL_ID)));
 		return cmd;
 	}
@@ -120,24 +220,30 @@ public class InteractionGraphCommand {
 		return cmd;
 	}
 
-	private <T> void createCommandsForCollectionChanges(ICompositeCommand cmd, List<T> oldValues, List<T> newValues, Function<T, ICommand> addCommand, Function<T, ICommand> removeCommand) {
+	private <T extends EObject> void createCommandsForCollectionChanges(ICompositeCommand cmd, EObject container, EStructuralFeature feature, List<T> oldValues, List<T> newValues,
+			Function<T, ICommand> addCommand, Function<T, ICommand> removeCommand) {
 		List<T> objToRemove = oldValues.stream().filter(d -> !newValues.contains(d)).collect(Collectors.toList());
 		List<T> objToAdd = newValues.stream().filter(d -> !oldValues.contains(d)).collect(Collectors.toList());
-
-		for (T lf : objToAdd) {
-			cmd.add(addCommand.apply(lf));
-		}
 
 		for (T lf : objToRemove) {
 			cmd.add(removeCommand.apply(lf));
 		}
 
+		for (T lf : objToAdd) {
+			cmd.add(addCommand.apply(lf));
+		}
+
 		// ReorderCommands
 		int index = 0;
 		for (T obj : newValues) {
-			if (oldValues.indexOf(obj) != index) {
+			cmd.add(new EMFtoGMFCommandWrapper(new MoveCommand(getEditingDomain(), container, feature, obj, index) {
+				@Override
+				public boolean doCanExecute() {
+					return true;
+				}
 
-			}
+			}));
+			// cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), interactionGraph.getNodeFor((Element) obj), "Set Lifeline location", Collections.emptyList()));
 			index++;
 		}
 	}
@@ -196,5 +302,5 @@ public class InteractionGraphCommand {
 	 * }
 	 */
 	private InteractionGraphImpl interactionGraph;
-
+	private List<InteractionGraphEditAction> actions = new ArrayList<>();
 }

@@ -44,6 +44,12 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class ViewUtilities {
+	public static final int ROW_PADDING = 10;
+	public static final int COL_PADDING = 10;
+
+	public static final int LIFELINE_HEADER_HEIGHT = 19;
+	public static final int LIFELINE_DEFAULT_WIDTH = 100;
+
 	static View getViewForElement(View containerView, Element element) {
 		if (containerView == null) {
 			return null;
@@ -76,6 +82,45 @@ public class ViewUtilities {
 				}
 
 				View vw = getViewForElement((View) v, element);
+				if (vw != null) {
+					return vw;
+				}
+			}
+		}
+		return null;
+	}
+
+	public static View getViewWithType(View containerView, String type) {
+		if (containerView == null) {
+			return null;
+		}
+
+		for (Object v : containerView.getChildren()) {
+			if (!(v instanceof View)) {
+				continue;
+			}
+
+			if (type.equals(((View) v).getType())) {
+				return (View) v;
+			}
+
+			View vw = getViewWithType((View) v, type);
+			if (vw != null) {
+				return vw;
+			}
+		}
+
+		if (containerView instanceof Diagram) {
+			for (Object v : containerView.getDiagram().getEdges()) {
+				if (!(v instanceof View)) {
+					continue;
+				}
+
+				if (type.equals(((View) v).getType())) {
+					return (View) v;
+				}
+
+				View vw = getViewWithType((View) v, type);
 				if (vw != null) {
 					return vw;
 				}
@@ -172,6 +217,21 @@ public class ViewUtilities {
 				}
 				p = getAnchorLocationForView(viewer, e, e.getTarget());
 			}
+			return r;
+		}
+		return null; // Can not happen
+	}
+
+	public static Rectangle getClientAreaBounds(EditPartViewer viewer, View view) {
+		if (view instanceof org.eclipse.gmf.runtime.notation.Node) {
+			org.eclipse.gmf.runtime.notation.Node node = (org.eclipse.gmf.runtime.notation.Node) view;
+			GraphicalEditPart ep = getEditPart(viewer, view);
+			if (ep == null) {
+				return absoluteLayoutConstraint(viewer, view);
+			}
+
+			Rectangle r = getAbsoluteBounds(ep.getContentPane());
+			cancelViewportEffects(ep, r);
 			return r;
 		}
 		return null; // Can not happen
@@ -490,4 +550,26 @@ public class ViewUtilities {
 		return ((GraphicalEditPart) viewer.getEditPartRegistry().get(v));
 	}
 
+	public static Bounds toBounds(Rectangle r) {
+		return toBounds(r, null);
+	}
+
+	public static Bounds toBounds(Rectangle r, Bounds bounds) {
+		return toBounds(r.x, r.y, r.width, r.height, bounds);
+	}
+
+	public static Bounds toBounds(int x, int y, int width, int height) {
+		return toBounds(x, y, width, height, null);
+	}
+
+	public static Bounds toBounds(int x, int y, int width, int height, Bounds bounds) {
+		if (bounds == null) {
+			bounds = NotationFactory.eINSTANCE.createBounds();
+		}
+		bounds.setX(x);
+		bounds.setY(y);
+		bounds.setWidth(width);
+		bounds.setHeight(height);
+		return bounds;
+	}
 }

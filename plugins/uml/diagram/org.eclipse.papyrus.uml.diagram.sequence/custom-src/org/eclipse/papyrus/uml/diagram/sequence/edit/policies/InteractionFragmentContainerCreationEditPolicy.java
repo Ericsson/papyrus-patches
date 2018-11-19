@@ -19,19 +19,17 @@ import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.commands.Command;
-import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphFactory;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
-import org.eclipse.uml2.uml.UMLFactory;
 
 /**
  * Custom creation edit policy for containers of {@link InteractionFragment}s, primarily
@@ -62,16 +60,11 @@ public class InteractionFragmentContainerCreationEditPolicy extends DefaultCreat
 		////////////////////////////////////////////////
 
 		Rectangle rectangle = getCreationRectangle(request);
-		Cluster cluster = graph.addLifeline(UMLFactory.eINSTANCE.createLifeline());
+		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
+		cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
+				request.getViewAndElementDescriptor(), rectangle);
 
-		// TODO: Needs to set the view and the element in the request so the result is propagated through the command chain??? Or we do not want that???
-		// CreateElementRequestAdapter createReq = request.getViewAndElementDescriptor().getElementAdapter().getAdapter(CreateElementRequestAdapter.class);
-		// createReq.setNewElement(cluster.getElement());
-		// Need a wrapper to set the element in the CreateElementRequestAdapter from the cluster.
-		// Need a wrapper to set the view in the request ViewDescriptor from the cluster.
-
-		ICommand command = graph.getEditCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline");
-		return new ICommandProxy(command);
+		return new ICommandProxy(cmd);
 		/*
 		 * IElementType typeToCreate = request.getViewAndElementDescriptor().getElementAdapter().getAdapter(IElementType.class);
 		 *

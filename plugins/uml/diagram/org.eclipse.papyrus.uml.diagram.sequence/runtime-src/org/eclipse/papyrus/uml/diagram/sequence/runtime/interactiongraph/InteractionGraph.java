@@ -15,8 +15,6 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
 import java.util.List;
 
-import org.eclipse.emf.transaction.TransactionalEditingDomain;
-import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Comment;
@@ -162,6 +160,8 @@ public interface InteractionGraph {
 
 	public Cluster addLifeline(Lifeline lifeline);
 
+	public Cluster addLifeline(Lifeline lifeline, Cluster beforeLifeline);
+
 	public Cluster removeLifeline(Lifeline lifeline);
 
 	public void moveLifeline(Lifeline lifelineToMove, Lifeline beforeLifeline);
@@ -194,6 +194,4 @@ public interface InteractionGraph {
 	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment);
 
 	public List<InteractionGraphDiff> getEditChanges();
-
-	public ICommand getEditCommand(TransactionalEditingDomain editingDomain, String label);
 }

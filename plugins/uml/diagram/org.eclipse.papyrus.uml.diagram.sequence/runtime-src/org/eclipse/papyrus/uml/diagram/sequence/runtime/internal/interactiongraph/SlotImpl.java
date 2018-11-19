@@ -1,7 +1,7 @@
 /*****************************************************************************
  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
  *
- *    
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,7 +24,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 
 public abstract class SlotImpl {
 	protected int index;
-	protected  List<NodeImpl> nodes = new ArrayList<NodeImpl>();
+	protected List<NodeImpl> nodes = new ArrayList<>();
 
 	public int getIndex() {
 		return index;
@@ -33,12 +33,12 @@ public abstract class SlotImpl {
 	void setIndex(int index) {
 		this.index = index;
 	}
-	
+
 	void addNode(NodeImpl node) {
 		nodes.add(node);
 		attachNode(node);
 	}
-	
+
 	void addNodes(List<? extends NodeImpl> nodes) {
 		nodes.stream().forEach(SlotImpl.this::addNode);
 	}
@@ -48,9 +48,12 @@ public abstract class SlotImpl {
 		attachNode(node);
 	}
 
+	protected abstract void nudge(int delta);
+
 	protected abstract void attachNode(NodeImpl n);
+
 	protected abstract void detachNode(NodeImpl n);
-	
+
 	void removeNode(NodeImpl node) {
 		nodes.remove(node);
 		detachNode(node);
@@ -61,16 +64,17 @@ public abstract class SlotImpl {
 	}
 
 	Rectangle getBounds() {
-		Rectangle r = new Rectangle(); 
+		Rectangle r = new Rectangle();
 		for (NodeImpl n : nodes) {
 			Rectangle b = n.getBounds();
-			if (b == null)
+			if (b == null) {
 				continue;
+			}
 			r.union(b);
-		}		
+		}
 		return r;
 	}
-	
+
 	Point getLocation() {
 		return getBounds().getLocation();
 	}
@@ -81,11 +85,12 @@ public abstract class SlotImpl {
 
 	public List<Point> getAnchorPoints() {
 		// TODO: Not know if still needed????
-		List<Point> points = new ArrayList<Point>();
+		List<Point> points = new ArrayList<>();
 		for (NodeImpl n : nodes) {
 			Rectangle r = n.getBounds();
-			if (r == null)
+			if (r == null) {
 				continue;
+			}
 			points.add(r.getCenter());
 		}
 		return points;

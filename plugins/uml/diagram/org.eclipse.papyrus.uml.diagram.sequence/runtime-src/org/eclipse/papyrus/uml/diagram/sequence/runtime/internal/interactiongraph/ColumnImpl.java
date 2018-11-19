@@ -1,7 +1,7 @@
 /*****************************************************************************
  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
  *
- *    
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 
 public class ColumnImpl extends SlotImpl implements Column {
-	
+	// TODO: Keep left padding, so we can nudge when name has changed???
 	private int xpos;
 
 	@Override
@@ -42,19 +42,27 @@ public class ColumnImpl extends SlotImpl implements Column {
 	void setXPosition(int x) {
 		this.xpos = x;
 	}
-	
+
 	@Override
 	public void sortNodes() {
-/*		List<Node> mos = nodes.stream().
-				filter(d -> d.getElement() instanceof MessageEnd).
-				collect(Collectors.toList());
-		if (mos.size() > 0) {			
-			Collections.sort(nodes, ColumnImpl.MESSAGE_END_NODE_COMPARATORS);
-		} else {
-			//throw new UnsupportedOperationException(); 
-		}*/
+		/*
+		 * List<Node> mos = nodes.stream().
+		 * filter(d -> d.getElement() instanceof MessageEnd).
+		 * collect(Collectors.toList());
+		 * if (mos.size() > 0) {
+		 * Collections.sort(nodes, ColumnImpl.MESSAGE_END_NODE_COMPARATORS);
+		 * } else {
+		 * //throw new UnsupportedOperationException();
+		 * }
+		 */
 	}
-		
+
+	@Override
+	public void nudge(int delta) {
+		this.xpos += delta;
+	}
+
+	@Override
 	public String toString() {
 		return String.format("Col[%d][x: %d]", index, xpos);
 	}

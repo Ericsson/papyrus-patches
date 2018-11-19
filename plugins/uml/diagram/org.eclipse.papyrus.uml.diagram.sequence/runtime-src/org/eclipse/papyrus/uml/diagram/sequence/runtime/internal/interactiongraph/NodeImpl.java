@@ -1,7 +1,7 @@
 /*****************************************************************************
  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
  *
- *    
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,20 +27,20 @@ public class NodeImpl implements Node {
 	public NodeImpl(Element element) {
 		this.element = element;
 	}
-		
+
 	void setParent(ClusterImpl cluster) {
 		this.parent = cluster;
 	}
-	
+
 	@Override
 	public InteractionGraphImpl getInteractionGraph() {
 		NodeImpl n = this;
 		while (n != null && !(n.parent instanceof InteractionGraph)) {
 			n = n.parent;
 		}
-		return (InteractionGraphImpl)n.parent;
+		return (InteractionGraphImpl) n.parent;
 	}
-	
+
 	@Override
 	public ClusterImpl getParent() {
 		if (parent instanceof InteractionGraph) {
@@ -48,13 +48,13 @@ public class NodeImpl implements Node {
 		}
 		return parent;
 	}
-	
+
 	@Override
 	public NodeImpl getConnectedNode() {
 		if (oppositeNode == null) {
 			return null;
 		}
-		
+
 		return (connects ? oppositeNode : null);
 	}
 
@@ -63,28 +63,28 @@ public class NodeImpl implements Node {
 		if (oppositeNode == null) {
 			return null;
 		}
-		
+
 		return (!connects ? oppositeNode : null);
 	}
-	
+
 	void connectNode(NodeImpl connectedNode) {
 		disconnectNode();
 		connectedNode.disconnectNode();
 		this.oppositeNode = connectedNode;
 		this.connects = true;
 		connectedNode.oppositeNode = this;
-		connectedNode.connects = false; 
+		connectedNode.connects = false;
 	}
-	
+
 	void disconnectNode() {
 		if (this.oppositeNode != null) {
 			this.oppositeNode.oppositeNode = null;
 			this.oppositeNode.connects = false;
 			this.oppositeNode = null;
 			this.connects = false;
-		}		
+		}
 	}
-	
+
 	@Override
 	public Element getElement() {
 		return element;
@@ -95,33 +95,39 @@ public class NodeImpl implements Node {
 		return view;
 	}
 
-	void setView(View view) {
+	public void setView(View view) {
 		this.view = view;
 		if (this.view == null) {
 			setEditPart(null);
 		} else {
-			EditPartViewer viewer = getInteractionGraph().getEditPartViewer(); 
+			EditPartViewer viewer = getInteractionGraph().getEditPartViewer();
 			if (viewer != null) {
-				setEditPart((GraphicalEditPart)viewer.getEditPartRegistry().get(view));
+				setEditPart((GraphicalEditPart) viewer.getEditPartRegistry().get(view));
 			}
 		}
 	}
-	
+
 	@Override
 	public GraphicalEditPart getEditPart() {
-	    return editPart;
+		return editPart;
 	}
 
 	void setEditPart(GraphicalEditPart editPart) {
-	    this.editPart = editPart;
-	    bounds = extractBounds();
+		this.editPart = editPart;
+		bounds = extractBounds();
 	}
-	
+
+	EditPartViewer getViewer() {
+		InteractionGraphImpl graph = getInteractionGraph();
+		return graph.getEditPartViewer();
+	}
+
 	Rectangle extractBounds() {
-		Rectangle r = ViewUtilities.getBounds(editPart != null ? editPart.getViewer() : null , view);
-		if ( r == null)
+		Rectangle r = ViewUtilities.getBounds(getViewer(), view);
+		if (r == null) {
 			return null;
-				
+		}
+
 		return r.getCopy();
 	}
 
@@ -129,7 +135,7 @@ public class NodeImpl implements Node {
 	public RowImpl getRow() {
 		return row;
 	}
-	
+
 	void setRow(RowImpl row) {
 		this.row = row;
 	}
@@ -138,7 +144,7 @@ public class NodeImpl implements Node {
 	public ColumnImpl getColumn() {
 		return column;
 	}
-	
+
 	void setColumn(ColumnImpl column) {
 		this.column = column;
 	}
@@ -146,24 +152,29 @@ public class NodeImpl implements Node {
 	public Rectangle getBounds() {
 		return bounds;
 	}
-	
-	void setBounds(Rectangle bounds) {
+
+	public void setBounds(Rectangle bounds) {
+		if (bounds.equals(this.bounds)) {
+			return;
+		}
 		this.bounds = bounds;
 	}
-	
+
+	@Override
 	public String toString() {
-		if (element == null)
+		if (element == null) {
 			return "Node[--]";
-		return String.format("Node[%s]", 
-				element instanceof NamedElement ? ((NamedElement)element).getName() : "A " + element.eClass().getName());
+		}
+		return String.format("Node[%s]",
+				element instanceof NamedElement ? ((NamedElement) element).getName() : "A " + element.eClass().getName());
 	}
 
 	private ClusterImpl parent;
 	private Element element;
-	
+
 	private boolean connects;
 	protected NodeImpl oppositeNode;
-	
+
 	protected View view;
 	protected GraphicalEditPart editPart;
 	protected RowImpl row;
