@@ -85,7 +85,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		graph.getInteraction().getMessages().forEach(message -> doSwitch(message));
 
 		// Layout Grid
-		graph.layoutGrid();
+		graph.layout();
 
 		return graph;
 	}

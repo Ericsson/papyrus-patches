@@ -18,11 +18,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.providers;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gmf.runtime.common.core.service.AbstractProvider;
 import org.eclipse.gmf.runtime.common.core.service.IOperation;
-import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
-import org.eclipse.gmf.runtime.diagram.ui.services.editpolicy.CreateEditPoliciesOperation;
 import org.eclipse.gmf.runtime.diagram.ui.services.editpolicy.IEditPolicyProvider;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionOperandEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.CustomInteractionOperandCreationEditPolicy;
 
 /**
  * The edit policy provider for the InteractionOperands.
@@ -36,13 +32,14 @@ public class CustomInteractionOperandEditPolicyProvider extends AbstractProvider
 	 */
 	@Override
 	public boolean provides(final IOperation operation) {
-
-		if (operation instanceof CreateEditPoliciesOperation) {
-			final EditPart editPart = ((CreateEditPoliciesOperation) operation).getEditPart();
-			if (editPart instanceof InteractionOperandEditPart) {
-				return true;
-			}
-		}
+		/*
+		 * if (operation instanceof CreateEditPoliciesOperation) {
+		 * final EditPart editPart = ((CreateEditPoliciesOperation) operation).getEditPart();
+		 * if (editPart instanceof InteractionOperandEditPart) {
+		 * return true;
+		 * }
+		 * }
+		 */
 
 		return false;
 	}
@@ -54,7 +51,7 @@ public class CustomInteractionOperandEditPolicyProvider extends AbstractProvider
 	 */
 	@Override
 	public void createEditPolicies(final EditPart editPart) {
-		editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomInteractionOperandCreationEditPolicy());
+		// -- Grilling -- editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomInteractionOperandCreationEditPolicy());
 	}
 
 }

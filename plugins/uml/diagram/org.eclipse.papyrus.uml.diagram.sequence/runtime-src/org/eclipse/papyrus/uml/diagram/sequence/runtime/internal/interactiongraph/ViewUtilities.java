@@ -340,6 +340,7 @@ public class ViewUtilities {
 		GraphicalEditPart ep = getEditPart(viewer, container);
 		if (ep != null) {
 			Rectangle rcp2 = getAbsoluteBounds(ep.getContentPane());
+			rcp2 = cancelViewportEffects(ep, rcp2);
 			pt.x -= rcp2.x;
 			pt.y -= rcp2.y;
 			return pt;

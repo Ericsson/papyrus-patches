@@ -41,24 +41,27 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 @SuppressWarnings({ "rawtypes", "restriction" })
 public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 		implements ICommand, ICommandWithSettableResult {
-	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, String label, List affectedFiles) {
+	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, String label, List affectedFiles) {
 		super(domain, label, affectedFiles);
 		this.interactionGraphNode = (NodeImpl) interactionGraphNode;
+		this.rect = r;
 	}
 
-	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, String label, Map options, List affectedFiles) {
+	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, String label, Map options, List affectedFiles) {
 		super(domain, label, options, affectedFiles);
 		this.interactionGraphNode = (NodeImpl) interactionGraphNode;
+		this.rect = r;
 	}
 
 	@Override
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		InteractionGraphImpl graph = interactionGraphNode.getInteractionGraph();
 		View v = interactionGraphNode.getView();
-		Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), interactionGraphNode.getBounds());
+		Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), rect);
 		((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(constraints));
 		return CommandResult.newOKCommandResult();
 	}
 
 	private NodeImpl interactionGraphNode;
+	private Rectangle rect;
 }

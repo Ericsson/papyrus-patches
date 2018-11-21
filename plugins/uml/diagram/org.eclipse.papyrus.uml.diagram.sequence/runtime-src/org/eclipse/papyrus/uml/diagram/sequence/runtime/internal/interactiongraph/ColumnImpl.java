@@ -19,6 +19,11 @@ public class ColumnImpl extends SlotImpl implements Column {
 	// TODO: Keep left padding, so we can nudge when name has changed???
 	private int xpos;
 
+	public ColumnImpl(InteractionGraphImpl interactionGraph) {
+		super(interactionGraph);
+	}
+
+
 	@Override
 	protected void attachNode(NodeImpl node) {
 		if (node.getColumn() != this && node.getColumn() != null) {
@@ -60,6 +65,7 @@ public class ColumnImpl extends SlotImpl implements Column {
 	@Override
 	public void nudge(int delta) {
 		this.xpos += delta;
+		getNodes().stream().map(NodeImpl.class::cast).forEach(interactionGraph.getLayoutManager()::layout);
 	}
 
 	@Override

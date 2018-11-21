@@ -19,7 +19,6 @@ package org.eclipse.papyrus.uml.diagram.sequence.providers;
 import static org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart.findNearestSide;
 
 import org.eclipse.gef.EditPart;
-import org.eclipse.gef.EditPolicy;
 import org.eclipse.gmf.runtime.common.core.service.AbstractProvider;
 import org.eclipse.gmf.runtime.common.core.service.IOperation;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
@@ -29,8 +28,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpec
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.CustomExecutionSpecificationSemanticEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.TimeElementCreationFeedbackEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.CustomExecutionSpecificationCreationEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.CustomExecutionSpecificationXYLayoutEditPolicy;
 
 /**
  * The edit policy provider for the execution specifications.
@@ -57,8 +54,8 @@ public class CustomExecutionSpecificationEditPolicyProvider extends AbstractProv
 
 	@Override
 	public void createEditPolicies(final EditPart editPart) {
-		editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomExecutionSpecificationCreationEditPolicy());
-		editPart.installEditPolicy(EditPolicy.LAYOUT_ROLE, new CustomExecutionSpecificationXYLayoutEditPolicy());
+		// -- Grilling -- editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomExecutionSpecificationCreationEditPolicy());
+		// -- Grilling -- editPart.installEditPolicy(EditPolicy.LAYOUT_ROLE, new CustomExecutionSpecificationXYLayoutEditPolicy());
 		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new CustomExecutionSpecificationSemanticEditPolicy());
 
 		TimeElementCreationFeedbackEditPolicy tecfep = new TimeElementCreationFeedbackEditPolicy(

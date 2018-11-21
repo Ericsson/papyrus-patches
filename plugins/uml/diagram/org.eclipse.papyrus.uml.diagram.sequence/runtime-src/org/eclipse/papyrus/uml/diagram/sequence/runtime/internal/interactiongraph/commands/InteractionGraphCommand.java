@@ -14,6 +14,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -41,7 +44,7 @@ import org.eclipse.gmf.runtime.emf.commands.core.command.CompositeTransactionalC
 import org.eclipse.gmf.runtime.emf.type.core.commands.DestroyElementCommand;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
-import org.eclipse.papyrus.infra.emf.gmf.command.EMFtoGMFCommandWrapper;
+import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
@@ -52,6 +55,9 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.UMLFactory;
 import org.eclipse.uml2.uml.UMLPackage;
@@ -96,18 +102,83 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			@Override
 			public boolean apply(InteractionGraph graph) {
 				int x = rect.x;
-				int offset = rect.width;
 				Cluster nextLifeline = graph.getLifelineClusters().stream().filter(d -> ((ClusterImpl) d).getBounds().x >= x).findFirst().orElse(null);
 				Lifeline lifeline = UMLFactory.eINSTANCE.createLifeline();
 				cluster = graph.addLifeline(lifeline, nextLifeline);
-				Rectangle r = rect.getCopy();
+				Rectangle r = ((ClusterImpl) cluster).getBounds();
+				r.x = x;
+				int offset = r.width;
 				((ClusterImpl) cluster).setBounds(r);
 				graph.getColumns().stream().filter(d -> d.getXPosition() > x).map(ColumnImpl.class::cast).forEach(d -> d.nudge(offset));
+				graph.layout();
 				return true;
 			}
 
 			Cluster cluster;
 		});
+	}
+
+	/**
+	 * @param moveDelta
+	 */
+	public void nudgeLifeline(Lifeline lifeline, Point moveDelta) {
+		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
+		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
+		Rectangle clientAreaBounds = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), (View) lifelineNode.getView().eContainer());
+		int minX = clientAreaBounds.x;
+		if (index > 0) {
+			Rectangle prevBounds = interactionGraph.getLifelineClusters().get(index - 1).getBounds();
+			minX = Math.max(prevBounds.x + prevBounds.width, minX);
+		}
+
+		Rectangle bounds = lifelineNode.getBounds();
+		if (bounds.x + moveDelta.x < minX) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				lifelineNode.getBounds().x += moveDelta.x;
+				graph.getColumns().stream().filter(d -> d.getIndex() > lifelineNode.getColumn().getIndex()).map(ColumnImpl.class::cast).forEach(d -> d.nudge(moveDelta.x));
+				graph.layout();
+				return true;
+			}
+		});
+
+	}
+
+	public void resizeLifeline(Lifeline lifeline, Dimension sizeDelta) {
+		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
+		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
+		Rectangle clientAreaBounds = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), (View) lifelineNode.getView().eContainer());
+
+		Rectangle bounds = lifelineNode.getBounds();
+		// TODO: Check size of label???
+		if (bounds.width + sizeDelta.width <= 1) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				lifelineNode.getBounds().width += sizeDelta.width;
+				graph.getColumns().stream().filter(d -> d.getIndex() > lifelineNode.getColumn().getIndex()).map(ColumnImpl.class::cast).forEach(d -> d.nudge(sizeDelta.width));
+				graph.layout();
+				return true;
+			}
+		});
+
 	}
 
 	@Override
@@ -236,14 +307,14 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		// ReorderCommands
 		int index = 0;
 		for (T obj : newValues) {
-			cmd.add(new EMFtoGMFCommandWrapper(new MoveCommand(getEditingDomain(), container, feature, obj, index) {
+			cmd.add(new TransactionalCommandProxy(getEditingDomain(), new MoveCommand(getEditingDomain(), container, feature, obj, index) {
 				@Override
 				public boolean doCanExecute() {
 					return true;
 				}
-
-			}));
-			// cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), interactionGraph.getNodeFor((Element) obj), "Set Lifeline location", Collections.emptyList()));
+			}, "Rearrange Lifeline collection", Collections.EMPTY_LIST));
+			NodeImpl node = interactionGraph.getNodeFor((Element) obj);
+			cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), "Set Lifeline location", Collections.emptyList()));
 			index++;
 		}
 	}

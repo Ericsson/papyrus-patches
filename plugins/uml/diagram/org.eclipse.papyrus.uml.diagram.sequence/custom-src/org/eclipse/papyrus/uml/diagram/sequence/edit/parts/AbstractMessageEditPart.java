@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
+import org.eclipse.draw2d.ConnectionRouter;
 import org.eclipse.draw2d.Cursors;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Point;
@@ -51,6 +52,7 @@ import org.eclipse.papyrus.uml.diagram.common.figure.edge.UMLEdgeFigure;
 import org.eclipse.papyrus.uml.diagram.common.service.ApplyStereotypeRequest;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionSourceAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionTargetAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers.MessageRouter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceEditPolicy;
@@ -59,9 +61,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.figures.MessageFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.keyboardlistener.IKeyPressState;
 import org.eclipse.papyrus.uml.diagram.sequence.keyboardlistener.KeyboardListener;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectMessageToGridEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectRectangleToGridEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.LifeLineGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.OccurrenceSpecificationUtil;
@@ -73,6 +72,8 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.ui.PlatformUI;
 
 public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart implements IKeyPressState {
+
+	public static ConnectionRouter messageRouter = new MessageRouter();
 
 	private boolean reorderMessages = false;
 
@@ -285,7 +286,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 		super.createDefaultEditPolicies();
 		installEditPolicy(IMaskManagedLabelEditPolicy.MASK_MANAGED_LABEL_EDIT_POLICY, new MessageLabelEditPolicy());
 		// Ordering Message Occurrence Specification. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=403233
-		installEditPolicy(ConnectRectangleToGridEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectMessageToGridEditPolicy());
+		// -- Grilling -- installEditPolicy(ConnectRectangleToGridEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectMessageToGridEditPolicy());
 		installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new MessageGraphicalNodeEditPolicy());
 	}
@@ -492,7 +493,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 	 */
 	@Override
 	protected void installRouter() {
-		getConnectionFigure().setConnectionRouter(LifeLineGraphicalNodeEditPolicy.messageRouter);
+		getConnectionFigure().setConnectionRouter(/* LifeLineGraphicalNodeEditPolicy. */messageRouter);
 		getConnectionFigure().setCursor(org.eclipse.gmf.runtime.gef.ui.internal.l10n.Cursors.CURSOR_SEG_MOVE);
 		refreshBendpoints();
 	}

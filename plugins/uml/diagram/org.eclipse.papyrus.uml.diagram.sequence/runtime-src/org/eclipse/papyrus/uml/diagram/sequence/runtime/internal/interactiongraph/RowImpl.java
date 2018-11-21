@@ -27,6 +27,10 @@ public class RowImpl extends SlotImpl implements Row {
 
 	private int ypos;
 
+	public RowImpl(InteractionGraphImpl interactionGraph) {
+		super(interactionGraph);
+	}
+
 	@Override
 	protected void attachNode(NodeImpl node) {
 		if (node.getRow() != this && node.getRow() != null) {

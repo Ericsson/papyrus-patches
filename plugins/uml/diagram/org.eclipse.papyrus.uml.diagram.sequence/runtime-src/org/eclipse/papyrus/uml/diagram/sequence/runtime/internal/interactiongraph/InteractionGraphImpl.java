@@ -135,13 +135,22 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return builder.nodeCache.get(element);
 	}
 
+	InteractionLayoutManager getLayoutManager() {
+		return layoutManager;
+	}
+
+	@Override
+	public void layout() {
+		layoutGrid();
+	}
+
 	@SuppressWarnings("unchecked")
-	public void layoutGrid() {
+	private void layoutGrid() {
 		rows.clear();
 		columns.clear();
 
 		// 1-. Layout Lifelines -> Row(0)
-		RowImpl row = new RowImpl();
+		RowImpl row = new RowImpl(this);
 		rows.add(row);
 		row.addNodes(lifelineClusters);
 
@@ -170,7 +179,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			}
 
 			if (isNewRow) {
-				prevRow = new RowImpl();
+				prevRow = new RowImpl(this);
 				rows.add(prevRow);
 			}
 
@@ -181,7 +190,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int prevX = 0;
 		// Layout Columns
 		for (ClusterImpl lfCluster : lifelineClusters) {
-			ColumnImpl column = new ColumnImpl();
+			ColumnImpl column = new ColumnImpl(this);
 			columns.add(column);
 			column.addNode(lfCluster);
 			// Calculate Columns sizes....
@@ -219,13 +228,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 			if (colIndex < ((columns.size() + 1) / 2)) {
 				if (leftGatesColumn == null) {
-					leftGatesColumn = new ColumnImpl();
+					leftGatesColumn = new ColumnImpl(this);
 				}
 				leftGatesColumn.addNode((NodeImpl) formalGate);
 				continue;
 			} else {
 				if (rightGatesColumn == null) {
-					rightGatesColumn = new ColumnImpl();
+					rightGatesColumn = new ColumnImpl(this);
 				}
 				rightGatesColumn.addNode((NodeImpl) formalGate);
 			}
@@ -318,7 +327,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		addLifeline(cluster, (ClusterImpl) insertBefore);
 		builder.nodeCache.put(lifeline, cluster);
 		if (rows.size() == 0) {
-			rows.add(new RowImpl());
+			rows.add(new RowImpl(this));
 		}
 		layoutGrid();
 		return cluster;

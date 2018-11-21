@@ -65,7 +65,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantLabelEd
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintBorderNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationBorderNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.GrillingEditpart;
 
 /**
  * @author Jin Liu (jin.liu@soyatec.com)
@@ -96,8 +95,8 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 		// return new OLDPackageEditPart(view);
 		case InteractionEditPart.VISUAL_ID:
 			return new CInteractionEditPart(view);
-		case GrillingEditpart.VISUAL_ID:
-			return new GrillingEditpart(view);
+		// -- Grilling -- case GrillingEditpart.VISUAL_ID:
+		// return new GrillingEditpart(view);
 		// case InteractionNameEditPart.VISUAL_ID:
 		// return new CustomInteractionNameEditPart(view);
 		case ConsiderIgnoreFragmentEditPart.VISUAL_ID:

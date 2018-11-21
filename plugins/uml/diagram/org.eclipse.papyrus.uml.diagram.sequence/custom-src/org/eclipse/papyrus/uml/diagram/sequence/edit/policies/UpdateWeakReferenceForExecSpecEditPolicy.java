@@ -42,7 +42,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpec
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.GridManagementEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineEditPartUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.LogOptions;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
@@ -58,6 +57,7 @@ import org.eclipse.uml2.uml.OccurrenceSpecification;
  *
  */
 public class UpdateWeakReferenceForExecSpecEditPolicy extends UpdateWeakReferenceEditPolicy {
+	public static int threshold = 5;
 	public static final String UDPATE_WEAK_REFERENCE_FOR_EXECSPEC = "UpdateWeakReferenceForExecSpecEditPolicy"; //$NON-NLS-1$
 
 	/**
@@ -90,19 +90,19 @@ public class UpdateWeakReferenceForExecSpecEditPolicy extends UpdateWeakReferenc
 			 * Bug 532071 - [SequenceDiagram] Creation and Deletion of an element on a Lifeline should not move necessarily the other elements
 			 * This code is comment due to instability (Oxygen version is not work very well).
 			 */
-//			else if (request instanceof CreateViewAndElementRequest) {
-//				// for creation request
-//				command = getUpdateWeakRefForExecSpecCreate((CreateViewAndElementRequest) request);
-//			} else if (request instanceof EditCommandRequestWrapper
-//					&& (getHost() instanceof AbstractExecutionSpecificationEditPart)) {
-//
-//				// Check that this is a delete command, in this case, we have to recalculate the other execution specification positions
-//				final IEditCommandRequest editCommandRequest = ((EditCommandRequestWrapper) request).getEditCommandRequest();
-//				if (editCommandRequest instanceof DestroyElementRequest
-//						&& ((DestroyElementRequest) editCommandRequest).getElementToDestroy() instanceof ExecutionSpecification) {
-//					return getUpdateWeakRefForExecSpecDelete((EditCommandRequestWrapper) request);
-//				}
-//			}
+			// else if (request instanceof CreateViewAndElementRequest) {
+			// // for creation request
+			// command = getUpdateWeakRefForExecSpecCreate((CreateViewAndElementRequest) request);
+			// } else if (request instanceof EditCommandRequestWrapper
+			// && (getHost() instanceof AbstractExecutionSpecificationEditPart)) {
+			//
+			// // Check that this is a delete command, in this case, we have to recalculate the other execution specification positions
+			// final IEditCommandRequest editCommandRequest = ((EditCommandRequestWrapper) request).getEditCommandRequest();
+			// if (editCommandRequest instanceof DestroyElementRequest
+			// && ((DestroyElementRequest) editCommandRequest).getElementToDestroy() instanceof ExecutionSpecification) {
+			// return getUpdateWeakRefForExecSpecDelete((EditCommandRequestWrapper) request);
+			// }
+			// }
 		}
 		return null == command ? super.getCommand(request) : command;
 	}
@@ -132,7 +132,7 @@ public class UpdateWeakReferenceForExecSpecEditPolicy extends UpdateWeakReferenc
 		// Get next and previous event from the lifeline source
 		EditPart host = getHost();
 		if (host instanceof LifelineEditPart) {
-			nextEventsFromPosition.addAll(LifelineEditPartUtil.getNextEventsFromPosition(reqlocationOnScreen.getCopy().translate(0, GridManagementEditPolicy.threshold), (LifelineEditPart) host));
+			nextEventsFromPosition.addAll(LifelineEditPartUtil.getNextEventsFromPosition(reqlocationOnScreen.getCopy().translate(0, /* GridManagementEditPolicy. */threshold), (LifelineEditPart) host));
 			previousEventsFromPosition.addAll(LifelineEditPartUtil.getPreviousEventsFromPosition(new Point(reqlocationOnScreen.x, reqlocationOnScreen.y + deltaMoveAtCreationAndDeletion + AbstractExecutionSpecificationEditPart.DEFAUT_HEIGHT),
 					(LifelineEditPart) host));
 		}

@@ -26,7 +26,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrence
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.CustomDestructionOccurrenceSpecificationSemanticEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.TimeElementCreationFeedbackEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.CustomDestructionOccurrenceSpecificationCreationEditPolicy;
 
 /**
  * Provider of custom edit policies for destruction occurrence specifications.
@@ -48,7 +47,7 @@ public class CustomDestructionOccurrenceSpecificationEditPolicyProvider extends 
 
 	@Override
 	public void createEditPolicies(final EditPart editPart) {
-		editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomDestructionOccurrenceSpecificationCreationEditPolicy());
+		// -- Grilling -- editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomDestructionOccurrenceSpecificationCreationEditPolicy());
 		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new CustomDestructionOccurrenceSpecificationSemanticEditPolicy());
 		editPart.installEditPolicy(TimeElementCreationFeedbackEditPolicy.ROLE,
 				new TimeElementCreationFeedbackEditPolicy(parentFigure -> new TimeElementLocator(parentFigure,

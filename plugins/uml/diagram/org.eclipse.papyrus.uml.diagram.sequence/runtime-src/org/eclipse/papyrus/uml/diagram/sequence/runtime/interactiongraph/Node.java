@@ -1,7 +1,7 @@
 /*****************************************************************************
  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
  *
- *    
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Location;
 import org.eclipse.gmf.runtime.notation.View;
@@ -42,47 +43,49 @@ public interface Node {
 	 * Returns the {@link Cluster} that owns this node. Normally a {@link Cluster} associated with a
 	 * {@link Lifeline}, an {@link ExecutionSpecification}, a {@link CombinedFragment} or
 	 * {@link InteractionUse} part covered in a lifeline.
-	 * 
+	 *
 	 * @return a {@link Cluster} or null if this {@link Node} is the root.
 	 */
 	public Cluster getParent();
 
-	/** Returns the {@link InteractionGraph} this node belongs to. 
-	 * 
-	 * @return the {@link InteractionGraph} 
+	/**
+	 * Returns the {@link InteractionGraph} this node belongs to.
+	 *
+	 * @return the {@link InteractionGraph}
 	 */
 	public InteractionGraph getInteractionGraph();
+
 	/**
 	 * Returns the {@link Node} that this node connects to, normally by meaning of a message.<br>
-	 * 
-	 * In other words, from the perspective of this node, the returned node is a part of the same group 
-	 * of related nodes and cluster that are handle together. But from the perpective of the returned node, 
+	 *
+	 * In other words, from the perspective of this node, the returned node is a part of the same group
+	 * of related nodes and cluster that are handle together. But from the perpective of the returned node,
 	 * both nodes are unrelated.<br>
-	 * 
-	 * This normally implies the existing of a message 
-	 * connecting the two nodes, where this node is the sending and the returned node is the receiving.   
-	 * 
+	 *
+	 * This normally implies the existing of a message
+	 * connecting the two nodes, where this node is the sending and the returned node is the receiving.
+	 *
 	 * @return a {@link Node}
 	 */
 	public Node getConnectedNode();
 
 	/**
 	 * Returns the {@link Node} that connects to this node, normally by meaning of a message.<br>
-	 * 
-	 * In other words, from the perspective of the returned node, this node is a part of the same group 
-	 * of related nodes and cluster that are handle together. But from the perspective of this node, both 
-	 * nodes are unrelated.<br> 
-	 * 
-	 * This normally implies the existing of a message 
-	 * connecting the two nodes, where this node is the receiving and the returned node is the sending.   
-	 * 
+	 *
+	 * In other words, from the perspective of the returned node, this node is a part of the same group
+	 * of related nodes and cluster that are handle together. But from the perspective of this node, both
+	 * nodes are unrelated.<br>
+	 *
+	 * This normally implies the existing of a message
+	 * connecting the two nodes, where this node is the receiving and the returned node is the sending.
+	 *
 	 * @return a {@link Node}
 	 */
 	public Node getConnectedByNode();
 
 	/**
 	 * Returns the {@link Element} that this node represents.
-	 * 
+	 *
 	 * @return a {@link Element} subclass, an {@link InteractionFragment} or a {@link Gate}.
 	 */
 	public Element getElement();
@@ -90,30 +93,32 @@ public interface Node {
 	/**
 	 * The View in the notation model that hold graphical constraints probably, in the form of
 	 * {@link Location}.
-	 * 
+	 *
 	 * @return a {@link View}
 	 */
 	public View getView();
 
 	/**
-	 * The EditPart associated to the view in the notation model. The edit parts are used to calculate the position 
+	 * The EditPart associated to the view in the notation model. The edit parts are used to calculate the position
 	 * in the diagram editor.
-	 * 
+	 *
 	 * @return a {@link View}
 	 */
 	public GraphicalEditPart getEditPart();
 
 	/**
 	 * The row which holds the logical position in the diagram.
-	 * 
+	 *
 	 * @return a {@link Row}
 	 */
 	public Row getRow();
 
 	/**
 	 * The col which holds the logical position in the diagram.
-	 * 
+	 *
 	 * @return a {@link Row}
 	 */
 	public Column getColumn();
+
+	public Rectangle getBounds();
 }

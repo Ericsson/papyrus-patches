@@ -19,6 +19,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 import java.util.List;
 
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.UnexecutableCommand;
@@ -26,6 +27,7 @@ import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionContainerLayoutEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionFragmentContainerCreationEditPolicy;
 
 /**
@@ -46,8 +48,8 @@ public class CInteractionInteractionCompartmentEditPart extends InteractionInter
 	@Override
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
-
 		installEditPolicy(EditPolicyRoles.CREATION_ROLE, new InteractionFragmentContainerCreationEditPolicy());
+		installEditPolicy(EditPolicy.LAYOUT_ROLE, new InteractionContainerLayoutEditPolicy());
 	}
 
 	/**
@@ -61,7 +63,7 @@ public class CInteractionInteractionCompartmentEditPart extends InteractionInter
 		// ExecutionSpecification can't be drop into Interaction
 		if (request instanceof ChangeBoundsRequest) {
 			List<?> editParts = ((ChangeBoundsRequest) request).getEditParts();
-			if(null != editParts && !editParts.isEmpty()) {
+			if (null != editParts && !editParts.isEmpty()) {
 				for (Object part : editParts) {
 					if (part instanceof AbstractExecutionSpecificationEditPart) {
 						return UnexecutableCommand.INSTANCE;

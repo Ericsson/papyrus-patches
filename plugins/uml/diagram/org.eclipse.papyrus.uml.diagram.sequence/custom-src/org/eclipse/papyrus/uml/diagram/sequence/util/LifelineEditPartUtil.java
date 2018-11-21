@@ -25,7 +25,6 @@ import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.commands.Command;
@@ -40,7 +39,6 @@ import org.eclipse.gmf.runtime.diagram.ui.l10n.DiagramUIMessages;
 import org.eclipse.gmf.runtime.emf.core.util.EObjectAdapter;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.Bounds;
-import org.eclipse.gmf.runtime.notation.DecorationNode;
 import org.eclipse.gmf.runtime.notation.Shape;
 import org.eclipse.gmf.runtime.notation.impl.ShapeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.command.SetResizeAndLocationCommand;
@@ -52,7 +50,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateEditPart
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineDotLineCustomFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.BoundForEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.GridManagementEditPolicy;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 
@@ -194,22 +191,25 @@ public class LifelineEditPartUtil {
 		DiagramEditPart diagramEditPart = getDiagramEditPart(lifelineEditPart);
 		Lifeline lifeline = (Lifeline) lifelineEditPart.resolveSemanticElement();
 		try {
-			GridManagementEditPolicy grilling = (GridManagementEditPolicy) diagramEditPart.getEditPolicy(GridManagementEditPolicy.GRID_MANAGEMENT);
-			if (grilling != null) {
-				for (DecorationNode row : grilling.rows) {
-					Point currentPoint = GridManagementEditPolicy.getLocation(row);
-					if (currentPoint.y < position.y) {
-						if (row.getElement() != null) {
-							EObject referedElement = row.getElement();
-							if (referedElement instanceof OccurrenceSpecification) {
-								if (lifeline.getCoveredBys().contains(referedElement)) {
-									previous.add((OccurrenceSpecification) referedElement);
-								}
-							}
-						}
-					}
-				}
-			}
+			// -- Grilling --
+			/*
+			 * GridManagementEditPolicy grilling = (GridManagementEditPolicy) diagramEditPart.getEditPolicy(GridManagementEditPolicy.GRID_MANAGEMENT);
+			 * if (grilling != null) {
+			 * for (DecorationNode row : grilling.rows) {
+			 * Point currentPoint = GridManagementEditPolicy.getLocation(row);
+			 * if (currentPoint.y < position.y) {
+			 * if (row.getElement() != null) {
+			 * EObject referedElement = row.getElement();
+			 * if (referedElement instanceof OccurrenceSpecification) {
+			 * if (lifeline.getCoveredBys().contains(referedElement)) {
+			 * previous.add((OccurrenceSpecification) referedElement);
+			 * }
+			 * }
+			 * }
+			 * }
+			 * }
+			 * }
+			 */
 		} catch (Exception e) {
 		}
 		return previous;
@@ -245,22 +245,25 @@ public class LifelineEditPartUtil {
 		DiagramEditPart diagramEditPart = getDiagramEditPart(lifelineEditPart);
 		Lifeline lifeline = (Lifeline) lifelineEditPart.resolveSemanticElement();
 		try {
-			GridManagementEditPolicy grilling = (GridManagementEditPolicy) diagramEditPart.getEditPolicy(GridManagementEditPolicy.GRID_MANAGEMENT);
-			if (grilling != null) {
-				for (DecorationNode row : grilling.rows) {
-					Point currentPoint = GridManagementEditPolicy.getLocation(row);
-					if (currentPoint.y > position.y) {
-						if (row.getElement() != null) {
-							EObject referedElement = row.getElement();
-							if (referedElement instanceof OccurrenceSpecification) {
-								if (lifeline.getCoveredBys().contains(referedElement)) {
-									previous.add((OccurrenceSpecification) referedElement);
-								}
-							}
-						}
-					}
-				}
-			}
+			// -- Grilling --
+			/*
+			 * GridManagementEditPolicy grilling = (GridManagementEditPolicy) diagramEditPart.getEditPolicy(GridManagementEditPolicy.GRID_MANAGEMENT);
+			 * if (grilling != null) {
+			 * for (DecorationNode row : grilling.rows) {
+			 * Point currentPoint = GridManagementEditPolicy.getLocation(row);
+			 * if (currentPoint.y > position.y) {
+			 * if (row.getElement() != null) {
+			 * EObject referedElement = row.getElement();
+			 * if (referedElement instanceof OccurrenceSpecification) {
+			 * if (lifeline.getCoveredBys().contains(referedElement)) {
+			 * previous.add((OccurrenceSpecification) referedElement);
+			 * }
+			 * }
+			 * }
+			 * }
+			 * }
+			 * }
+			 */
 		} catch (Exception e) {
 		}
 		return previous;
@@ -285,10 +288,10 @@ public class LifelineEditPartUtil {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * This allows to create command to resize life lines of the interaction if needed.
-	 * 
+	 *
 	 * @param compoundCommand
 	 *            The compound command to fill.
 	 * @param initialEditPart

@@ -55,31 +55,12 @@ public class InteractionFragmentContainerCreationEditPolicy extends DefaultCreat
 				view.getDiagram(),
 				getHost().getViewer());
 
-		////////////////////////////////////////////////
-		// TODO: Need to wrap the graph operation in something, so we do not modify until command execution. A command Builder????
-		////////////////////////////////////////////////
-
 		Rectangle rectangle = getCreationRectangle(request);
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
 		cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
 				request.getViewAndElementDescriptor(), rectangle);
 
 		return new ICommandProxy(cmd);
-		/*
-		 * IElementType typeToCreate = request.getViewAndElementDescriptor().getElementAdapter().getAdapter(IElementType.class);
-		 *
-		 * if (!ElementUtil.isTypeOf(typeToCreate, UMLElementTypes.LIFELINE)) {
-		 * IEditCommandRequest semanticCreateRequest = (IEditCommandRequest) request.getViewAndElementDescriptor().getCreateElementRequestAdapter().getAdapter(IEditCommandRequest.class);
-		 * if (semanticCreateRequest != null) {
-		 * // What are the lifelines covered?
-		 * Rectangle rectangle = getCreationRectangle(request);
-		 * Set<Lifeline> covered = SequenceUtil.getCoveredLifelines(rectangle, getHost());
-		 * RequestParameterUtils.setCoveredLifelines(semanticCreateRequest, covered);
-		 * }
-		 * }
-		 *
-		 * return super.getCreateElementAndViewCommand(request);
-		 */
 	}
 
 	protected Rectangle getCreationRectangle(CreateViewAndElementRequest request) {

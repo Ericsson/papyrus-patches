@@ -16,6 +16,8 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
 
 /**
  * @author ETXACAM
@@ -26,12 +28,17 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 	public void layout(NodeImpl node) {
 		int width = node.getBounds() == null ? ViewUtilities.LIFELINE_DEFAULT_WIDTH : node.getBounds().width;
 		int height = ViewUtilities.LIFELINE_HEADER_HEIGHT;
+		View containerContentPane = ViewUtilities.getViewWithType(node.getInteractionGraph().getInteractionView(), CInteractionInteractionCompartmentEditPart.VISUAL_ID);
+		if (containerContentPane != null) {
+			Rectangle area = ViewUtilities.getClientAreaBounds(node.getInteractionGraph().getEditPartViewer(), containerContentPane);
+			height = area.height;
+		}
 
 		ColumnImpl column = node.column;
 		RowImpl row = node.row;
 
 		Rectangle r = new Rectangle();
-		r.y = row.getYPosition() - (height / 2);
+		r.y = row.getYPosition() - (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
 		r.x = column.getXPosition() - (width / 2);
 		r.width = width;
 		r.height = height;

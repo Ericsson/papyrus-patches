@@ -23,8 +23,13 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 
 public abstract class SlotImpl {
+	protected InteractionGraphImpl interactionGraph;
 	protected int index;
 	protected List<NodeImpl> nodes = new ArrayList<>();
+
+	public SlotImpl(InteractionGraphImpl interactionGraph) {
+		this.interactionGraph = interactionGraph;
+	}
 
 	public int getIndex() {
 		return index;

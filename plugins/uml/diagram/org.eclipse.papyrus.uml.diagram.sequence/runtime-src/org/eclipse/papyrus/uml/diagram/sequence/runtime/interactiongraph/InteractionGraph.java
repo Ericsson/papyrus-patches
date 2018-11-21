@@ -109,6 +109,8 @@ public interface InteractionGraph {
 
 	public DiagramLayoutPreferences getLayoutPreferences();
 
+	public void layout();
+
 	/**
 	 * Create a {@link Node} for given element. All the nodes and cluster referenced by messages
 	 * are also created.
