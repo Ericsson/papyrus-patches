@@ -11,7 +11,7 @@
  * Contributors:
  *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Initial API and implementation
  *   Christian W. Damus - bug 533679
- *
+ *   Vincent LORENZO - bug 541313 - [UML][CDO] UML calls to the method getCacheAdapter(EObject) must be replaced
  *****************************************************************************/
 
 package org.eclipse.papyrus.uml.diagram.sequence.util;
@@ -90,7 +90,7 @@ public class ExecutionSpecificationUtil {
 			final EditPart editPartToSkip) {
 		return calculateExecutionSpecificationCorrectLocation(lifeLineEditPart, executionSpecificationRectangles, initialRectangle, Collections.singleton(editPartToSkip));
 	}
-	
+
 	/**
 	 * This allows to calculate the correct location of the execution specification with the list of rectangles of the execution specification for the current life line.
 	 *
@@ -246,13 +246,14 @@ public class ExecutionSpecificationUtil {
 	public static Map<AbstractExecutionSpecificationEditPart, Rectangle> getRectangles(final LifelineEditPart lifeLineEditPart) {
 		return getRectangles(lifeLineEditPart, null);
 	}
-	
+
 	/**
 	 * This allows to get initial rectangles by execution specification available in the current life line.
 	 *
 	 * @param lifeLineEditPart
 	 *            The current life line edit part.
-	 * @param editPartsToSkip The collection of edit parts to skip during the calculation.
+	 * @param editPartsToSkip
+	 *            The collection of edit parts to skip during the calculation.
 	 * @return The map with the rectangle by execution specification edit part.
 	 */
 	public static Map<AbstractExecutionSpecificationEditPart, Rectangle> getRectangles(final LifelineEditPart lifeLineEditPart, final Collection<EditPart> editPartsToSkip) {
@@ -314,14 +315,14 @@ public class ExecutionSpecificationUtil {
 
 	/**
 	 * Query the execution, if any, that is started by an {@code occurrence}.
-	 * 
+	 *
 	 * @param occurrence
 	 *            an occurrence specification
 	 * @return the execution specification that it starts
 	 * @since 5.0
 	 */
 	public static Optional<ExecutionSpecification> getStartedExecution(OccurrenceSpecification occurrence) {
-		CacheAdapter cache = CacheAdapter.getCacheAdapter(occurrence);
+		CacheAdapter cache = CacheAdapter.getInstance();
 		Predicate<EStructuralFeature.Setting> settingFilter = setting -> setting.getEStructuralFeature() == UMLPackage.Literals.EXECUTION_SPECIFICATION__START;
 
 		return cache.getInverseReferences(occurrence).stream()
