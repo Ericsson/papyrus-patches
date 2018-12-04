@@ -42,9 +42,9 @@ public class NodeOrderResolver {
 		List<List<Node>> lifelinesNodes = 
 				lifelineClusters.stream().
 				map(ClusterImpl.class::cast).
-				map(d->(new ArrayList<Node>(d.getAllNodes())))
+				map(d->(new ArrayList<Node>(d.getAllNodes().stream().
+							sorted(RowImpl.NODE_VPOSITION_COMPARATORS).collect(Collectors.toList()))))
 				.collect(Collectors.toList());
-		
 		List<NodeImpl> nodes = new ArrayList<NodeImpl>();
 		NodeImpl node = null;
 		do {

@@ -15,8 +15,6 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
-import java.util.List;
-
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -29,11 +27,11 @@ import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.XYLayoutEditPolicy;
-import org.eclipse.gmf.runtime.diagram.ui.util.EditPartUtil;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Lifeline;
 
@@ -42,7 +40,21 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
+	protected KeyboardHandler keyHandler = new KeyboardHandler();
+
 	public InteractionContainerLayoutEditPolicy() {
+	}
+
+	@Override
+	public void activate() {
+		super.activate();
+		keyHandler.activate();
+	}
+
+	@Override
+	public void deactivate() {
+		super.deactivate();
+		keyHandler.deactivate();
 	}
 
 	@Override
@@ -76,6 +88,7 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 
 	@Override
 	protected Command getChangeConstraintCommand(ChangeBoundsRequest request) {
+		// TODO: @etxacam Need to handle multiselection properly
 		EditPart editPart = (EditPart) request.getEditParts().stream().findFirst().orElse(null);
 		if (editPart == null || !(editPart.getModel() instanceof View)) {
 			return null;
@@ -90,16 +103,25 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 				return null;
 			}
 
-			InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
-			if (request.getMoveDelta().x != 0 || request.getMoveDelta().y != 0) {
-				cmd.nudgeLifeline((Lifeline) element, request.getMoveDelta());
-			}
+			if (!keyHandler.isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+				// No reordering. Resizing is never reordering
+				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
+				if (request.getMoveDelta().x != 0 || request.getMoveDelta().y != 0) {
+					cmd.nudgeLifeline((Lifeline) element, request.getMoveDelta());
+				}
 
-			if (request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
-				cmd.resizeLifeline((Lifeline) element, request.getSizeDelta());
+				if (request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+					cmd.resizeLifeline((Lifeline) element, request.getSizeDelta());
+				}
+				return new ICommandProxy(cmd);
+			} else {
+				// Reordering case.
+				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
+				if (request.getMoveDelta().x != 0 || request.getMoveDelta().y != 0) {
+					cmd.moveLifeline((Lifeline) element, request.getMoveDelta());
+				}
+				return new ICommandProxy(cmd);
 			}
-
-			return new ICommandProxy(cmd);
 		}
 		return null;
 	}
@@ -123,24 +145,5 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 		}
 
 		return new Rectangle(location, size);
-	}
-
-	@Override
-	public void showSourceFeedback(Request req) {
-		super.showSourceFeedback(req);
-	}
-
-	@Override
-	public void showTargetFeedback(Request req) {
-		// TODO: Moveit to a Lifeline policy so we can restrict the target type based on the Node Layouts --> Moving Area Constraint --> Constraint the request ???
-		super.showTargetFeedback(req);
-		if (req instanceof ChangeBoundsRequest) {
-			ChangeBoundsRequest request = (ChangeBoundsRequest) req;
-			List<?> editParts = request.getEditParts();
-			EditPart ep = editParts.stream().map(IGraphicalEditPart.class::cast).filter(d -> EditPartUtil.getSemanticEClassName(d).equals("uml.Lifeline")).findFirst().orElse(null);
-			if (ep != null && request.getMoveDelta() != null) {
-				request.getMoveDelta().y = 0;
-			}
-		}
 	}
 }

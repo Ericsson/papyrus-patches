@@ -181,13 +181,14 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			if (isNewRow) {
 				prevRow = new RowImpl(this);
 				rows.add(prevRow);
+				prevRow.setYPosition(node.getBounds().getCenter().y);
 			}
 
-			prevRow.addNode(node);
+			prevRow.addNode(node);			
 			prevNode = node;
 		}
 
-		int prevX = 0;
+		int prevX = Integer.MIN_VALUE;
 		// Layout Columns
 		for (ClusterImpl lfCluster : lifelineClusters) {
 			ColumnImpl column = new ColumnImpl(this);
@@ -196,8 +197,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			// Calculate Columns sizes....
 			Rectangle r = lfCluster.getBounds();
 			if (r != null) {
-				prevX = r.getCenter().x;
-				column.setXPosition(prevX);
+				int nudgeX = 0;
+				if (prevX >= r.x && prevX <= r.x + r.width) {
+					nudgeX += prevX - r.x + ViewUtilities.COL_PADDING;
+				}
+				int colX = r.getCenter().x + nudgeX;
+				column.setXPosition(colX);
+				prevX = r.x + r.width + nudgeX;
 			}
 			column.addNodes((List) lfCluster.getAllNodes());
 		}
@@ -349,6 +355,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	public void moveLifeline(Lifeline lifelineToMove, Lifeline beforeLifeline) {
 		ClusterImpl lfToMove = getLifeline(lifelineToMove);
 		ClusterImpl beforeLf = getLifeline(beforeLifeline);
+		if (lfToMove == beforeLf) {
+			return;
+		}
 		lifelineClusters.remove(lfToMove);
 		if (beforeLf != null) {
 			lifelineClusters.add(lifelineClusters.indexOf(beforeLf), lfToMove);

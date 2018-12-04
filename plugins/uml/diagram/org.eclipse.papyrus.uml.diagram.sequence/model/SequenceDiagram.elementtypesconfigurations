@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <elementtypesconfigurations:ElementTypeSetConfiguration xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:elementtypesconfigurations="http://www.eclipse.org/papyrus/infra/elementtypesconfigurations/1.2" xmi:id="_uuwoQENKEeimO7ZhVBpjkg" description="Notational edit-helper advices for the Sequence Diagram." identifier="org.eclipse.papyrus.uml.diagram.sequence.advice" name="Sequence Diagram Advice" metamodelNsURI="http://www.eclipse.org/uml2/5.0.0/UML">
-  <elementTypeConfigurations xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" xmi:id="org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge" identifier="org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge" name="Message Asynch Edge" hint="Message_AsynchEdge" kind="org.eclipse.gmf.runtime.emf.type.core.IHintedType">
+  <!--elementTypeConfigurations xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" xmi:id="org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge" identifier="org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge" name="Message Asynch Edge" hint="Message_AsynchEdge" kind="org.eclipse.gmf.runtime.emf.type.core.IHintedType">
     <iconEntry xmi:type="elementtypesconfigurations:IconEntry" xmi:id="_sYPhkNx2EeWVxMf7SXAfhg" iconPath="/icons/full/obj16/Message.gif" bundleId="org.eclipse.uml2.uml.edit"/>
     <specializedTypes xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.CompleteAsynchMessage"/>
-  </elementTypeConfigurations>
+  </elementTypeConfigurations-->
   <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_BvoRIENLEeimO7ZhVBpjkg" description="Advice for configuration of the view for the default operand of a new combined fragment." identifier="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.defaultInteractionOperand" inheritance="all" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.DefaultInteractionOperandAdvice">
     <target xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/umldi.elementtypesconfigurations#org.eclipse.papyrus.umldi.CombinedFragment_Shape"/>
   </adviceBindingsConfigurations>
@@ -20,7 +20,7 @@
   <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_oW2fQJYxEeies4N3OENAgQ" description="Graphical advice for preserving GeneralOrdering link consistency" identifier="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.GeneralOrderingLinkHelperAdvice" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.GeneralOrderingLinkHelperAdvice">
     <target xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.GeneralOrdering"/>
   </adviceBindingsConfigurations>
-  <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_R_pqhGT7EeSzFvTXGJPhUg" identifier="org.eclipse.papyrus.uml.diagram.sequence.advice.Message" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice">
+  <!--adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_R_pqhGT7EeSzFvTXGJPhUg" identifier="org.eclipse.papyrus.uml.diagram.sequence.advice.Message" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice">
     <target xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.diagram.sequence/model/SequenceDiagram.elementtypesconfigurations#org.eclipse.papyrus.uml.diagram.sequence.Message_AsynchEdge"/>
-  </adviceBindingsConfigurations>
+  </adviceBindingsConfigurations-->
 </elementtypesconfigurations:ElementTypeSetConfiguration>

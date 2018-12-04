@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -75,6 +76,7 @@ public class RowImpl extends SlotImpl implements Row {
 		return String.format("Row[%d][y: %d]", index, ypos);
 	}
 
+	public static final NodeVPositionComparator NODE_VPOSITION_COMPARATORS = new NodeVPositionComparator();
 	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATORS = new MessageEndNodeComparator();
 
 	private static class MessageEndNodeComparator implements Comparator<Node> {
@@ -96,6 +98,17 @@ public class RowImpl extends SlotImpl implements Row {
 			}
 
 			return 0;
+		}
+	}
+
+	private static class NodeVPositionComparator implements Comparator<Node> {
+		@Override
+		public int compare(Node o1, Node o2) {
+			Rectangle r1 = (Rectangle)o1.getBounds();
+			Rectangle r2 = (Rectangle)o2.getBounds();
+			if (r1 == null || r2 == null)
+				return 0;
+			return Integer.compare(r1.y,r2.y );
 		}
 	}
 }

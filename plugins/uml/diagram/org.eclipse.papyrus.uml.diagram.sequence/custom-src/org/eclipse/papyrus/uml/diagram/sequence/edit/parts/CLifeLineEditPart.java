@@ -33,15 +33,18 @@ import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
+import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
+import org.eclipse.gmf.runtime.diagram.ui.util.EditPartUtil;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.common.draw2d.anchors.FixedAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineRestorePositionEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineSelectionEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateNodeReferenceEditPolicy;
@@ -140,6 +143,7 @@ public class CLifeLineEditPart extends LifelineEditPart {
 	@Override
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
+		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new LifeLineGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new LifelineSelectionEditPolicy());
 		installEditPolicy(LifeLineRestorePositionEditPolicy.KEY, new LifeLineRestorePositionEditPolicy());
 		installEditPolicy(UpdateNodeReferenceEditPolicy.UDPATE_NODE_REFERENCE, new UpdateNodeReferenceEditPolicy());
@@ -235,6 +239,20 @@ public class CLifeLineEditPart extends LifelineEditPart {
 		}
 
 		return super.getTargetEditPart(request);
+	}
+
+	@Override
+	public void showSourceFeedback(Request req) {
+		// TODO: @etxacam Make use of the InteractionGraph classes.
+		if (req instanceof ChangeBoundsRequest) {
+			ChangeBoundsRequest request = (ChangeBoundsRequest) req;
+			List<?> editParts = request.getEditParts();
+			EditPart ep = editParts.stream().map(IGraphicalEditPart.class::cast).filter(d -> EditPartUtil.getSemanticEClassName(d).equals("uml.Lifeline")).findFirst().orElse(null);
+			if (ep != null && request.getMoveDelta() != null) {
+				request.getMoveDelta().y = 0;
+			}
+		}
+		super.showSourceFeedback(req);
 	}
 
 	@SuppressWarnings("unchecked")

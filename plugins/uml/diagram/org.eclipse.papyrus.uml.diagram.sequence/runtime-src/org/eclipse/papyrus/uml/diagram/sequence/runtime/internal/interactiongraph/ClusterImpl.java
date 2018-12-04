@@ -15,10 +15,11 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.NamedElement;
@@ -37,6 +38,10 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		this.fragmentCluster = fragmentCluster;
 	}
 
+	protected void updateNodes(Comparator<Node> comparator) {
+		nodes.sort(comparator);
+	}
+	
 	@Override
 	public List<Node> getNodes() {
 		return Collections.unmodifiableList(nodes);
@@ -76,6 +81,23 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 
 	public List<Node> getAllNodes() {
 		return NodeUtilities.flatten(this);
+	}
+	
+	public Rectangle getBound() {
+		Rectangle r = super.getBounds();
+		if (r != null)
+			return r;
+		
+		for (Node c : getNodes()) {
+			Rectangle b = c.getBounds();
+			if (b == null)
+				continue;
+			if (r == null)
+				r = b.getCopy();
+			else
+				r.union(b);
+		}
+		return r;
 	}
 	
 	public String toString() {

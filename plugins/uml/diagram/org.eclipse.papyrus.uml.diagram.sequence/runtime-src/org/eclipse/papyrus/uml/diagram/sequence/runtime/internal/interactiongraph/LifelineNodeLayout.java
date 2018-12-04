@@ -19,6 +19,7 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
 
+
 /**
  * @author ETXACAM
  *
@@ -42,7 +43,7 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		r.x = column.getXPosition() - (width / 2);
 		r.width = width;
 		r.height = height;
-		node.setBounds(r);
+		node.setBounds(r);		
 	}
 
 }

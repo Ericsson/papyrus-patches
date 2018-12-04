@@ -20,15 +20,12 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
-import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphFactory;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
-import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 
 /**
@@ -48,18 +45,15 @@ public class InteractionFragmentContainerCreationEditPolicy extends DefaultCreat
 
 	@Override
 	protected Command getCreateElementAndViewCommand(CreateViewAndElementRequest request) {
-		InteractionGraph graph = (InteractionGraph) request.getExtendedData().get("interactionGraph");
-		View view = ((GraphicalEditPart) getHost()).getNotationView();
-		graph = InteractionGraphFactory.getInstance().createInteractionGraph(
-				(Interaction) view.getElement(),
-				view.getDiagram(),
-				getHost().getViewer());
+		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
+		if (graph == null) {
+			return null;
+		}
 
 		Rectangle rectangle = getCreationRectangle(request);
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
 		cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
 				request.getViewAndElementDescriptor(), rectangle);
-
 		return new ICommandProxy(cmd);
 	}
 

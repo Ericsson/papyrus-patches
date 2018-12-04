@@ -19,10 +19,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -80,7 +84,11 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 
 		// Create Fragments
 		graph.getInteraction().getFragments().forEach(fragment -> doSwitch(fragment));
+		// Synch diagram positions
+		graph.getLifelineClusters().forEach(cluster -> ((ClusterImpl)cluster).
+				updateNodes(RowImpl.NODE_VPOSITION_COMPARATORS));
 
+		
 		// Link with messages
 		graph.getInteraction().getMessages().forEach(message -> doSwitch(message));
 
@@ -109,6 +117,18 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	@Override
 	public NodeImpl caseMessageOccurrenceSpecification(MessageOccurrenceSpecification element) {
 		NodeImpl node = caseOccurrenceSpecification(element);
+		Message msg = element.getMessage();
+		Edge msgView = (Edge)ViewUtilities.getViewForElement(graph.getDiagram(), msg);
+		
+		if (msg.getSendEvent() == element) {
+			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getSource());
+			node.setBounds(new Rectangle(p,new Dimension(1, 1)));
+		} else if (msg.getReceiveEvent() == element) {
+			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getTarget());
+			if (p != null) {
+				node.setBounds(new Rectangle(p,new Dimension(1, 1)));
+			}
+		}
 		return node;
 	}
 
