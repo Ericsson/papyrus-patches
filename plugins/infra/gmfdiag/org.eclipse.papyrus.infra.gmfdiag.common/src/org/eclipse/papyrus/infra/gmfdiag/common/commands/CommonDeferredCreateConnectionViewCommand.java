@@ -37,6 +37,7 @@ import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.LabelEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest.ConnectionViewDescriptor;
+import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.View;
 
 /**
@@ -146,7 +147,10 @@ public class CommonDeferredCreateConnectionViewCommand extends DeferredCreateCon
 		while (editPartIterator.hasNext()) {
 			EditPart currentEditPart = (EditPart) editPartIterator.next();
 			if ((!(currentEditPart instanceof CompartmentEditPart)) && currentEditPart instanceof IGraphicalEditPart && semanticElement == (((IGraphicalEditPart) currentEditPart).resolveSemanticElement())) {
-				if (!(currentEditPart instanceof LabelEditPart)) {
+				// In the case of a diagram created inside an element and this element being dropped inside, there is a possibility (the order does not seem to be kept between creations)
+				// that the editPart matching the semantic element is the diagram itself as it is contained by the element.
+				// We cannot link a diagram Edit Part, it will return a null command, preventing the link creation.
+				if (!(currentEditPart instanceof LabelEditPart || currentEditPart.getModel() instanceof Diagram)) {
 					return (IGraphicalEditPart) currentEditPart;
 				}
 			}
