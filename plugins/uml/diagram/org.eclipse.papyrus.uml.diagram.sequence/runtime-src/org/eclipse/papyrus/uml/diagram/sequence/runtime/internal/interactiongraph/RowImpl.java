@@ -67,8 +67,9 @@ public class RowImpl extends SlotImpl implements Row {
 	}
 
 	@Override
-	protected void nudge(int delta) {
+	public void nudge(int delta) {
 		this.ypos += delta;
+		getNodes().stream().map(NodeImpl.class::cast).forEach(interactionGraph.getLayoutManager()::layout);		
 	}
 
 	@Override

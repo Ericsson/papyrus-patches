@@ -23,14 +23,15 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.DiagramLayoutPreferences;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphDiff;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.Element;
@@ -39,6 +40,7 @@ import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Lifeline;
+import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
@@ -48,12 +50,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		super(interaction);
 		super.setView(diagram);
 		super.setEditPart(editPart);
-		viewer = editPart == null ? null : editPart.getViewer();
-	}
 
-	@Override
-	public DiagramLayoutPreferences getLayoutPreferences() {
-		return diagramLayoutPrefs;
+		viewer = editPart == null ? null : editPart.getViewer();
 	}
 
 	@Override
@@ -73,7 +71,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	public Diagram getDiagram() {
 		return (Diagram) getView();
 	}
-
+	
+	@Override
 	public EditPartViewer getEditPartViewer() {
 		return viewer;
 	}
@@ -121,6 +120,26 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
+	public List<Link> getMessageLinks() {
+		return Collections.unmodifiableList(messageLinks);
+	}
+
+	void addMessage(LinkImpl message, LinkImpl insertBeforeMessage) {
+		int indexNext = insertBeforeMessage == null ? -1 : messageLinks.indexOf(insertBeforeMessage);
+		if (indexNext == -1) {
+			messageLinks.add(message);
+		} else {
+			messageLinks.add(indexNext, message);
+		}
+		message.setInteractionGraph(this);
+	}
+	
+	void moveMessage(LinkImpl message, LinkImpl insertBeforeMessage) {
+		messageLinks.remove(message);
+		addMessage(message,insertBeforeMessage);
+	}
+	
+	@Override
 	public List<Row> getRows() {
 		return Collections.unmodifiableList(rows);
 	}
@@ -132,13 +151,30 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	@Override
 	public NodeImpl getNodeFor(Element element) {
-		return builder.nodeCache.get(element);
+		return builder.getCacheNode(element);
+	}
+
+	@Override
+	public LinkImpl getLinkFor(Element element) {
+		return builder.getCacheLink(element);
+	}
+
+	@Override
+	public GraphItem getItemFor(Element element) {
+		GraphItem item = getNodeFor(element);
+		if (item != null)
+			return item;
+		return getLinkFor(element);
 	}
 
 	InteractionLayoutManager getLayoutManager() {
 		return layoutManager;
 	}
 
+	public List<Node> getLayoutNodes() {
+		return rows.stream().flatMap(r -> r.getNodes().stream()).collect(Collectors.toList());
+	}
+	
 	@Override
 	public void layout() {
 		layoutGrid();
@@ -161,7 +197,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		row.setYPosition(y);
 
 		NodeOrderResolver orderResolver = new NodeOrderResolver(this);
-
+		
 		RowImpl prevRow = null;
 		NodeImpl prevNode = null;
 		List<NodeImpl> orderedNodes = orderResolver.getOrderedNodes();
@@ -181,7 +217,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			if (isNewRow) {
 				prevRow = new RowImpl(this);
 				rows.add(prevRow);
-				prevRow.setYPosition(node.getBounds().getCenter().y);
+				if (node.getBounds() != null) {
+					y = node.getBounds().getCenter().y;
+					prevRow.setYPosition(y);
+				}
+				else
+					prevRow.setYPosition(-1);
 			}
 
 			prevRow.addNode(node);			
@@ -202,6 +243,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 					nudgeX += prevX - r.x + ViewUtilities.COL_PADDING;
 				}
 				int colX = r.getCenter().x + nudgeX;
+
 				column.setXPosition(colX);
 				prevX = r.x + r.width + nudgeX;
 			}
@@ -315,6 +357,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 
 		layoutManager.layout();
+		
+		
 	}
 
 	@Override
@@ -369,13 +413,50 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
+	public LinkImpl getMessage(Message message) {
+		return messageLinks.stream().filter(d -> d.getElement() == message).findFirst().orElse(null);
+	}
+
+	@Override
+	public LinkImpl addMessage(Message message) {
+		return addMessage(message, null);
+	}
+
+	@Override
+	public LinkImpl addMessage(Message message, Link insertBefore) {
+		LinkImpl link = new LinkImpl(message);
+		addMessage(link, (LinkImpl) insertBefore);
+		builder.nodeCache.put(message, link);
+		layoutGrid();
+		return link;
+	}
+	
+	@Override
+	public void moveMessage(Message message, Message insertBefore) {
+		LinkImpl msgToMove = getMessage(message);
+		LinkImpl beforeMsg = getMessage(insertBefore);
+		if (msgToMove == beforeMsg) {
+			return;
+		}
+		moveMessage(msgToMove, beforeMsg);
+		layoutGrid();
+	}
+
+	
+	// TODO: @etxacam Review what can be done by message API
+	@Override
 	public NodeImpl getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos) {
 		ClusterImpl lifelineCluster = getLifeline(lifeline);
 		return NodeUtilities.flattenImpl(lifelineCluster).filter(d -> d.getElement() == mos).findFirst().orElse(null);
 	}
 
 	@Override
-	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos) {
+	public NodeImpl addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos) {
+		return addMessageOccurrenceSpecification(lifeline, mos, null);
+	}
+	
+	@Override
+	public NodeImpl addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos, Node insertBefore) {
 		NodeImpl mosNode = getMessageOccurrenceSpecification(lifeline, mos);
 		if (mosNode != null) {
 			return mosNode;
@@ -386,7 +467,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		ClusterImpl lifelineCluster = getLifeline(lifeline);
 		NodeImpl node = new NodeImpl(mos);
-		lifelineCluster.addNode(node);
+		lifelineCluster.addNode(node, insertBefore);
 		builder.nodeCache.put(mos, node);
 		layoutGrid();
 		return node;
@@ -409,25 +490,25 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	@Override
 	public boolean moveMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mosToMove,
 			Lifeline toLifeline, InteractionFragment fragmentBefore) {
-		NodeImpl n = builder.nodeCache.get(lifeline);
+		NodeImpl n = builder.getCacheNode(lifeline);
 		if (n == null || !(n instanceof Cluster)) {
 			return false;
 		}
 		ClusterImpl fromLifelineNode = (ClusterImpl) n;
 
-		n = builder.nodeCache.get(toLifeline);
+		n = builder.getCacheNode(toLifeline);
 		if (n == null || !(n instanceof Cluster)) {
 			return false;
 		}
 		ClusterImpl toLifelineNode = (ClusterImpl) n;
 
-		NodeImpl mosNode = builder.nodeCache.get(mosToMove);
+		NodeImpl mosNode = builder.getCacheNode(mosToMove);
 		if (mosNode == null) {
 			return false;
 		}
-		n = builder.nodeCache.get(fragmentBefore);
+		n = builder.getCacheNode(fragmentBefore);
 
-		// TODO: Check if it is allowed to move the mos:
+		// TODO: @etxacam Check if it is allowed to move the mos:
 		// 1) SendEvent before receiveEvent
 		// 2) Ends inside the same fragment.
 		// 3) Special case may trigger change of gate kind (Inner <--> Outer).
@@ -441,17 +522,35 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
-	public boolean connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv) {
-		NodeImpl sendNode = builder.nodeCache.get(send);
-		NodeImpl recvNode = builder.nodeCache.get(recv);
+	public Link connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv) {
+		NodeImpl sendNode = builder.getCacheNode(send);
+		NodeImpl recvNode = builder.getCacheNode(recv);
 
 		if (sendNode == null || recvNode == null) {
-			return false;
+			return null;
 		}
 
-		sendNode.connectNode(recvNode);
+		boolean msgSend = true;
+		LinkImpl link = builder.getCacheLink(send.getMessage());
+		if (link == null) {
+			msgSend = false;
+			link = builder.getCacheLink(recv.getMessage());
+		}
+		
+		if (link == null) {
+			Message msg = msgSend ? send.getMessage() : recv.getMessage();
+			link = new LinkImpl(msg);
+			link.setSource(sendNode);
+			link.setTarget(recvNode);		
+			link.setEdge((Edge)ViewUtilities.getViewForElement(getDiagram(), msg));
+			link.setInteractionGraph(this);
+			addMessage(link, null);
+			builder.nodeCache.put(msg, link);			
+		}
+		
+		sendNode.connectNode(recvNode,link);
 		layoutGrid();
-		return true;
+		return link;
 	}
 
 	@Override
@@ -539,14 +638,14 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			}
 			execNode.addNode(d);
 		}
-		;
+		
 		execNode.addNode(1, new NodeImpl(exec));
 
 
 		if (startNodeImpl.getConnectedByNode() != null) {
-			startNodeImpl.getConnectedByNode().connectNode(execNode);
+			startNodeImpl.getConnectedByNode().connectNode(execNode, null);
 		} else if (startNodeImpl.getConnectedNode() != null) {
-			execNode.connectNode(startNodeImpl.getConnectedNode());
+			execNode.connectNode(startNodeImpl.getConnectedNode(), null);
 		}
 
 		layoutGrid();
@@ -583,7 +682,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			return false;
 		}
 
-		NodeImpl beforeNode = builder.nodeCache.get(fragmentBefore);
+		NodeImpl beforeNode = builder.getCacheNode(fragmentBefore);
 
 		if (execNode.getConnectedByNode() != null) {
 			// TODO: Check it is not going to a previous position of the triggering point
@@ -619,11 +718,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	@Override
 	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment) {
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public List<InteractionGraphDiff> getEditChanges() {
-		return new InteractionGraphDiffBuilder(this).calculateDifferences();
 	}
 
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
@@ -688,9 +782,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	private InteractionGraphBuilder builder;
 	private EditPartViewer viewer;
 	private List<ClusterImpl> lifelineClusters = new ArrayList<>();
+	private List<LinkImpl> messageLinks = new ArrayList<>();
 	private List<RowImpl> rows = new ArrayList<>();
 	private List<ColumnImpl> columns = new ArrayList<>();
-	private DiagramLayoutPreferencesImpl diagramLayoutPrefs = new DiagramLayoutPreferencesImpl();
 	private InteractionLayoutManager layoutManager = new InteractionLayoutManager(this);
 
 }

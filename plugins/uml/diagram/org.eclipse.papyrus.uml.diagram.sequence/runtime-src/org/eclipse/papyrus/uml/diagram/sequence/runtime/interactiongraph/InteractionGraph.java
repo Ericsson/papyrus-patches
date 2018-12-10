@@ -15,7 +15,9 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
 import java.util.List;
 
+import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Element;
@@ -45,6 +47,8 @@ public interface InteractionGraph {
 	 * @return a gmf notation diagram
 	 */
 	public Diagram getDiagram();
+
+	public EditPartViewer getEditPartViewer();
 
 	/**
 	 * Returns the interaction used to build this graph.
@@ -85,6 +89,15 @@ public interface InteractionGraph {
 	public List<FragmentCluster> getFragmentClusters();
 
 	/**
+	 * Return a list with the clusters representing the lifelines defined in the interaction.<br>
+	 *
+	 * The order of the list correspond with the order of lifelines in the interaction
+	 *
+	 * @return a list with nodes
+	 */
+	public List<Link> getMessageLinks();
+
+	/**
 	 * Return the ordered list of rows used in the graph.
 	 *
 	 * @return an ordered list with the rows.
@@ -106,9 +119,9 @@ public interface InteractionGraph {
 	 * @return a Node representing the given element
 	 */
 	public Node getNodeFor(Element element);
-
-	public DiagramLayoutPreferences getLayoutPreferences();
-
+	public Link getLinkFor(Element element);
+	public GraphItem getItemFor(Element element);
+	
 	public void layout();
 
 	/**
@@ -168,16 +181,22 @@ public interface InteractionGraph {
 
 	public void moveLifeline(Lifeline lifelineToMove, Lifeline beforeLifeline);
 
+	public Link getMessage(Message message);
+	public Link addMessage(Message message);
+	public Link addMessage(Message message, Link insertBefore);
+	public void moveMessage(Message message, Message insertBefore);
+
 	public Node getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
+	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos, Node insertBefore);
 
 	public Node removeMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 
 	public boolean moveMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mosToMove,
 			Lifeline toLifeline, InteractionFragment fragmentBefore);
 
-	public boolean connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv);
+	public Link connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv);
 
 	public Cluster getExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
 
@@ -195,5 +214,4 @@ public interface InteractionGraph {
 
 	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment);
 
-	public List<InteractionGraphDiff> getEditChanges();
 }

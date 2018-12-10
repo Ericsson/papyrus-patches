@@ -157,10 +157,12 @@ public class NodeOrderResolver {
 		if (connectedBy != null) {
 			if (previous.contains(connectedBy))
 				return;
-			previous.add(connectedBy);
-			List<NodeImpl> ns = getPreviousNodesInLifeline(connectedBy, null);
-			previous.addAll(ns);
-			ns.stream().forEach(d -> getPreviousNodes(d, previous));
+			if (previous.add(connectedBy)) {
+				List<NodeImpl> ns = getPreviousNodesInLifeline(connectedBy, null);
+				if (previous.addAll(ns)) {
+					ns.stream().forEach(d -> getPreviousNodes(d, previous));
+				}
+			}
 		}
 		
 		NodeImpl connect = node.getConnectedNode();
@@ -168,8 +170,9 @@ public class NodeOrderResolver {
 			if (NodeUtilities.areNodesHorizontallyConnected(node,connect)) {
 				List<NodeImpl> ns = getPreviousNodesInLifeline(connect, null);
 				if (!ns.contains(node)) { // Avoid loops				
-					previous.addAll(ns);
-					ns.stream().forEach(d -> getPreviousNodes(d, previous));
+					if (previous.addAll(ns)) {
+						ns.stream().forEach(d -> getPreviousNodes(d, previous));
+					}
 				}
 			}
 		}
@@ -179,22 +182,26 @@ public class NodeOrderResolver {
 			if (markImpl.getKind() == Kind.end) {
 				FragmentClusterImpl fgCluster = markImpl.getParent().getFragmentCluster();
 				List<NodeImpl> startMarks = fgCluster.getClusters().stream().map(d -> (NodeImpl)d.getNodes().get(0)).collect(Collectors.toList());
-				previous.addAll(startMarks);
-				startMarks.stream().forEach(d -> getPreviousNodes(d, previous));
+				if (previous.addAll(startMarks)) {
+					startMarks.stream().forEach(d -> getPreviousNodes(d, previous));
+				}
 				
 				List<Node> gates = new ArrayList<Node>(fgCluster.getInnerGates());
-				gates.addAll(fgCluster.getOuterGates());
-				gates.stream().map(NodeImpl.class::cast).forEach(d -> {
-					previous.add(d.getConnectedByNode() != null ? d.getConnectedByNode() : d.getConnectedNode()); 
-					getPreviousNodes(d, previous); 
-				});
+				if (gates.addAll(fgCluster.getOuterGates())) {
+					gates.stream().map(NodeImpl.class::cast).forEach(d -> {
+						if (previous.add(d.getConnectedByNode() != null ? d.getConnectedByNode() : d.getConnectedNode())) { 
+							getPreviousNodes(d, previous);
+						}
+					});
+				}
 			}
 		}
 				
 		ClusterImpl parent = node.getParent(); 
 		if (parent != null && parent.getParent() != null) {
-			previous.add(parent);
-			getPreviousNodes(parent, previous);			
+			if (previous.add(parent)) {
+				getPreviousNodes(parent, previous);
+			}
 		}
 	}
 

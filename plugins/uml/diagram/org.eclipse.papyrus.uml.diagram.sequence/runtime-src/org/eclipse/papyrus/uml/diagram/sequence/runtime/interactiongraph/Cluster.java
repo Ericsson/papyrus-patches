@@ -55,4 +55,6 @@ public interface Cluster extends Node {
 	 * @return a list of {@link Node}
 	 */
 	public List<Node> getNodes();
+
+	public List<Node> getAllNodes();
 }

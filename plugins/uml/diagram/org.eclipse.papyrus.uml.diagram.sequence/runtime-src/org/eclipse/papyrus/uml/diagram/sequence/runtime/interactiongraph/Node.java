@@ -38,7 +38,7 @@ import org.eclipse.uml2.uml.OccurrenceSpecification;
  * end point triggers the receive event end point, which can be also teh start of a
  * {@link ExecutionSpecification}. <br/>
  */
-public interface Node {
+public interface Node extends GraphItem {
 	/**
 	 * Returns the {@link Cluster} that owns this node. Normally a {@link Cluster} associated with a
 	 * {@link Lifeline}, an {@link ExecutionSpecification}, a {@link CombinedFragment} or
@@ -48,12 +48,6 @@ public interface Node {
 	 */
 	public Cluster getParent();
 
-	/**
-	 * Returns the {@link InteractionGraph} this node belongs to.
-	 *
-	 * @return the {@link InteractionGraph}
-	 */
-	public InteractionGraph getInteractionGraph();
 
 	/**
 	 * Returns the {@link Node} that this node connects to, normally by meaning of a message.<br>
@@ -82,29 +76,6 @@ public interface Node {
 	 * @return a {@link Node}
 	 */
 	public Node getConnectedByNode();
-
-	/**
-	 * Returns the {@link Element} that this node represents.
-	 *
-	 * @return a {@link Element} subclass, an {@link InteractionFragment} or a {@link Gate}.
-	 */
-	public Element getElement();
-
-	/**
-	 * The View in the notation model that hold graphical constraints probably, in the form of
-	 * {@link Location}.
-	 *
-	 * @return a {@link View}
-	 */
-	public View getView();
-
-	/**
-	 * The EditPart associated to the view in the notation model. The edit parts are used to calculate the position
-	 * in the diagram editor.
-	 *
-	 * @return a {@link View}
-	 */
-	public GraphicalEditPart getEditPart();
 
 	/**
 	 * The row which holds the logical position in the diagram.

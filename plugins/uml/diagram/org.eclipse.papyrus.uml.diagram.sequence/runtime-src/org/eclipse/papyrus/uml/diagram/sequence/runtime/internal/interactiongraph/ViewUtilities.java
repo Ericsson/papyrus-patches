@@ -24,7 +24,9 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.core.preferences.PreferencesHint;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
+import org.eclipse.gmf.runtime.diagram.ui.parts.DiagramGraphicalViewer;
 import org.eclipse.gmf.runtime.gef.ui.figures.SlidableAnchor;
 import org.eclipse.gmf.runtime.notation.Anchor;
 import org.eclipse.gmf.runtime.notation.Bounds;
@@ -35,6 +37,9 @@ import org.eclipse.gmf.runtime.notation.LayoutConstraint;
 import org.eclipse.gmf.runtime.notation.Location;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
+import org.eclipse.papyrus.infra.gmfdiag.common.preferences.PreferencesConstantsHelper;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Lifeline;
@@ -572,5 +577,42 @@ public class ViewUtilities {
 		bounds.setWidth(width);
 		bounds.setHeight(height);
 		return bounds;
+	}
+	
+	public static Rectangle snapToGrid(EditPartViewer viewer, Diagram diagram, Rectangle r) {
+		Point pt = snapToGrid(viewer, diagram, r.getTopLeft());
+		r.x = pt.x; 
+		r.y = pt.y;
+		return r;
+	}
+
+	public static Point snapToGrid(EditPartViewer viewer, Diagram diagram, int x, int y) {
+		return snapToGrid(viewer, diagram, new Point(x,y));		
+	}
+
+	public static Point snapToGrid(EditPartViewer viewer, Diagram diagram, Point pt) {
+		double gridSpacing = getGridSpacing(viewer, diagram);
+		pt.x = (int)(Math.round((double)pt.x / gridSpacing) * gridSpacing);
+		pt.y = (int)(Math.round((double)pt.y / gridSpacing) * gridSpacing);
+		return pt;		
+	}
+	
+	public static boolean isSnapToGrid(EditPartViewer viewer, Diagram diagram) {
+		boolean snapToGrid = false;
+		if (viewer instanceof DiagramGraphicalViewer) {
+			IPreferenceStore preferenceStore = ((DiagramGraphicalViewer)viewer).getWorkspaceViewerPreferenceStore();
+			snapToGrid = preferenceStore.getBoolean(PreferencesConstantsHelper.SNAP_TO_GRID_CONSTANT);
+		}
+		return NotationUtils.getBooleanValue(diagram, PreferencesConstantsHelper.SNAP_TO_GRID_CONSTANT, snapToGrid);
+	}
+
+	private static double getGridSpacing(EditPartViewer viewer, Diagram diagram) {
+		double gridSpacing = 1.0;
+		if (viewer instanceof DiagramGraphicalViewer) {
+			String diagramType = diagram.getType();
+			IPreferenceStore preferenceStore = ((DiagramGraphicalViewer)viewer).getWorkspaceViewerPreferenceStore();
+			gridSpacing = preferenceStore.getDouble(PreferencesConstantsHelper.GRID_SPACING_CONSTANT);
+		}
+		return NotationUtils.getDoubleValue(diagram, PreferencesConstantsHelper.GRID_SPACING_CONSTANT, gridSpacing);
 	}
 }

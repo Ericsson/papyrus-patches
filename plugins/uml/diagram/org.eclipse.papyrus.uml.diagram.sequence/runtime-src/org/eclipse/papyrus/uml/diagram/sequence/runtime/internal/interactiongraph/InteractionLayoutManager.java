@@ -18,6 +18,10 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Lifeline;
 
@@ -26,7 +30,6 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class InteractionLayoutManager implements InteractionNodeLayout {
-
 	private static Map<Class<? extends Element>, InteractionNodeLayout> layouts = initializeLayouts();
 
 	public InteractionLayoutManager(InteractionGraphImpl graph) {
@@ -34,7 +37,19 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 	}
 
 	public void layout() {
-		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));
+		for (Column column : interactionGraph.getColumns()) {
+			for (Node n : column.getNodes()) {
+				layout((NodeImpl)n);
+			}
+		}
+
+		for (Row row : interactionGraph.getRows()) {
+			for (Node n : row.getNodes()) {
+				layout((NodeImpl)n);
+			}
+		}
+
+		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));		
 	}
 
 	@Override
@@ -42,6 +57,13 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 		InteractionNodeLayout layout = getNodeLayoutFor(node);
 		if (layout != null) {
 			layout.layout(node);
+		} else {
+			Rectangle r = node.getBounds();
+			if (r != null) {
+				
+				r.x = node.getColumn().getXPosition() - (r.width / 2);
+				r.y = node.getRow().getYPosition() - (r.height / 2);
+			}				
 		}
 	}
 

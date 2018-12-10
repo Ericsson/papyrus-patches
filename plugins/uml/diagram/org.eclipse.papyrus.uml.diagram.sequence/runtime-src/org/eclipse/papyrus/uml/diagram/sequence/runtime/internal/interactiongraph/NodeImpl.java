@@ -16,14 +16,16 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.NamedElement;
 
 
-public class NodeImpl implements Node {
+public class NodeImpl extends GraphItemImpl implements Node {
 	public NodeImpl(Element element) {
 		this.element = element;
 	}
@@ -67,13 +69,19 @@ public class NodeImpl implements Node {
 		return (!connects ? oppositeNode : null);
 	}
 
-	void connectNode(NodeImpl connectedNode) {
+	public LinkImpl getConnectedByLink() {
+		return connectingLink;
+	}
+
+	void connectNode(NodeImpl connectedNode, Link link) {
 		disconnectNode();
 		connectedNode.disconnectNode();
 		this.oppositeNode = connectedNode;
 		this.connects = true;
 		connectedNode.oppositeNode = this;
 		connectedNode.connects = false;
+		connectedNode.connectingLink = (LinkImpl)link;
+		connectingLink = (LinkImpl)link;
 	}
 
 	void disconnectNode() {
@@ -82,6 +90,7 @@ public class NodeImpl implements Node {
 			this.oppositeNode.connects = false;
 			this.oppositeNode = null;
 			this.connects = false;
+			this.connectingLink = null;
 		}
 	}
 
@@ -174,7 +183,8 @@ public class NodeImpl implements Node {
 
 	private boolean connects;
 	protected NodeImpl oppositeNode;
-
+	protected LinkImpl connectingLink;  
+	
 	protected View view;
 	protected GraphicalEditPart editPart;
 	protected RowImpl row;

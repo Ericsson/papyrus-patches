@@ -23,7 +23,9 @@ import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewRequest.ViewDescriptor;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.CreateViewCommand;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.GraphItemImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 
 /**
@@ -41,17 +43,17 @@ public class CreateNodeViewCommand extends CreateViewCommand {
 	 */
 	public CreateNodeViewCommand(TransactionalEditingDomain editingDomain, Node interactionGraphNode, ViewDescriptor viewDescriptor, View containerView) {
 		super(editingDomain, viewDescriptor, containerView);
-		this.interactionGraphNode = interactionGraphNode;
+		this.interactionGraphNode = (NodeImpl)interactionGraphNode;
 	}
 
 	@Override
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		CommandResult res = super.doExecuteWithResult(monitor, info);
 		if (res.getStatus().isOK()) {
-			((NodeImpl) interactionGraphNode).setView((View) getViewDescriptor().getAdapter(View.class));
+			((GraphItemImpl) interactionGraphNode).setView((View) getViewDescriptor().getAdapter(View.class));
 		}
 		return res;
 	}
 
-	private Node interactionGraphNode;
+	private NodeImpl interactionGraphNode;
 }

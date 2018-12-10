@@ -27,6 +27,7 @@ import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -52,7 +53,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	Map<OccurrenceSpecification, ExecutionSpecification> startExecutionSpecification;
 	Map<OccurrenceSpecification, ExecutionSpecification> endExecutionSpecification;
 	Map<Lifeline, ClusterImpl> activeLifelineGroups;
-	Map<EObject, NodeImpl> nodeCache = new HashMap<>(); // TODO: -> Move to the GraphImpl
+	Map<EObject, GraphItem> nodeCache = new HashMap<>(); // TODO: -> Move to the GraphImpl
 
 	InteractionGraphBuilder(Interaction interaction, Diagram diagram, EditPartViewer viewer) {
 		GraphicalEditPart editPart = viewer == null ? null : (GraphicalEditPart) viewer.getEditPartRegistry().get(diagram);
@@ -122,9 +123,14 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		
 		if (msg.getSendEvent() == element) {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getSource());
+			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 			node.setBounds(new Rectangle(p,new Dimension(1, 1)));
 		} else if (msg.getReceiveEvent() == element) {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getTarget());
+			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+
 			if (p != null) {
 				node.setBounds(new Rectangle(p,new Dimension(1, 1)));
 			}
@@ -135,6 +141,10 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	@Override
 	public NodeImpl caseExecutionOccurrenceSpecification(ExecutionOccurrenceSpecification element) {
 		NodeImpl node = caseOccurrenceSpecification(element);
+		Point top = node.getParent().getBounds().getTop();
+		if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+			top = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), top);
+		node.setBounds(new Rectangle(top, new Dimension(1,1)));
 		return node;
 	}
 
@@ -153,9 +163,20 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		}
 
 		ClusterImpl parent = activeLifelineGroups.get(lifeline);
-		NodeImpl node = new NodeImpl(element);
+		NodeImpl node = new NodeImpl(element);		
 		parent.addNode(node);
 		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
+		if (isStartExecutionSpecification) {
+			Point p = node.getParent().getBounds().getTop();
+			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);			
+			node.setBounds(new Rectangle(p, new Dimension(1,1)));
+		} else if (isFinishExecutionSpecification) {
+			Point p = node.getParent().getBounds().getBottom();
+			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+			node.setBounds(new Rectangle(p, new Dimension(1,1)));
+		}
 		cache(element, node);
 
 		if (isFinishExecutionSpecification) {
@@ -169,7 +190,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	public NodeImpl caseExecutionSpecification(ExecutionSpecification element) {
 		OccurrenceSpecification start = element.getStart();
 
-		NodeImpl startNode = nodeCache.get(start);
+		NodeImpl startNode = getCacheNode(start);
 		ClusterImpl execSpecCluster = startNode.getParent();
 
 		NodeImpl node = new NodeImpl(element);
@@ -226,7 +247,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		if (element.getOwner() instanceof Interaction) {
 			graph.addFormalGate(node);
 		} else if (element.getOwner() instanceof InteractionUse) {
-			FragmentClusterImpl intUseCluster = (FragmentClusterImpl) nodeCache.get(element.getOwner());
+			FragmentClusterImpl intUseCluster = (FragmentClusterImpl) getCacheNode(element.getOwner());
 			intUseCluster.addOuterGate(node);
 		}
 		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
@@ -241,10 +262,16 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		boolean isExecutionSpecification = recvEvent instanceof OccurrenceSpecification &&
 				startExecutionSpecification.containsKey(recvEvent);
 
-		NodeImpl sendNode = nodeCache.get(sendEvent);
-		NodeImpl recvNode = nodeCache.get(recvEvent);
+		NodeImpl sendNode = getCacheNode(sendEvent);
+		NodeImpl recvNode = getCacheNode(recvEvent);
 
-		sendNode.connectNode(isExecutionSpecification ? recvNode.getParent() : recvNode);
+		LinkImpl link = new LinkImpl(element);
+		link.setSource(sendNode);
+		link.setTarget(recvNode);		
+		graph.addMessage(link, null);
+		link.setEdge((Edge)ViewUtilities.getViewForElement(graph.getDiagram(), element));		
+		sendNode.connectNode(isExecutionSpecification ? recvNode.getParent() : recvNode, link);
+		nodeCache.put(element, link);
 		return sendNode; // return not null to avoid continue case processing
 	}
 
@@ -253,7 +280,21 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		return null;
 	}
 
-	private void cache(EObject obj, NodeImpl n) {
+	NodeImpl getCacheNode(EObject obj) {		
+		GraphItem res = nodeCache.get(obj);
+		if (!(res instanceof NodeImpl))
+			return null;
+		return (NodeImpl)res;
+	}
+	
+	LinkImpl getCacheLink(EObject obj) {		
+		GraphItem res = nodeCache.get(obj);
+		if (!(res instanceof LinkImpl))
+			return null;
+		return (LinkImpl)res;
+	}
+
+	private void cache(EObject obj, GraphItem n) {
 		nodeCache.put(obj, n);
 	}
 

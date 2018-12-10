@@ -2,9 +2,11 @@
  * Copyright (c) 2018 CEA LIST and others.
  * 
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * http://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *   CEA LIST - Initial API and implementation
@@ -13,24 +15,20 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gmf.runtime.notation.Edge;
 
 /**
  * @author ETXACAM
  *
  */
-public interface InteractionGraphDiff {
-	public static enum Type {
-		CREATE,
-		DELETE,
-		CHANGE_FEATURE
-	}
-	
-	public Type getType();
-	public EObject get();
-	public EObject getParent();
-	public EStructuralFeature getFeature();
-	public Object getNewValue();
-	public Object getOldValue();
+public interface Link extends GraphItem {
+	Node getSource();
+	Point getSourceLocation();
+	Node getTarget();
+	Point getTargetLocation();
+
+	Edge getEdge();
+	Rectangle getBounds();
 }
