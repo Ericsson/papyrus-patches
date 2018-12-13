@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -171,7 +172,8 @@ public class ArchitectureExtendedProviderDescriptor extends ExtendedProviderDesc
 							modelSet = ServiceUtils.getInstance().getModelSet(part.getAdapter(ServicesRegistry.class));
 							List<?> collect = new ArchitectureDescriptionUtils(modelSet).getArchitectureViewpoints().stream()// gets Viewpoints
 									.flatMap(p -> p.getRepresentationKinds().stream())// get representation kinds from viewpoint
-									.filter(PapyrusDiagram.class::isInstance).map(PapyrusDiagram.class::cast)// filter on diagram type
+									.filter(Predicate.isEqual(getDiagram())) // check that the diagram handled by this descriptor is in an active viewpoint
+									.map(PapyrusDiagram.class::cast)// filter on diagram type
 									.filter(p -> getDiagram().getQualifiedName().equals(p.getQualifiedName()))
 									.flatMap(p -> p.getPalettes().stream()).distinct()// Get paletteConf
 									.collect(Collectors.toList());// as list
