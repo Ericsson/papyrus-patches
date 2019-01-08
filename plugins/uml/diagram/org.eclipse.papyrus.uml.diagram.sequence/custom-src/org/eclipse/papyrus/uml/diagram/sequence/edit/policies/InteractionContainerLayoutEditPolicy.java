@@ -30,6 +30,7 @@ import org.eclipse.gmf.runtime.diagram.ui.editpolicies.XYLayoutEditPolicy;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
 import org.eclipse.uml2.uml.Element;
@@ -102,23 +103,29 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 			if (graph == null) {
 				return null;
 			}
-
+			Point orig = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(0,0));
+			Point moveDelta = ViewUtilities.controlToViewer(graph.getEditPartViewer(), request.getMoveDelta().getCopy());
+			moveDelta.x -= orig.x;
+			moveDelta.y -= orig.y;
+			
+			Dimension sizeDelta = ViewUtilities.controlToViewer(graph.getEditPartViewer(), request.getSizeDelta().getCopy());
+			
 			if (!keyHandler.isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
 				// No reordering. Resizing is never reordering
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
-				if (request.getMoveDelta().x != 0 || request.getMoveDelta().y != 0) {
-					cmd.nudgeLifeline((Lifeline) element, request.getMoveDelta());
+				if (moveDelta.x != 0 || moveDelta.y != 0) {					
+					cmd.nudgeLifeline((Lifeline) element, moveDelta);
 				}
 
-				if (request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
-					cmd.resizeLifeline((Lifeline) element, request.getSizeDelta());
+				if (sizeDelta.width != 0 || sizeDelta.height != 0) {
+					cmd.resizeLifeline((Lifeline) element, sizeDelta);
 				}
 				return new ICommandProxy(cmd);
 			} else {
 				// Reordering case.
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
-				if (request.getMoveDelta().x != 0 || request.getMoveDelta().y != 0) {
-					cmd.moveLifeline((Lifeline) element, request.getMoveDelta());
+				if (moveDelta.x != 0 || moveDelta.y != 0) {
+					cmd.moveLifeline((Lifeline) element, moveDelta);
 				}
 				return new ICommandProxy(cmd);
 			}

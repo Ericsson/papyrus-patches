@@ -186,8 +186,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		layoutGrid();
 	}
 
+	public void disableLayout() {
+		disabledLayout ++;
+	}
+
+	public void enableLayout() {
+		disabledLayout --;
+		disabledLayout = Math.max(0, disabledLayout);
+	}
+
 	@SuppressWarnings("unchecked")
 	private void layoutGrid() {
+		if (disabledLayout > 0)
+			return;
 		rows.clear();
 		columns.clear();
 
@@ -785,6 +796,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return true;
 	}
 
+	private int disabledLayout = 0; 
 	private InteractionGraphBuilder builder;
 	private EditPartViewer viewer;
 	private List<ClusterImpl> lifelineClusters = new ArrayList<>();
@@ -792,5 +804,4 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	private List<RowImpl> rows = new ArrayList<>();
 	private List<ColumnImpl> columns = new ArrayList<>();
 	private InteractionLayoutManager layoutManager = new InteractionLayoutManager(this);
-
 }

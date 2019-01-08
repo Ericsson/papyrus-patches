@@ -31,6 +31,7 @@ import org.eclipse.gmf.runtime.diagram.ui.util.SelectInDiagramHelper;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
@@ -84,10 +85,13 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
+		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
+		Point p1 = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(srcLoc.x, srcLoc.y));				
+
 		if (keyHandler.isAnyPressed() ) {
-			cmd.moveMessage(message, new Point(loc.x - srcLoc.x, loc.y - srcLoc.y));
+			cmd.moveMessage(message, new Point(p.x - p1.x, p.y - p1.y));
 		} else {
-			cmd.nudgeMessage(message, new Point(loc.x - srcLoc.x, loc.y - srcLoc.y));
+			cmd.nudgeMessage(message, new Point(p.x - p1.x, p.y - p1.y));
 		}
 		return new ICommandProxy(cmd);
 	}

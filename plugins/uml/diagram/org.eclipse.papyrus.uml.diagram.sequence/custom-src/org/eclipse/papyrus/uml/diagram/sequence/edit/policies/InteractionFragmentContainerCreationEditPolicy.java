@@ -25,6 +25,7 @@ import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.uml2.uml.InteractionFragment;
 
@@ -50,7 +51,7 @@ public class InteractionFragmentContainerCreationEditPolicy extends DefaultCreat
 			return null;
 		}
 
-		Rectangle rectangle = getCreationRectangle(request);
+		Rectangle rectangle = ViewUtilities.controlToViewer(graph.getEditPartViewer(), getCreationRectangle(request).getCopy());
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
 		cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
 				request.getViewAndElementDescriptor(), rectangle);

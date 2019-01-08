@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Viewport;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -252,12 +253,14 @@ public class ViewUtilities {
 		if (ep == ep.getRoot()) {
 			return p;
 		}
+		/*
 		IFigure viewport = ((GraphicalEditPart) ep.getRoot()).getFigure();
 		if (viewport instanceof Viewport) {
 			Point pvp = ((Viewport) viewport).getViewLocation();
 			p.x += pvp.x;
 			p.y += pvp.y;
-		}
+		}*/
+		controlToViewer(ep.getViewer(), p);
 		return p;
 	}
 
@@ -266,12 +269,13 @@ public class ViewUtilities {
 		if (ep == ep.getRoot()) {
 			return rect;
 		}
-		IFigure viewport = ((GraphicalEditPart) ep.getRoot()).getFigure();
+		/*IFigure viewport = ((GraphicalEditPart) ep.getRoot()).getFigure();
 		if (viewport instanceof Viewport) {
 			Point pvp = ((Viewport) viewport).getViewLocation();
 			rect.x += pvp.x;
 			rect.y += pvp.y;
-		}
+		}*/
+		controlToViewer(ep.getViewer(), rect);
 		return rect;
 	}
 
@@ -366,6 +370,36 @@ public class ViewUtilities {
 	public static Rectangle getBoundsForLayoutConstraint(EditPartViewer viewer, View view) {
 		View containerView = (View) view.eContainer();
 		return toRelativeForLayoutConstraints(viewer, containerView, getBounds(viewer, view));
+	}
+
+	public static Rectangle controlToViewer(EditPartViewer viewer, Rectangle rect) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(rect);
+		return rect;
+	}
+	
+	public static Point controlToViewer(EditPartViewer viewer, Point point) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(point);
+		return point;
+	}
+	
+	public static Dimension controlToViewer(EditPartViewer viewer, Dimension dimension) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(dimension);
+		return dimension;
+	}
+
+	public static Rectangle viewerToControl(EditPartViewer viewer, Rectangle rect) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(rect);
+		return rect;
+	}
+
+	public static Point viewerToControl(EditPartViewer viewer, Point point) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(point);
+		return point;
+	}
+
+	public static Dimension viewerToControl(EditPartViewer viewer, Dimension dimension) {
+		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(dimension);
+		return dimension;
 	}
 
 	/*
@@ -578,7 +612,7 @@ public class ViewUtilities {
 		bounds.setHeight(height);
 		return bounds;
 	}
-	
+
 	public static Rectangle snapToGrid(EditPartViewer viewer, Diagram diagram, Rectangle r) {
 		Point pt = snapToGrid(viewer, diagram, r.getTopLeft());
 		r.x = pt.x; 

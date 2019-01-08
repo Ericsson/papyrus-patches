@@ -57,6 +57,7 @@ import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
+import org.eclipse.gmf.runtime.notation.Location;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
@@ -87,7 +88,7 @@ import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 import org.eclipse.uml2.uml.UMLFactory;
 import org.eclipse.uml2.uml.UMLPackage;
-
+// TODO: @etxacam Handle control vs viewer coordinates
 public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	/**
 	 * Constructor.
@@ -453,16 +454,21 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				source.getBounds().y = newSrcY;
-				target.getBounds().y = newTrgY;
+				interactionGraph.disableLayout();
+				try {
+					source.getBounds().y = newSrcY;
+					interactionGraph.moveMessageOccurrenceSpecification(srcLifeline, (MessageOccurrenceSpecification)source.getElement(), 
+							srcLifeline, srcMoveBeforeNode == null ? null : (InteractionFragment)srcMoveBeforeNode.getElement());				
+					
+					target.getBounds().y = newTrgY;
+	
+					interactionGraph.moveMessageOccurrenceSpecification(trgLifeline, (MessageOccurrenceSpecification)target.getElement(), 
+							trgLifeline, trgMoveBeforeNode == null ? null : (InteractionFragment)trgMoveBeforeNode.getElement());
+				} finally {
+					interactionGraph.enableLayout();
+				}
 				
-				interactionGraph.moveMessageOccurrenceSpecification(srcLifeline, (MessageOccurrenceSpecification)source.getElement(), 
-						srcLifeline, (InteractionFragment)srcMoveBeforeNode.getElement());				
-				
-				interactionGraph.moveMessageOccurrenceSpecification(trgLifeline, (MessageOccurrenceSpecification)target.getElement(), 
-						trgLifeline, (InteractionFragment)trgMoveBeforeNode.getElement());
-				
-				// TODO @etxacam Provide a real getOrderedNodes() or something like that....
+				interactionGraph.layout();
 				
 				List<Node> allNodes = ((InteractionGraphImpl)interactionGraph).getLayoutNodes();
 				int index = allNodes.indexOf(source);
@@ -476,6 +482,55 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 	
+	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point newLocation) {		
+		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
+			// TODO @etxacam We need to handle Gates
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+		
+		boolean isRecvEvent = msgEnd.getMessage().getReceiveEvent() == msgEnd; 
+		Link link = interactionGraph.getLinkFor(msgEnd.getMessage());
+		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);		
+		Lifeline currLifeline = ((MessageOccurrenceSpecification)msgEnd).getCovered();
+		
+		Node target = link.getTarget();
+		Node source = link.getSource();
+
+		if (isRecvEvent) {
+			if (newLocation.y < source.getBounds().y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}				
+		} else {
+			if (newLocation.y > target.getBounds().y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}				
+			
+		}
+
+		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
+		List<Node> toLifelineNodes = toLifelineNode.getAllNodes();  
+		Node toMoveBeforeNode = toLifelineNodes.stream().filter(d -> d.getBounds().getCenter().y > newLocation.y).findFirst().orElse(null);
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				msgEndNode.getBounds().y = newLocation.y;
+				msgEndNode.getBounds().x = toLifelineNode.getBounds().getCenter().x;
+
+				interactionGraph.moveMessageOccurrenceSpecification(currLifeline, (MessageOccurrenceSpecification)msgEndNode.getElement(), 
+						toLifeline, toMoveBeforeNode == null ? null: (InteractionFragment)toMoveBeforeNode.getElement());
+				return true;
+			}
+		});
+	}
+
 	@Override
 	public boolean canExecute() {
 		for (InteractionGraphEditAction action : actions) {
