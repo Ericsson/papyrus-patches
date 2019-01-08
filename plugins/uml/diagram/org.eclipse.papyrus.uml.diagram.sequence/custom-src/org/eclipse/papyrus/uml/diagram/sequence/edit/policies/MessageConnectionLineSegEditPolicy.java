@@ -33,6 +33,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.uml2.uml.Message;
 
 /**
@@ -59,9 +60,9 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 	}
 
 	protected Command getBendpointsChangedCommand(BendpointRequest request) {
-		Point loc = request.getLocation().getCopy();
-		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer)&&
-				(getHost().getViewer().getControl() instanceof FigureCanvas)){
+		Point loc = SequenceUtil.getSnappedLocation(request.getSource(),request.getLocation().getCopy());
+		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer) &&
+			(getHost().getViewer().getControl() instanceof FigureCanvas)){
 			SelectInDiagramHelper.exposeLocation((FigureCanvas)getHost().getViewer().getControl(),loc);
 		}
 	

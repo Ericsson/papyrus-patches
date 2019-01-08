@@ -69,7 +69,7 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 			edge.setSourceAnchor(createAnchor(source, target, sourceAnchor, true));
 			
 			edge.setTarget(target.getView());
-			edge.setTargetAnchor(createAnchor(source, target, sourceAnchor, false));			
+			edge.setTargetAnchor(createAnchor(source, target, targetAnchor, false));			
 		}
 		return res;
 	}

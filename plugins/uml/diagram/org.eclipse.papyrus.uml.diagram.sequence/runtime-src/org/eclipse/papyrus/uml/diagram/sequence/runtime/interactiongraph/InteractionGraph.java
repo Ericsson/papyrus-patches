@@ -110,6 +110,16 @@ public interface InteractionGraph {
 	 * @return an ordered list with the rows.
 	 */
 	public List<Column> getColumns();
+	
+	/** 
+	 * Return the ordered and flatten list of nodes (excluding clusters) that represent fragments, gates, start and end 
+	 * of combined fragments and interaction usages.
+	 * 
+	 * The normal usage of that function is to find which nodes needs to be nudge when the position of a visual element 
+	 * is changed.
+	 * @return a list with the nodes.
+	 */
+	public List<Node> getOrderedNodes();
 
 	/**
 	 * Return the node representing the given {@link Element}

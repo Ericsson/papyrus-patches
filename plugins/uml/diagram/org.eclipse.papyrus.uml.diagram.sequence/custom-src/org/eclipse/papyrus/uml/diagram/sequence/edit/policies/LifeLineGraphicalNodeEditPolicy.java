@@ -21,6 +21,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.ConnectionRouter;
 import org.eclipse.draw2d.geometry.Point;
@@ -44,6 +45,7 @@ import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElemen
 import org.eclipse.gmf.runtime.diagram.ui.util.EditPartUtil;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
+import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpart.NodeEditPart;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy;
@@ -75,6 +77,8 @@ import org.eclipse.uml2.uml.OccurrenceSpecification;
  * pay attention : this editpolicy launch a display of event during the move of the mouse
  */
 public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPolicy {
+
+	private static final String CLICK_LOCATION_KEY = "clickLocation";
 
 	/** the router to use for messages */
 	public static ConnectionRouter messageRouter = new MessageRouter();
@@ -331,8 +335,26 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 			return null;
 		}
 
-		// TODO Handle message end changing Lifeline
-		return null;
+		Point loc = SequenceUtil.getSnappedLocation(request.getConnectionEditPart(), request.getLocation());
+		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
+		if (srcLoc == null) {
+			srcLoc = loc.getCopy();
+			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
+		}
+		
+		Connection connection = (Connection)request.getConnectionEditPart().getFigure();
+		Edge connectionView = (Edge) request.getConnectionEditPart().getModel();
+		if (!(connectionView.getElement() instanceof Message))
+			return null;
+		Message message = (Message)connectionView.getElement(); 
+		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
+		if (graph == null)
+			return null;
+		
+		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
+				"Move Message", graph, null);
+		cmd.nudgeMessageEnd(message.getSendEvent(), new Point(loc.x - srcLoc.x, loc.y - srcLoc.y));
+		return new ICommandProxy(cmd);
 	}
 
 	/**
@@ -346,8 +368,26 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 			return null;
 		}
 
-		// TODO Handle message end changing Lifeline
-		return null;
+		Point loc = request.getLocation();
+		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
+		if (srcLoc == null) {
+			srcLoc = loc.getCopy();
+			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
+		}
+		
+		Connection connection = (Connection)request.getConnectionEditPart().getFigure();
+		Edge connectionView = (Edge) request.getConnectionEditPart().getModel();
+		if (!(connectionView.getElement() instanceof Message))
+			return null;
+		Message message = (Message)connectionView.getElement(); 
+		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
+		if (graph == null)
+			return null;
+		
+		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
+				"Move Message", graph, null);
+		cmd.nudgeMessageEnd(message.getReceiveEvent(), new Point(loc.x - srcLoc.x, loc.y - srcLoc.y));
+		return new ICommandProxy(cmd);
 	}
 
 

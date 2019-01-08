@@ -124,6 +124,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return Collections.unmodifiableList(messageLinks);
 	}
 
+	@Override
+	public List<Node> getOrderedNodes() {
+		return rows.subList(1, rows.size()).stream().flatMap(d->d.getNodes().stream()).
+				filter(Node.class::isInstance).collect(Collectors.toList());
+	}
+
 	void addMessage(LinkImpl message, LinkImpl insertBeforeMessage) {
 		int indexNext = insertBeforeMessage == null ? -1 : messageLinks.indexOf(insertBeforeMessage);
 		if (indexNext == -1) {

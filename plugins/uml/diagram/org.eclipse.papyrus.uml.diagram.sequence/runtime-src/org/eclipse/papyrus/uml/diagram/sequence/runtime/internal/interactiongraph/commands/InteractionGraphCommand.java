@@ -17,8 +17,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -66,6 +68,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
@@ -78,6 +81,7 @@ import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
@@ -257,6 +261,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
+		// TODO: @etxacam Needs to investigate why we can not create messages with slope...
 		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram())) {
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor);
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor);
@@ -317,24 +322,24 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void nudgeMessage(Message msg, Point delta) {
 		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message. 
 		Link link = interactionGraph.getLinkFor(msg);
-
-		Lifeline srcLifeline = ((MessageOccurrenceSpecification)msg.getSendEvent()).getCovered();
-		Cluster srcLifelineNode = interactionGraph.getLifeline(srcLifeline);
-		List<Node> srcLifelineNodes = srcLifelineNode.getAllNodes();  
-		Node source = link.getSource();
-		int srcIndex = srcLifelineNodes.indexOf(source);
-		Node srcPrev = srcIndex > 0 ? srcLifelineNodes.get(srcIndex-1) : null;
-		Node srcNext = srcIndex < srcLifelineNodes.size()-1 ? srcLifelineNodes.get(srcIndex +1) : null;
-				
-		Lifeline targetLifeline = ((MessageOccurrenceSpecification)msg.getSendEvent()).getCovered();
-		Cluster trgLifelineNode = interactionGraph.getLifeline(targetLifeline);
-		List<Node> trgLifelineNodes = trgLifelineNode.getAllNodes();  
-		Node target = link.getTarget();
-		int trgIndex = trgLifelineNodes.indexOf(target);
-		Node trgPrev = trgIndex > 0 ? trgLifelineNodes.get(trgIndex-1) : null;
-		Node trgNext = trgIndex < trgLifelineNodes.size()-1 ? trgLifelineNodes.get(trgIndex +1) : null;
 		
-		Rectangle validArea = getEmptyArea(null, Arrays.asList(srcPrev, trgPrev),null,null);
+		Node source = link.getSource();
+		Set<Node> limitNodes = new HashSet<Node>();
+		Row row = source.getRow();
+		limitNodes.addAll(row.getNodes());
+		if (row.getIndex() > 1)
+			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
+		
+		Node target = link.getTarget();
+		row = target.getRow();
+		limitNodes.addAll(row.getNodes());
+		if (row.getIndex() > 1)
+			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
+		
+		limitNodes.remove(source);
+		limitNodes.remove(target);
+		
+		Rectangle validArea = getEmptyArea(null, new ArrayList<>(limitNodes), null, null);
 		Rectangle msgArea = link.getBounds();
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgArea)) {
@@ -359,6 +364,71 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
+	public void nudgeMessageEnd(MessageEnd msgEnd, Point delta) {
+		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
+			// TODO @etxacam We need to handle Gates
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+		
+		boolean isRecvEvent = msgEnd.getMessage().getReceiveEvent() == msgEnd; 
+		Link link = interactionGraph.getLinkFor(msgEnd.getMessage());
+		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);		
+		
+		Set<Node> limitNodes = new HashSet<Node>();
+		Row row = msgEndNode.getRow();
+		limitNodes.addAll(row.getNodes());
+		if (row.getIndex() > 1)
+			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
+
+		Node target = link.getTarget();
+		Node source = link.getSource();
+		limitNodes.remove(source);
+		limitNodes.remove(target);
+
+		Rectangle validArea = getEmptyArea(null,new ArrayList<>(limitNodes),null,null);
+		validArea.x = msgEndNode.getParent().getBounds().x;
+		validArea.width = msgEndNode.getParent().getBounds().width;
+		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().translate(delta);
+		if (!validArea.contains(newMsgEndPos)) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+
+		if (isRecvEvent) {
+			if (newMsgEndPos.y < link.getSource().getBounds().y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}				
+		} else {
+			if (newMsgEndPos.y > link.getTarget().getBounds().y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}				
+			
+		}
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				if (isRecvEvent) {
+					graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
+							.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+					graph.layout();
+				}
+				
+				Rectangle r = msgEndNode.getBounds();
+				r.y = newMsgEndPos.y;
+				graph.layout();
+				return true;
+			}
+		});
+	}
+	
 	public void moveMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
 
@@ -566,8 +636,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 				if (lk.getTarget() != null) {
 					Point p = lk.getTarget().getBounds().getTopLeft();
-					View endView = lk.getSource().getParent().getView();
-					if (edge.getSource() != endView) {
+					View endView = lk.getTarget().getParent().getView();
+					if (edge.getTarget() != endView) {
 						command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, endView)));
 					}
@@ -720,7 +790,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return new Rectangle(left,top, Math.max(0,right-left), Math.max(0,bottom-top));
 	}
 	
-
 	/*
 	private void calculateFragmentsChanges(List<InteractionGraphDiff> diffs) {
 		List<InteractionFragment> fragments = interactionGraph.getInteraction().getFragments();

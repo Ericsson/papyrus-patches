@@ -127,8 +127,13 @@ public class NodeOrderResolver {
 				if (NodeUtilities.getYPos(node) < NodeUtilities.getYPos(candidate))
 					candidate = node;
 				
-				if (NodeUtilities.isNodeConnectedTo(previous, node))
-					candidate = node;
+				if (NodeUtilities.isNodeConnectedTo(previous, node)) {
+					if (NodeUtilities.areNodesHorizontallyConnected(node,previous) ||
+						NodeUtilities.getYPos(node) == Integer.MIN_VALUE || 
+						NodeUtilities.getYPos(previous) == Integer.MIN_VALUE) {
+							candidate = node;
+					}
+				}
 			}
 		}
 		
