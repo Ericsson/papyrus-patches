@@ -213,17 +213,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int y = compRect.y + ViewUtilities.ROW_PADDING + (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
 		row.setYPosition(y);
 
-		NodeOrderResolver orderResolver = new NodeOrderResolver(this);
+		List<NodeImpl> orderedNodes = getLifelineClusters().stream().flatMap(d -> NodeUtilities.flatten((ClusterImpl)d).stream()).
+				map(NodeImpl.class::cast).sorted(RowImpl.NODE_VPOSITION_COMPARATORS).collect(Collectors.toList());
+		//NodeOrderResolver orderResolver = new NodeOrderResolver(this);
 		
 		RowImpl prevRow = null;
 		NodeImpl prevNode = null;
-		List<NodeImpl> orderedNodes = orderResolver.getOrderedNodes();
+		//List<NodeImpl> orderedNodes = orderResolver.getOrderedNodes();
 		boolean isNewRow = true;
 		for (int i = 0; i < orderedNodes.size(); i++) {
 			NodeImpl node = orderedNodes.get(i);
 			if (prevNode != null) {
 				isNewRow = !NodeUtilities.areNodesHorizontallyConnected(prevNode, node) ||
-						!NodeUtilities.isNodeConnectedTo(prevNode, node);
+						!(NodeUtilities.isNodeConnectedTo(prevNode, node) || NodeUtilities.isNodeConnectedTo(node, prevNode));
 				if (prevNode.getConnectedNode() == node &&
 						NodeUtilities.getLifelineNode(prevNode) == NodeUtilities.getLifelineNode(node)) {
 					// Self Message
@@ -483,6 +485,11 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 
 		ClusterImpl lifelineCluster = getLifeline(lifeline);
+		while (insertBefore != null && insertBefore.getParent() != lifelineCluster) {
+			if (insertBefore.getParent().getNodes().indexOf(insertBefore) == 0)
+				insertBefore = insertBefore.getParent();
+		}
+		
 		NodeImpl node = new NodeImpl(mos);
 		lifelineCluster.addNode(node, insertBefore);
 		builder.nodeCache.put(mos, node);
@@ -647,7 +654,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		execNode = new ClusterImpl(exec);
 		builder.nodeCache.put(exec, execNode);
-		parentCluster.addNode(execNode);
+		parentCluster.addNode(startNodeIndex, execNode);
 
 		for (NodeImpl d : nodesToEncloseIn) {
 			if (d != null) {
@@ -656,8 +663,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			execNode.addNode(d);
 		}
 		
-		execNode.addNode(1, new NodeImpl(exec));
-
+		NodeImpl execMarkNode = new NodeImpl(exec);  
+		execNode.addNode(1, execMarkNode);
+		if (startNodeImpl.getBounds() != null)
+			execMarkNode.setBounds(startNodeImpl.getBounds().getCopy());
 
 		if (startNodeImpl.getConnectedByNode() != null) {
 			startNodeImpl.getConnectedByNode().connectNode(execNode, null);
@@ -752,7 +761,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 
 		// TODO: Handle before start of exec spec / fragment start mark
-
+		if (node == before)
+			return true;
+		
 		fromCluster.removeNode(index);
 
 		index = before == null ? -1 : toCluster.getNodes().indexOf(before);

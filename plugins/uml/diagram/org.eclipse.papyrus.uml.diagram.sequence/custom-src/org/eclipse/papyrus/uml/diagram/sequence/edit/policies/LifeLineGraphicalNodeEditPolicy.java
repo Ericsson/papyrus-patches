@@ -270,7 +270,9 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		}
 
 		Point srcAnchor =  (Point)request.getExtendedData().get("EDGE_SOURCE_POINT");
+		srcAnchor = ViewUtilities.controlToViewer(graph.getEditPartViewer(), srcAnchor.getCopy());
 		Point trgAnchor = request.getLocation();
+		trgAnchor = ViewUtilities.controlToViewer(graph.getEditPartViewer(), trgAnchor.getCopy());
 		
 		String hint = request.getConnectionViewDescriptor().getSemanticHint();
 		int msgSort = -1;

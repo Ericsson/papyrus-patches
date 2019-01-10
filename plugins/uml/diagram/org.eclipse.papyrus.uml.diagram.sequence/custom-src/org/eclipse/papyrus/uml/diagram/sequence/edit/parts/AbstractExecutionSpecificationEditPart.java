@@ -61,6 +61,7 @@ import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.gmf.runtime.notation.datatype.GradientData;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.IPapyrusNodeFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.SelectableBorderedNodeFigure;
 import org.eclipse.papyrus.uml.diagram.common.editparts.RoundedCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeBottomAnchor;
@@ -543,6 +544,19 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		super.refreshVisuals();
 		refreshTransparency();
 		refreshShadow();
+	}
+
+	@Override
+	protected NodeFigure createNodeFigure() {
+		return new SelectableBorderedNodeFigure(createMainFigureWithSVG()) {
+
+			@Override
+			public void setBounds(Rectangle rect) {
+				// TODO Auto-generated method stub
+				super.setBounds(rect);
+			}
+			
+		};
 	}
 
 	@Override

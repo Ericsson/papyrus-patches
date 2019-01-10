@@ -14,7 +14,6 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -56,12 +55,11 @@ import org.eclipse.gmf.runtime.emf.type.core.commands.DestroyElementCommand;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.notation.Edge;
-import org.eclipse.gmf.runtime.notation.IdentityAnchor;
-import org.eclipse.gmf.runtime.notation.Location;
-import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
@@ -74,9 +72,11 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeOrderResolver;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.RowImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
+import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
@@ -279,40 +279,91 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			}
 
 			@Override
-			public boolean apply(InteractionGraph graph) {			
-				Message msg = UMLFactory.eINSTANCE.createMessage();
-				msg.setMessageSort(MessageSort.get(msgSort));
-				// TODO generate message name.
-				int nCount = graph.getMessageLinks().stream().map(d -> Message.class.cast(d.getElement()).getName()).
-						filter(d -> d.matches("Message[0-9]*")).map(d-> d.equals("Message") ? 1 : Integer.parseInt(d.replaceFirst("Message", ""))).						
-						sorted(Comparator.reverseOrder()).findFirst().orElse(0)+1;
-				if (nCount > 1)
-					msg.setName("Message"+nCount);
-				else
-					msg.setName("Message");
-				
-				MessageOccurrenceSpecification mosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-				MessageOccurrenceSpecification mosTrg= UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-				msg.setSendEvent(mosSrc);
-				mosSrc.setMessage(msg);
-				msg.setReceiveEvent(mosTrg);				
-				mosTrg.setMessage(msg);
-				
-				ClusterImpl sourceCluster = (ClusterImpl)graph.getLifeline((Lifeline)source);
-				Node srcBeforeFrag = NodeUtilities.flatten(sourceCluster).stream().
-					filter(n -> n.getBounds() != null && srcAnchor.y < n.getBounds().y).findFirst().orElse(null);
-				ClusterImpl targetCluster = (ClusterImpl)graph.getLifeline((Lifeline)target);
-				Node trgBeforeFrag = NodeUtilities.flatten(targetCluster).stream().
-						filter(n -> n.getBounds() != null && trgAnchor.y < n.getBounds().y).findFirst().orElse(null);
-				
-				NodeImpl srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)source, mosSrc, srcBeforeFrag);
-				srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(1,1)));
-				
-				NodeImpl trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)target, mosTrg, trgBeforeFrag);				
-				trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(1,1)));
-				
-				message = graph.connectMessageOcurrenceSpecification(mosSrc, mosTrg);
-				return true;
+			public boolean apply(InteractionGraph graph) {	
+				((InteractionGraphImpl)graph).disableLayout();
+				try {
+					Message msg = UMLFactory.eINSTANCE.createMessage();
+					msg.setMessageSort(MessageSort.get(msgSort));
+					// TODO generate message name.
+					int nCount = graph.getMessageLinks().stream().map(d -> Message.class.cast(d.getElement()).getName()).
+							filter(d -> d.matches("Message[0-9]*")).map(d-> d.equals("Message") ? 1 : Integer.parseInt(d.replaceFirst("Message", ""))).						
+							sorted(Comparator.reverseOrder()).findFirst().orElse(0)+1;
+					if (nCount > 1)
+						msg.setName("Message"+nCount);
+					else
+						msg.setName("Message");
+					
+					MessageOccurrenceSpecification mosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+					MessageOccurrenceSpecification mosTrg= UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+					msg.setSendEvent(mosSrc);
+					mosSrc.setMessage(msg);
+					msg.setReceiveEvent(mosTrg);				
+					mosTrg.setMessage(msg);
+					
+					ClusterImpl sourceCluster = (ClusterImpl)graph.getLifeline((Lifeline)source);
+					Node srcBeforeFrag = NodeUtilities.flatten(sourceCluster).stream().
+						filter(n -> n.getBounds() != null && srcAnchor.y < n.getBounds().y).findFirst().orElse(null);
+					ClusterImpl targetCluster = (ClusterImpl)graph.getLifeline((Lifeline)target);
+					Node trgBeforeFrag = NodeUtilities.flatten(targetCluster).stream().
+							filter(n -> n.getBounds() != null && trgAnchor.y < n.getBounds().y).findFirst().orElse(null);
+					
+					NodeImpl srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)source, mosSrc, srcBeforeFrag);
+					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(1,1)));
+					
+					NodeImpl trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)target, mosTrg, trgBeforeFrag);				
+					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(1,1)));
+					
+					message = graph.connectMessageOcurrenceSpecification(mosSrc, mosTrg);
+					((InteractionGraphImpl)graph).enableLayout();
+					graph.layout();
+					
+					if (msg.getMessageSort() == MessageSort.SYNCH_CALL_LITERAL) {
+						// TODO: @etxacam Check preferences for auto create of behavior spc...
+						// TODO: @etxacam Show menu to create action / behavior exec spec.
+						
+						// TODO @etxacam if horizontal message, nudge there are more nodes in the same row (inclusive message 
+						//   if there are in previous columns)  
+						graph.getRows().stream().filter(d -> (d.getIndex() > srcNode.getRow().getIndex() 
+								|| d.getIndex() > trgNode.getRow().getIndex()))
+								.map(RowImpl.class::cast).forEach(d -> d.nudge(40));
+						graph.layout();
+						
+						((InteractionGraphImpl)graph).disableLayout();
+
+						// Create reply message
+						Message replyMsg = UMLFactory.eINSTANCE.createMessage();
+						replyMsg.setMessageSort(MessageSort.REPLY_LITERAL);
+						replyMsg.setName("Reply " + msg.getName());
+	
+						MessageOccurrenceSpecification repMosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+						MessageOccurrenceSpecification repMosTrg= UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+						replyMsg.setSendEvent(repMosSrc);
+						repMosSrc.setMessage(replyMsg);
+						replyMsg.setReceiveEvent(repMosTrg);				
+						repMosTrg.setMessage(replyMsg);
+						
+						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)target, repMosSrc, trgBeforeFrag);
+						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + 60);
+						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(1,1)));
+						
+						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)source, repMosTrg, srcBeforeFrag);				
+						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y);
+						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(1,1)));
+	
+						message = graph.connectMessageOcurrenceSpecification(repMosSrc, repMosTrg);
+	
+						ExecutionSpecification execSpec = UMLFactory.eINSTANCE.createBehaviorExecutionSpecification();
+						execSpec.setStart(mosTrg);
+						execSpec.setFinish(repMosSrc);
+						ClusterImpl execSpecCluster = (ClusterImpl)graph.addExecutionSpecification((Lifeline)target, execSpec);
+						execSpecCluster.getBounds();
+						((InteractionGraphImpl)graph).enableLayout();
+						graph.layout();						
+					}
+					return true;
+				} finally {
+					((InteractionGraphImpl)graph).enableLayout();					
+				}
 			}
 
 			Link message;
@@ -355,7 +406,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				List<Node> allNodes = interactionGraph.getAllNodes();		
 				graph.getRows().stream().filter(d -> (d.getIndex() >= source.getRow().getIndex() 
 						|| d.getIndex() >= target.getRow().getIndex()))
 						.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
@@ -570,6 +620,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	protected ICommand buildDelegateCommands(TransactionalEditingDomain editingDomain, String label) {
 		ICompositeCommand command = new CompositeTransactionalCommand(editingDomain, label);
 		calculateLifelinesEditingCommand(editingDomain, command);
+		calculateExecutionSpecificationEditingCommand(editingDomain, command);
 		calculateMessagesChanges(editingDomain, command);
 		calculateFragmentsChanges(editingDomain, command);
 
@@ -586,7 +637,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Function<Lifeline, IUndoableOperation> removeCommandFunction = (d) -> deleteLifelinesEditingCommand(editingDomain, d);
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
 				UMLPackage.Literals.INTERACTION__LIFELINE, lifelines, graphLifelines, addCommandFunction,
-				removeCommandFunction, true);
+				removeCommandFunction, true, true);
 
 
 		// Update lifelines occurrences covered. 
@@ -600,7 +651,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				}
 			}
 			createCommandsForCollectionChanges(editingDomain, command, lf,
-					UMLPackage.Literals.LIFELINE__COVERED_BY, lf.getCoveredBys(), fragments, false);
+					UMLPackage.Literals.LIFELINE__COVERED_BY, lf.getCoveredBys(), fragments, false, false);
 		}						
 	}
 
@@ -627,12 +678,75 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return cmd;
 	}
 
+	private void calculateExecutionSpecificationEditingCommand(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
+		List<ExecutionSpecification> executionSpecifications  = interactionGraph.getInteraction().getFragments().stream().
+				filter(ExecutionSpecification.class::isInstance).
+				map(ExecutionSpecification.class::cast).collect(Collectors.toList());
+		List<ExecutionSpecification> graphExecutionSpecifications = interactionGraph.getLifelineClusters().stream().
+				flatMap(d->d.getAllNodes().stream()).map(Node::getElement).filter(ExecutionSpecification.class::isInstance).
+				map(ExecutionSpecification.class::cast).collect(Collectors.toList());
+
+		// TODO: index of created element
+		Function<ExecutionSpecification, IUndoableOperation> addCommandFunction = 
+				(d) -> createExecutionSpecificationEditingCommand(editingDomain, d);
+		Function<ExecutionSpecification, IUndoableOperation> removeCommandFunction = 
+				(d) -> deleteExecutionSpecificationEditingCommand(editingDomain, d);
+		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
+				UMLPackage.Literals.INTERACTION__FRAGMENT, executionSpecifications, graphExecutionSpecifications, addCommandFunction,
+				removeCommandFunction, false, false);
+		
+		updateBoundsChanges(command, interactionGraph.getLifelineClusters().stream().
+				flatMap(d->d.getAllNodes().stream()).filter(d -> d.getElement() instanceof ExecutionSpecification).
+				map(Node::getParent).collect(Collectors.toList()), true);
+		
+	}
+
+	private ICommand createExecutionSpecificationEditingCommand(TransactionalEditingDomain editingDomain, ExecutionSpecification executionSpecification) {
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create ExecutionSpecification");
+		boolean isActionExecSpec = executionSpecification instanceof ActionExecutionSpecification; 
+		final CreateElementRequest createReq = new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+				isActionExecSpec ? UMLElementTypes.ActionExecutionSpecification_Shape : 
+								   UMLElementTypes.BehaviorExecutionSpecification_Shape);
+		cmd.add(new CreateNodeElementCommand(createReq, executionSpecification));
+		
+		Node execSpecNode = interactionGraph.getNodeFor(executionSpecification);
+		Cluster lfCluster = execSpecNode.getParent();
+		while (lfCluster != null && !(lfCluster.getElement() instanceof Lifeline)) {
+			lfCluster = lfCluster.getParent();
+		}
+		
+		
+		String visualId = isActionExecSpec ? ActionExecutionSpecificationEditPart.VISUAL_ID :
+											 BehaviorExecutionSpecificationEditPart.VISUAL_ID;
+		cmd.add(new CreateNodeViewCommand(editingDomain, interactionGraph.getNodeFor(executionSpecification),
+				new ViewDescriptor(
+						new SemanticElementAdapter(executionSpecification,
+								UMLElementTypes.getElementType(visualId)),
+						org.eclipse.gmf.runtime.notation.Node.class, visualId,
+						((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
+				lfCluster.getView()));
+		
+		return cmd;
+	}
+
+	private ICommand deleteExecutionSpecificationEditingCommand(TransactionalEditingDomain editingDomain, ExecutionSpecification executionSpecification) {
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline");
+		cmd.add(new DeleteCommand(editingDomain, interactionGraph.getNodeFor(executionSpecification).getView()));
+		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, executionSpecification, false)));
+		return cmd;
+	}
+
 	private void calculateFragmentsChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
 		List<InteractionFragment> fragments = interactionGraph.getInteraction().getFragments();
-		List<InteractionFragment> graphFragments = interactionGraph.getRows().stream().flatMap(d -> d.getNodes().stream())
+		/*List<InteractionFragment> graphFragments = interactionGraph.getRows().stream().flatMap(d -> d.getNodes().stream())
+				.map(Node::getElement).filter(InteractionFragment.class::isInstance)
+				.map(InteractionFragment.class::cast).collect(Collectors.toList());*/
+		
+		NodeOrderResolver orderResolver = new NodeOrderResolver(interactionGraph);
+		List<InteractionFragment> graphFragments = orderResolver.getOrderedNodes().stream()
 				.map(Node::getElement).filter(InteractionFragment.class::isInstance)
 				.map(InteractionFragment.class::cast).collect(Collectors.toList());
-		
+				
 		Function<InteractionFragment, IUndoableOperation> addCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
 				AddCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
 		Function<InteractionFragment, IUndoableOperation> removeCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
@@ -640,7 +754,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
 				UMLPackage.Literals.INTERACTION__FRAGMENT, fragments, graphFragments, addCommandFunction,
-				removeCommandFunction, false);
+				removeCommandFunction, false, false);
 	}
 
 	private void calculateMessagesChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
@@ -653,7 +767,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
 				UMLPackage.Literals.INTERACTION__MESSAGE, messages, graphMessages, addCommandFunction,
-				removeCommandFunction, false);		
+				removeCommandFunction, false, false);		
 		
 		EditPartViewer viewer = interactionGraph.getEditPartViewer();
 		for (Link lk : interactionGraph.getMessageLinks()) {
@@ -672,16 +786,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (lk.getSource() != null) {
 					Point p = lk.getSource().getBounds().getTopLeft();
 					View endView = lk.getSource().getParent().getView();
-					if (edge.getSource() != endView) {
-						command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, endView)));
-					}
-					
-					String anchorId = ViewUtilities.formatAnchorId(viewer, lk.getSource().getParent().getView(), p);
-					IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
-					anchor.setId(anchorId);
-					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE_ANCHOR,anchor)));					
+					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.SOURCE, 
+							endView, p, "Set Source Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, null)));					
@@ -692,16 +798,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (lk.getTarget() != null) {
 					Point p = lk.getTarget().getBounds().getTopLeft();
 					View endView = lk.getTarget().getParent().getView();
-					if (edge.getTarget() != endView) {
-						command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, endView)));
-					}
-					
-					String anchorId = ViewUtilities.formatAnchorId(viewer, lk.getTarget().getParent().getView(), p);
-					IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
-					anchor.setId(anchorId);
-					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR,anchor)));					
+					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.TARGET, 
+							endView, p, "Set Target Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, null)));					
@@ -757,19 +855,19 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	private <T extends EObject> void createCommandsForCollectionChanges(TransactionalEditingDomain editingDomain, 
 			ICompositeCommand cmd, EObject container, EStructuralFeature feature, List<T> oldValues, List<T> newValues, 
-			boolean updateBounds) {
+			boolean updateBounds, boolean updateParts) {
 		Function<T, IUndoableOperation> addCommandFunction = (d) -> new EMFCommandOperation(editingDomain, 
 				AddCommand.create(editingDomain, container, feature, d));
 		Function<T, IUndoableOperation> removeCommandFunction = (d) -> new EMFCommandOperation(editingDomain, 
 				RemoveCommand.create(editingDomain, container, feature, d));
 		
 		createCommandsForCollectionChanges(cmd, container, feature, oldValues, newValues, 
-				addCommandFunction, removeCommandFunction, updateBounds);
+				addCommandFunction, removeCommandFunction, updateBounds, updateParts);
 	}
 	
 	private <T extends EObject> void createCommandsForCollectionChanges(ICompositeCommand cmd, EObject container,
 			EStructuralFeature feature, List<T> oldList, List<T> newList, Function<T, IUndoableOperation> addCommand,
-			Function<T, IUndoableOperation> removeCommand, boolean updateBounds) {
+			Function<T, IUndoableOperation> removeCommand, boolean updateBounds, boolean updateParts) {
 		// We copy so the execution / undo do not interference with index calculation
 		final List<T> oldValues = new ArrayList<>(oldList);
 		final List<T> newValues = new ArrayList<>(newList);
@@ -785,22 +883,31 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		// ReorderCommands		'
 		int index = 0;
 		for (T obj : newValues) {
-			cmd.add(new TransactionalCommandProxy(getEditingDomain(),
-					new MoveCommand(getEditingDomain(), container, feature, obj, index) {
-						@Override
-						public boolean doCanExecute() {
-							return true;
-						}
-					}, "Rearrange collection", Collections.EMPTY_LIST));
+			if (feature != null) {
+				cmd.add(new TransactionalCommandProxy(getEditingDomain(),
+						new MoveCommand(getEditingDomain(), container, feature, obj, index) {
+							@Override
+							public boolean doCanExecute() {
+								return true;
+							}
+						}, "Rearrange collection", Collections.EMPTY_LIST));
+			}
+			
 			if (updateBounds) {
 				NodeImpl node = interactionGraph.getNodeFor((Element) obj);
-				cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), "Set location",
+				cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location",
 						Collections.emptyList()));
 			}
 			index++;
 		}
 	}
 
+	private void updateBoundsChanges(ICompositeCommand cmd, List<Node> nodes, boolean updateParts) {
+		for (Node node : nodes) {
+			cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location", Collections.emptyList()));
+		}
+	}
+	
 	public Rectangle getEmptyArea(List<Node> leftNodes, List<Node> topNodes, List<Node> rightNodes, List<Node> bottomNodes) {
 		View interactionView = interactionGraph.getInteractionView();
 		Rectangle rect =  ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), interactionView);

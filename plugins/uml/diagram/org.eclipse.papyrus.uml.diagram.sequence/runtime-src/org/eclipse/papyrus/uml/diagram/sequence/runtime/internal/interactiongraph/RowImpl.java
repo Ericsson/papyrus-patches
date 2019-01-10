@@ -69,7 +69,8 @@ public class RowImpl extends SlotImpl implements Row {
 	@Override
 	public void nudge(int delta) {
 		this.ypos += delta;
-		getNodes().stream().map(NodeImpl.class::cast).forEach(interactionGraph.getLayoutManager()::layout);		
+		getNodes().stream().map(NodeImpl.class::cast).forEach(interactionGraph.getLayoutManager()::layout);
+//		interactionGraph.getLayoutManager().layout();
 	}
 
 	@Override
@@ -109,7 +110,14 @@ public class RowImpl extends SlotImpl implements Row {
 			Rectangle r2 = (Rectangle)o2.getBounds();
 			if (r1 == null || r2 == null)
 				return 0;
-			return Integer.compare(r1.y,r2.y );
+			int res = Integer.compare(r1.y,r2.y );
+			if (res == 0) {
+				res = Integer.compare(r1.x, r1.y);
+				if (res == 0) {
+					return Integer.compare(o1.getParent().getNodes().indexOf(o1), o2.getParent().getNodes().indexOf(o2));
+				}				
+			}
+			return res;
 		}
 	}
 }

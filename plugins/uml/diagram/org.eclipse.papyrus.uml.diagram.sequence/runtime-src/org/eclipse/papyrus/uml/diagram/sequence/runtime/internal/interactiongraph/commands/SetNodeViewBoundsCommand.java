@@ -26,6 +26,7 @@ import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.common.core.internal.command.ICommandWithSettableResult;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand;
 import org.eclipse.gmf.runtime.notation.Shape;
 import org.eclipse.gmf.runtime.notation.View;
@@ -41,16 +42,18 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 @SuppressWarnings({ "rawtypes", "restriction" })
 public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 		implements ICommand, ICommandWithSettableResult {
-	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, String label, List affectedFiles) {
+	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, boolean refreshParts, String label, List affectedFiles) {
 		super(domain, label, affectedFiles);
 		this.interactionGraphNode = (NodeImpl) interactionGraphNode;
 		this.rect = r;
+		this.refreshEditParts = refreshParts;
 	}
 
-	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, String label, Map options, List affectedFiles) {
+	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, boolean refreshParts, String label, Map options, List affectedFiles) {
 		super(domain, label, options, affectedFiles);
 		this.interactionGraphNode = (NodeImpl) interactionGraphNode;
 		this.rect = r;
+		this.refreshEditParts = refreshParts;
 	}
 
 	@Override
@@ -59,9 +62,19 @@ public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 		View v = interactionGraphNode.getView();
 		Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), rect);
 		((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(constraints));
+		
+		if (refreshEditParts) {
+			GraphicalEditPart ep = (GraphicalEditPart)graph.getEditPartViewer().getEditPartRegistry().get(v);
+			if (ep != null) {
+				ep.refresh();
+				((GraphicalEditPart )ep.getParent()).getContentPane().invalidateTree();
+				((GraphicalEditPart )ep.getParent()).getContentPane().validate();				
+			}
+		}		
 		return CommandResult.newOKCommandResult();
 	}
 
 	private NodeImpl interactionGraphNode;
 	private Rectangle rect;
+	private boolean refreshEditParts;
 }

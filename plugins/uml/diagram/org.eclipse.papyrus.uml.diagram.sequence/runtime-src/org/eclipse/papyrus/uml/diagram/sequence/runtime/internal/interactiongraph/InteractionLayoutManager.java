@@ -19,10 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.papyrus.infra.ui.multidiagram.actionbarcontributor.ActionBarContributorExtensionFactory;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.uml2.uml.ActionExecutionSpecification;
+import org.eclipse.uml2.uml.BehaviorExecutionSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
 
 /**
@@ -30,13 +34,15 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class InteractionLayoutManager implements InteractionNodeLayout {
-	private static Map<Class<? extends Element>, InteractionNodeLayout> layouts = initializeLayouts();
+	private static Map<Class<? extends Element>, InteractionNodeLayout> nodeLayouts = initializeNodeLayouts();
+	private static Map<Class<? extends Element>, InteractionNodeLayout> clusterLayouts = initializeClusterLayouts();
 
 	public InteractionLayoutManager(InteractionGraphImpl graph) {
 		this.interactionGraph = graph;
 	}
 
 	public void layout() {
+		/**
 		for (Column column : interactionGraph.getColumns()) {
 			for (Node n : column.getNodes()) {
 				layout((NodeImpl)n);
@@ -47,14 +53,28 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 			for (Node n : row.getNodes()) {
 				layout((NodeImpl)n);
 			}
-		}
+		}*/
+		
 
 		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));		
 	}
-
+	
 	@Override
 	public void layout(NodeImpl node) {
-		InteractionNodeLayout layout = getNodeLayoutFor(node);
+		if (node instanceof ClusterImpl) {
+			ClusterImpl cluster = (ClusterImpl)node;
+			for (Node n : cluster.getNodes()) {
+				layout((NodeImpl)n);
+			}
+			InteractionNodeLayout layout = getClusterLayoutFor(cluster);
+			layoutImp(node, layout);
+		} else {
+			InteractionNodeLayout layout = getNodeLayoutFor(node);
+			layoutImp(node, layout);
+		}
+	}
+
+	private void layoutImp(NodeImpl node, InteractionNodeLayout layout) {
 		if (layout != null) {
 			layout.layout(node);
 		} else {
@@ -66,15 +86,29 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 			}				
 		}
 	}
-
+	
 	InteractionNodeLayout getNodeLayoutFor(NodeImpl node) {
 		Class key = node.getElement().eClass().getInstanceClass();
-		return layouts.get(key);
+		return nodeLayouts.get(key);
 	}
 
-	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeLayouts() {
+	InteractionNodeLayout getClusterLayoutFor(ClusterImpl node) {
+		Class key = node.getElement().eClass().getInstanceClass();
+		return clusterLayouts.get(key);
+	}
+
+	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeNodeLayouts() {
+		Map<Class<? extends Element>, InteractionNodeLayout> map = new HashMap<>();
+		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
+		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
+		return map;
+	}
+
+	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeClusterLayouts() {
 		Map<Class<? extends Element>, InteractionNodeLayout> map = new HashMap<>();
 		map.put(Lifeline.class, new LifelineNodeLayout());
+		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
+		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		return map;
 	}
 

@@ -34,6 +34,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.GraphItemImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 
 /**
  * @author ETXACAM
@@ -78,6 +79,7 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 		CreateConnectionRequest loc = new CreateConnectionRequest();
 		loc.setSourceEditPart(source.getEditPart());
 		loc.setTargetEditPart(target.getEditPart());
+		pt = ViewUtilities.viewerToControl(interactionGraphNode.getInteractionGraph().getEditPartViewer(), pt.getCopy()); 
 		loc.setLocation(pt);
 		loc.setSnapToEnabled(true);
 

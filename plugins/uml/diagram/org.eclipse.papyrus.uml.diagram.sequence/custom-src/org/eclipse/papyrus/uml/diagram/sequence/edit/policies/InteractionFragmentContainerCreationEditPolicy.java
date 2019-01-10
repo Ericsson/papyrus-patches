@@ -23,6 +23,7 @@ import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
@@ -51,11 +52,16 @@ public class InteractionFragmentContainerCreationEditPolicy extends DefaultCreat
 			return null;
 		}
 
-		Rectangle rectangle = ViewUtilities.controlToViewer(graph.getEditPartViewer(), getCreationRectangle(request).getCopy());
-		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
-		cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
-				request.getViewAndElementDescriptor(), rectangle);
-		return new ICommandProxy(cmd);
+		// TODO: @etxacam Handle multiple creation for paste???
+		if (request.getViewDescriptors().get(0).getSemanticHint().equals(LifelineEditPart.VISUAL_ID)) {
+			
+			Rectangle rectangle = ViewUtilities.controlToViewer(graph.getEditPartViewer(), getCreationRectangle(request).getCopy());
+			InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "createLifeline", graph, null);
+			cmd.addLifeline(request.getViewAndElementDescriptor().getCreateElementRequestAdapter(),
+					request.getViewAndElementDescriptor(), rectangle);
+			return new ICommandProxy(cmd);
+		}
+		return super.getCreateElementAndViewCommand(request);
 	}
 
 	protected Rectangle getCreationRectangle(CreateViewAndElementRequest request) {

@@ -41,6 +41,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
 import org.eclipse.papyrus.infra.gmfdiag.common.preferences.PreferencesConstantsHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Lifeline;
@@ -55,6 +56,7 @@ public class ViewUtilities {
 
 	public static final int LIFELINE_HEADER_HEIGHT = 19;
 	public static final int LIFELINE_DEFAULT_WIDTH = 100;
+	public static final int EXECUTION_SPECIFICATION_WIDTH = AbstractExecutionSpecificationEditPart.DEFAUT_WIDTH;
 
 	static View getViewForElement(View containerView, Element element) {
 		if (containerView == null) {

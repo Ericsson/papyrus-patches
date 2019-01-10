@@ -83,11 +83,16 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		return NodeUtilities.flatten(this);
 	}
 	
-	public Rectangle getBound() {
+	public Rectangle getBounds() {
 		Rectangle r = super.getBounds();
 		if (r != null)
 			return r;
 		
+		return getChildrenBounds();
+	}
+	
+	Rectangle getChildrenBounds() {
+		Rectangle r = null;
 		for (Node c : getNodes()) {
 			Rectangle b = c.getBounds();
 			if (b == null)
@@ -96,7 +101,7 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 				r = b.getCopy();
 			else
 				r.union(b);
-		}
+		}		
 		return r;
 	}
 	
