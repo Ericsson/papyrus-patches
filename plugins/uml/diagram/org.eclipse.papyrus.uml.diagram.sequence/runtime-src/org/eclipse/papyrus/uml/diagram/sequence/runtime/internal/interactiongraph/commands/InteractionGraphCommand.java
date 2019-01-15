@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.commands.ExecutionException;
@@ -378,7 +379,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Node source = link.getSource();
 		Set<Node> limitNodes = new HashSet<Node>();
 		Row row = source.getRow();
+		// Add row nodes except ExecSpecs
 		limitNodes.addAll(row.getNodes());
+		
+		
 		if (row.getIndex() > 1)
 			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
 		
@@ -390,7 +394,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		
 		limitNodes.remove(source);
 		limitNodes.remove(target);
-		
+		limitNodes.removeAll(limitNodes.stream().filter(d -> d.getElement() instanceof ExecutionSpecification).
+				collect(Collectors.toList()));
 		Rectangle validArea = getEmptyArea(null, new ArrayList<>(limitNodes), null, null);
 		Rectangle msgArea = link.getBounds();
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
