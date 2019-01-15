@@ -83,5 +83,5 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 	private List<FragmentClusterImpl> fragmentClusters = new ArrayList<FragmentClusterImpl>();
 	private List<NodeImpl> innerGates = new ArrayList<NodeImpl>();
 	private List<NodeImpl> outerGates = new ArrayList<NodeImpl>();
-	private List<NodeImpl> floatingNodes;
+	private List<NodeImpl> floatingNodes = new ArrayList<NodeImpl>();;
 }

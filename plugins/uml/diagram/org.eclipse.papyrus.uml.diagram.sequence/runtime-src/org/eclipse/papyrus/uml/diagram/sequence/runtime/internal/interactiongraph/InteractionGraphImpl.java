@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -161,6 +162,23 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
+	public ClusterImpl getClusterFor(Element element) {
+		NodeImpl node = builder.getCacheNode(element);
+		if (node == null)
+			return null;
+		
+		if (node instanceof Cluster)
+			return (ClusterImpl)node;
+			
+		node = node.getParent();
+		if (node == null)
+			return null;
+		if (node.getElement() == element)
+			return (ClusterImpl)node;
+		return null;
+	}
+
+	@Override
 	public LinkImpl getLinkFor(Element element) {
 		return builder.getCacheLink(element);
 	}
@@ -195,6 +213,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		disabledLayout = Math.max(0, disabledLayout);
 	}
 
+	// TODO: @etxacam Use the node blocks to split or merge rows in the same Y pos (or under threshold)
+	// TODO: @etxacam Remove the Layout manager and get the nodes provide it: So we can get the Origin of the node and recalculate 
+	//                size and the pos based on rows and cols.
 	@SuppressWarnings("unchecked")
 	private void layoutGrid() {
 		if (disabledLayout > 0)
@@ -214,7 +235,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		row.setYPosition(y);
 
 		List<NodeImpl> orderedNodes = getLifelineClusters().stream().flatMap(d -> NodeUtilities.flatten((ClusterImpl)d).stream()).
-				map(NodeImpl.class::cast).sorted(RowImpl.NODE_VPOSITION_COMPARATORS).collect(Collectors.toList());
+				map(NodeImpl.class::cast).sorted(RowImpl.NODE_FRAGMENT_COMPARATOR).collect(Collectors.toList());
 		//NodeOrderResolver orderResolver = new NodeOrderResolver(this);
 		
 		RowImpl prevRow = null;
@@ -225,7 +246,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			NodeImpl node = orderedNodes.get(i);
 			if (prevNode != null) {
 				isNewRow = !NodeUtilities.areNodesHorizontallyConnected(prevNode, node) ||
-						!(NodeUtilities.isNodeConnectedTo(prevNode, node) || NodeUtilities.isNodeConnectedTo(node, prevNode));
+						   !isNodeConnectedTo(node, prevRow.getNodes());
 				if (prevNode.getConnectedNode() == node &&
 						NodeUtilities.getLifelineNode(prevNode) == NodeUtilities.getLifelineNode(node)) {
 					// Self Message
@@ -237,7 +258,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				prevRow = new RowImpl(this);
 				rows.add(prevRow);
 				if (node.getBounds() != null) {
-					y = node.getBounds().getCenter().y;
+					y = node.getBounds()./*.getCenter().*/y;
 					prevRow.setYPosition(y);
 				}
 				else
@@ -380,6 +401,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 	}
 
+	private boolean isNodeConnectedTo(NodeImpl node, List<Node> row) {
+		for (Node prevNode : row) {
+			if (NodeUtilities.isNodeConnectedTo((NodeImpl)prevNode, node) || 
+				NodeUtilities.isNodeConnectedTo(node, (NodeImpl)prevNode)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	@Override
 	public ClusterImpl getLifeline(Lifeline lifeline) {
 		return lifelineClusters.stream().filter(d -> d.getElement() == lifeline).findFirst().orElse(null);
@@ -486,9 +517,15 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		ClusterImpl lifelineCluster = getLifeline(lifeline);
 		while (insertBefore != null && insertBefore.getParent() != lifelineCluster) {
-			if (insertBefore.getParent().getNodes().indexOf(insertBefore) == 0)
+			if (insertBefore.getParent().getNodes().indexOf(insertBefore) == 0) {
 				insertBefore = insertBefore.getParent();
+			} else {
+				break;
+			}
 		}
+		
+		if (insertBefore != null)
+			lifelineCluster = (ClusterImpl)insertBefore.getParent();
 		
 		NodeImpl node = new NodeImpl(mos);
 		lifelineCluster.addNode(node, insertBefore);
@@ -746,6 +783,85 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		throw new UnsupportedOperationException();
 	}
 
+	// TODO: @etxacam Need to find out how to nudge space left and space needed.
+	// TODO: @etxacam A clear strategy to see what happen when there is no fragment change:
+	//       Special case for there is no parent change? Or try remove / reinsert strategy???
+	// Generic Case: 
+	//  1) If insertion pint is over the current position => Nothing
+	//  2) If the insertion point is after the block => nugdge the block by - its size
+	//  3) If the insertion position is inside the block => No parent changes and we need to nudge the block by 
+	//     ypos - top.y and everything below the block and additional (ypos - top.y) + default insets - (afterblock.y - bottom.y) 
+	
+	public void moveNodeBlock(List<Node> nodes, int yPos) {
+		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
+		Rectangle totalArea = NodeUtilities.getArea(nodes);
+
+		disableLayout();
+		int minPrevDist = Integer.MAX_VALUE;
+		int minNudgeAfterY = Integer.MAX_VALUE;
+		try {
+			Set<Cluster> lifelines = nodes.stream().map(d -> NodeUtilities.getLifelineNode(d)).collect(Collectors.toSet());
+			for (Cluster lifelineCluster : lifelines) {
+				List<Node> ns = nodes.stream().filter(d -> NodeUtilities.getLifelineNode(d) == lifelineCluster).collect(Collectors.toList());
+				List<Node> ans = allNodes.stream().filter(d -> NodeUtilities.getLifelineNode(d) == lifelineCluster).collect(Collectors.toList()); 
+				
+				Node newPrevNode = lifelineCluster.getAllNodes().stream().filter(d->(d.getBounds().y < yPos)).
+						filter(d->!ans.contains(d)).sorted(Collections.reverseOrder(RowImpl.NODE_VPOSITION_COMPARATOR)).findFirst().orElse(null);
+				Cluster prevParent = newPrevNode != null ? newPrevNode.getParent() : null;
+				if (prevParent != null && prevParent != lifelineCluster && prevParent.getNodes().indexOf(newPrevNode) == prevParent.getNodes().size() -1)
+					newPrevNode = prevParent;
+				
+				Node insertBefore = lifelineCluster.getAllNodes().stream().filter(d->!ans.contains(d) && d.getBounds().y >= yPos).
+						findFirst().orElse(null);
+				Cluster insertBeforeParent = insertBefore != null ? insertBefore.getParent() : null;
+				if (insertBeforeParent != null && insertBeforeParent != lifelineCluster && insertBeforeParent.getNodes().indexOf(insertBefore) == 0)
+					newPrevNode = insertBeforeParent;
+				
+				int nudgeAfterY = insertBefore == null ? Integer.MAX_VALUE : insertBefore.getBounds().getTop().y;							
+				int prevDist = yPos;
+				if (newPrevNode != null) {
+					Rectangle r = newPrevNode.getBounds();
+					prevDist = yPos - r.getBottom().y;
+					if (r.height == 1)
+						prevDist --;
+				}
+				
+				minPrevDist = Math.min(minPrevDist, prevDist);
+				minNudgeAfterY = Math.min(minNudgeAfterY, nudgeAfterY);
+				Cluster target = lifelineCluster;
+				if (insertBefore != null) {
+					target = insertBefore.getParent();
+				}
+				NodeUtilities.moveNodes(this, ns, target, insertBefore, yPos);					
+			}
+
+			List<Node> nodesToNudge = getLayoutNodes().stream().filter(d->(d.getBounds().y >= totalArea.y)).
+					filter(d->!allNodes.contains(d)).collect(Collectors.toList());
+			int minNudgeAfterY_ = minNudgeAfterY;
+			List<Node> nodesToNudge2 = getLayoutNodes().stream().filter(d->(d.getBounds().y >= minNudgeAfterY_)).
+					filter(d->!allNodes.contains(d)).collect(Collectors.toList());
+						
+			Rectangle prevNodesArea = NodeUtilities.getArea(nodesToNudge); 
+			Rectangle nextNodesArea = NodeUtilities.getArea(nodesToNudge2); 
+			NodeUtilities.nudgeNodes(nodesToNudge2, 0, totalArea.height);				
+			NodeUtilities.nudgeNodes(nodesToNudge, 0, -totalArea.height);
+			// Need to nudge Extra
+			if (yPos >= totalArea.y + totalArea.height ) {
+				NodeUtilities.nudgeNodes(new ArrayList<>(allNodes.stream().filter(d->!(d instanceof Cluster)).collect(Collectors.toSet())),
+						0, -totalArea.height);
+			} else if (yPos >= totalArea.y) {
+				int delta = yPos - totalArea.y;				
+				int lastY = totalArea.bottom() + delta + 20; // TODO: @etxacam Need to get a default space between rows.
+				//NodeUtilities.nudgeNodes(NodeUtilities.flatten(nodes), 0, yPos - totalArea.y);
+				NodeUtilities.nudgeNodes(nodesToNudge, 0, Math.max(0, lastY - prevNodesArea.y));
+			}
+		} finally {
+			enableLayout();
+				
+		}
+		layout();
+	}
+	
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
 		if (fromCluster == null || toCluster == null || node == null) {
 			return false;

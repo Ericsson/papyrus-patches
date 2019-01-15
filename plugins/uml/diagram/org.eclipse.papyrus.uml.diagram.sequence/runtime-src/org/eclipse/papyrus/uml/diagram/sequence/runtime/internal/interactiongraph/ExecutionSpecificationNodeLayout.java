@@ -39,8 +39,8 @@ public class ExecutionSpecificationNodeLayout implements InteractionNodeLayout {
 			Rectangle r = new Rectangle();
 			r.x = column.getXPosition();
 			r.y = row.getYPosition();
-			r.width = 1;
-			r.height = 1;
+			r.width = 0;
+			r.height = 0;
 			node.setBounds(r);
 		}
 	}

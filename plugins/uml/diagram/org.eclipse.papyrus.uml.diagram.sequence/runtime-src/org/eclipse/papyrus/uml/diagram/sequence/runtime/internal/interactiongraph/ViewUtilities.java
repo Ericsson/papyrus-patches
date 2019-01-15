@@ -199,6 +199,7 @@ public class ViewUtilities {
 				r.union(getBounds(viewer, vw));
 			}
 		}
+		
 		return r;
 	}
 
@@ -336,6 +337,15 @@ public class ViewUtilities {
 			anchoringEp.getContentPane().translateToAbsolute(rect);
 			cancelViewportEffects(anchoringEp, rect);
 		}
+		float newX = ((float) p.x - (float) rect.x) / rect.width;
+		float newY = ((float) p.y - (float) rect.y) / rect.height;
+
+		StringBuffer b = new StringBuffer();
+		b.append("(").append(Float.toString(newX)).append(",").append(Float.toString(newY)).append(")");
+		return b.toString();
+	}
+
+	public static String formatAnchorId(Rectangle rect, Point p) {
 		float newX = ((float) p.x - (float) rect.x) / rect.width;
 		float newY = ((float) p.y - (float) rect.y) / rect.height;
 

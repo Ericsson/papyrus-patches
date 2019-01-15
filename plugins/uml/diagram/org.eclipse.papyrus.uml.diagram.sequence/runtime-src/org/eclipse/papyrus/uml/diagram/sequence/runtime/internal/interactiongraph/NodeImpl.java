@@ -22,6 +22,10 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
+import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.NamedElement;
 
 
@@ -174,10 +178,28 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		if (element == null) {
 			return "Node[--]";
 		}
-		return String.format("Node[%s]",
-				element instanceof NamedElement ? ((NamedElement) element).getName() : "A " + element.eClass().getName());
+		return String.format("Node[%s - %s Col:%s Row:%s]",
+				getPrintableString(element),
+				bounds == null ? "--" : bounds.toString(),
+				column == null ? "-" : ("[" + column.getIndex() +"]("+column.getXPosition()+")"),
+				row == null ? "-" : ("[" + row.getIndex() +"]("+row.getYPosition()+")"));
 	}
 
+	private String getPrintableString(Element element) {
+		if (element instanceof MessageOccurrenceSpecification) {
+			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)element;
+			Message msg = mos.getMessage();
+			return String.format("%s - %s", msg.getSendEvent() == mos ? "Send" : "Recieve", msg.getName());
+		} else if (element instanceof ExecutionOccurrenceSpecification) {
+			ExecutionOccurrenceSpecification eos = (ExecutionOccurrenceSpecification)element;			
+			ExecutionSpecification exSpec = eos.getExecution();			
+			return String.format("%s - %s", exSpec.getStart() == eos ? "Start" : "Finish", exSpec.getName());
+		} else if (element instanceof NamedElement) {
+			return ((NamedElement) element).getName();
+		}
+		return "--";
+	}
+	
 	private ClusterImpl parent;
 	private Element element;
 

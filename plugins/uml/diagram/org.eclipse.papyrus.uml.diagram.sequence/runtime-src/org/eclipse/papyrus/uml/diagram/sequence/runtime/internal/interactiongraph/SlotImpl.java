@@ -69,14 +69,7 @@ public abstract class SlotImpl {
 	}
 
 	Rectangle getBounds() {
-		Rectangle r = new Rectangle();
-		for (NodeImpl n : nodes) {
-			Rectangle b = n.getBounds();
-			if (b == null) {
-				continue;
-			}
-			r.union(b);
-		}
+		Rectangle r = NodeUtilities.getArea((List)nodes);
 		return r;
 	}
 

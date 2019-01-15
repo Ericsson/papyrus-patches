@@ -60,7 +60,7 @@ public class RowImpl extends SlotImpl implements Row {
 	public void sortNodes() {
 		List<Node> mos = nodes.stream().filter(d -> d.getElement() instanceof MessageEnd).collect(Collectors.toList());
 		if (mos.size() > 0) {
-			Collections.sort(nodes, RowImpl.MESSAGE_END_NODE_COMPARATORS);
+			Collections.sort(nodes, RowImpl.MESSAGE_END_NODE_COMPARATOR);
 		} else {
 			// throw new UnsupportedOperationException();
 		}
@@ -78,8 +78,9 @@ public class RowImpl extends SlotImpl implements Row {
 		return String.format("Row[%d][y: %d]", index, ypos);
 	}
 
-	public static final NodeVPositionComparator NODE_VPOSITION_COMPARATORS = new NodeVPositionComparator();
-	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATORS = new MessageEndNodeComparator();
+	public static final NodeFragmentComparator NODE_FRAGMENT_COMPARATOR = new NodeFragmentComparator();
+	public static final NodeVPositionComparator NODE_VPOSITION_COMPARATOR = new NodeVPositionComparator();
+	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATOR = new MessageEndNodeComparator();
 
 	private static class MessageEndNodeComparator implements Comparator<Node> {
 		@Override
@@ -113,10 +114,32 @@ public class RowImpl extends SlotImpl implements Row {
 			int res = Integer.compare(r1.y,r2.y );
 			if (res == 0) {
 				res = Integer.compare(r1.x, r1.y);
-				if (res == 0) {
+				if (res == 0) {					
 					return Integer.compare(o1.getParent().getNodes().indexOf(o1), o2.getParent().getNodes().indexOf(o2));
 				}				
 			}
+			return res;
+		}
+	}
+
+	private static class NodeFragmentComparator implements Comparator<Node> {
+		@Override
+		public int compare(Node o1, Node o2) {
+			Rectangle r1 = (Rectangle)o1.getBounds();
+			Rectangle r2 = (Rectangle)o2.getBounds();
+			if (r1 == null || r2 == null)
+				return 0;
+			int res = r1.y - r2.y;
+			if (res < -1 || res > 1)
+				return res;
+			
+			res = MESSAGE_END_NODE_COMPARATOR.compare(o1, o2);			
+			if (res == 0)
+				res = Integer.compare(r1.x, r1.y);				
+			if (res == 0) 
+				res = Integer.compare(r1.y,r2.y );
+			if (res == 0)
+				res = Integer.compare(o1.getParent().getNodes().indexOf(o1), o2.getParent().getNodes().indexOf(o2));
 			return res;
 		}
 	}

@@ -31,9 +31,11 @@ import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
+import org.eclipse.uml2.uml.Element;
 
 /**
  * @author ETXACAM
@@ -62,8 +64,10 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 			if (edge.getSource() != anchoringView) {
 				edge.setSource(anchoringView);
 			}
-
-			String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
+			
+			Node n = graph.getClusterFor((Element)anchoringView.getElement());
+			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
+			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
 			anchor.setId(anchorId);
 			edge.setSourceAnchor(anchor);
@@ -72,7 +76,9 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 				edge.setTarget(anchoringView);
 			}
 
-			String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
+			Node n = graph.getClusterFor((Element)anchoringView.getElement());
+			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
+			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
 			anchor.setId(anchorId);
 			edge.setTargetAnchor(anchor);			

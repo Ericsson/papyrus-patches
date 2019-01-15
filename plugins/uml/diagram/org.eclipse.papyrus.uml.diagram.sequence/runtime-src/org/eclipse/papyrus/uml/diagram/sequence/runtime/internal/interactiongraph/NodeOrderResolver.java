@@ -67,6 +67,9 @@ public class NodeOrderResolver {
 		if (index != -1) {
 			// TODO: @etxacam Find insertion point by links backwards
 			// TODO: @etxacam Tune it, by using positions. 
+			Node conNode = n.getConnectedByNode(); 
+			if (conNode != null && nodes.indexOf(conNode) != -1)
+				index = nodes.indexOf(conNode);
 			nodes.addAll(index, branch);
 			branch.clear();
 			return true;

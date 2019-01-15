@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Comment;
@@ -130,6 +131,8 @@ public interface InteractionGraph {
 	 */
 	public Node getNodeFor(Element element);
 	public Link getLinkFor(Element element);
+	public Cluster getClusterFor(Element element);
+	
 	public GraphItem getItemFor(Element element);
 	
 	public void layout();
@@ -223,5 +226,4 @@ public interface InteractionGraph {
 	public boolean replaceExecutionSpecificationFinish(ExecutionSpecification exec, OccurrenceSpecification ocurrSpec);
 
 	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment);
-
 }

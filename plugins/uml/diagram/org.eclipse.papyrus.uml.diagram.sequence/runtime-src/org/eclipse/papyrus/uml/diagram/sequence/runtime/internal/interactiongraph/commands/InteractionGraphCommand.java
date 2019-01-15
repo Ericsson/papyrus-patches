@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.commands.ExecutionException;
@@ -89,7 +88,7 @@ import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 import org.eclipse.uml2.uml.UMLFactory;
 import org.eclipse.uml2.uml.UMLPackage;
-// TODO: @etxacam Handle control vs viewer coordinates
+
 public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	/**
 	 * Constructor.
@@ -263,7 +262,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
-		// TODO: @etxacam Needs to investigate why we can not create messages with slope...
 		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram())) {
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor);
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor);
@@ -301,18 +299,20 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					msg.setReceiveEvent(mosTrg);				
 					mosTrg.setMessage(msg);
 					
-					ClusterImpl sourceCluster = (ClusterImpl)graph.getLifeline((Lifeline)source);
+					ClusterImpl sourceCluster = (ClusterImpl)graph.getClusterFor(source);
 					Node srcBeforeFrag = NodeUtilities.flatten(sourceCluster).stream().
 						filter(n -> n.getBounds() != null && srcAnchor.y < n.getBounds().y).findFirst().orElse(null);
-					ClusterImpl targetCluster = (ClusterImpl)graph.getLifeline((Lifeline)target);
+					ClusterImpl targetCluster = (ClusterImpl)graph.getClusterFor(target);
 					Node trgBeforeFrag = NodeUtilities.flatten(targetCluster).stream().
 							filter(n -> n.getBounds() != null && trgAnchor.y < n.getBounds().y).findFirst().orElse(null);
 					
-					NodeImpl srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)source, mosSrc, srcBeforeFrag);
-					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(1,1)));
+					Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
+					NodeImpl srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, mosSrc, srcBeforeFrag);
+					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(1, 1)));
 					
-					NodeImpl trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)target, mosTrg, trgBeforeFrag);				
-					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(1,1)));
+					Lifeline trgLifeline = (Lifeline)NodeUtilities.getLifelineNode(targetCluster).getElement();
+					NodeImpl trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, mosTrg, trgBeforeFrag);				
+					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(1, 1)));
 					
 					message = graph.connectMessageOcurrenceSpecification(mosSrc, mosTrg);
 					((InteractionGraphImpl)graph).enableLayout();
@@ -343,20 +343,20 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						replyMsg.setReceiveEvent(repMosTrg);				
 						repMosTrg.setMessage(replyMsg);
 						
-						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)target, repMosSrc, trgBeforeFrag);
+						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, repMosSrc, trgBeforeFrag);
 						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + 60);
-						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(1,1)));
+						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(1, 1)));
 						
-						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification((Lifeline)source, repMosTrg, srcBeforeFrag);				
+						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, repMosTrg, srcBeforeFrag);				
 						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y);
-						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(1,1)));
+						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(1, 1)));
 	
 						message = graph.connectMessageOcurrenceSpecification(repMosSrc, repMosTrg);
 	
 						ExecutionSpecification execSpec = UMLFactory.eINSTANCE.createBehaviorExecutionSpecification();
 						execSpec.setStart(mosTrg);
 						execSpec.setFinish(repMosSrc);
-						ClusterImpl execSpecCluster = (ClusterImpl)graph.addExecutionSpecification((Lifeline)target, execSpec);
+						ClusterImpl execSpecCluster = (ClusterImpl)graph.addExecutionSpecification(trgLifeline, execSpec);
 						execSpecCluster.getBounds();
 						((InteractionGraphImpl)graph).enableLayout();
 						graph.layout();						
@@ -396,7 +396,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		limitNodes.remove(target);
 		limitNodes.removeAll(limitNodes.stream().filter(d -> d.getElement() instanceof ExecutionSpecification).
 				collect(Collectors.toList()));
-		Rectangle validArea = getEmptyArea(null, new ArrayList<>(limitNodes), null, null);
+		Rectangle validArea = NodeUtilities.getEmptyArea(interactionGraph, null, new ArrayList<>(limitNodes), null, null);
 		Rectangle msgArea = link.getBounds();
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgArea)) {
@@ -442,7 +442,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		limitNodes.remove(source);
 		limitNodes.remove(target);
 
-		Rectangle validArea = getEmptyArea(null,new ArrayList<>(limitNodes),null,null);
+		Rectangle validArea = NodeUtilities.getEmptyArea(interactionGraph, null,new ArrayList<>(limitNodes),null,null);
 		validArea.x = msgEndNode.getParent().getBounds().x;
 		validArea.width = msgEndNode.getParent().getBounds().width;
 		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().translate(delta);
@@ -485,7 +485,31 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 	
+	// TODO: @etxacam Need to make to resize the interaction size so we make place for new messages and fragments.  
+	// TODO: @etxacam Need to move the message when no changing order. Why is not working???  
+	// TODO: @etxacam It is not working to move messages in exec specs
+	// TODO: @etxacam Check there is no bucles.
 	public void moveMessage(Message msg, Point moveDelta) {
+		Link link = interactionGraph.getLinkFor(msg);
+		Node source = link.getSource();
+		List<Node> nodes = NodeUtilities.getBlock(source);
+		Rectangle totalArea = NodeUtilities.getArea(nodes);
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+			
+			// TODO: @etxacam When moveing to top, the dist should be from lifeline row bottom.
+			// TODO: @etxacam Finish Sync Node (Reply msg) can not dettach from exec spec and include or remove blocks from 
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y+moveDelta.y);
+				return true;
+			}
+		});
+	}
+	
+	public void moveMessage1(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
 
 		Lifeline srcLifeline = ((MessageOccurrenceSpecification)msg.getSendEvent()).getCovered();
@@ -585,7 +609,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			}
 		});
 	}
-
+	
 	@Override
 	public boolean canExecute() {
 		for (InteractionGraphEditAction action : actions) {
@@ -913,49 +937,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 	}
 	
-	public Rectangle getEmptyArea(List<Node> leftNodes, List<Node> topNodes, List<Node> rightNodes, List<Node> bottomNodes) {
-		View interactionView = interactionGraph.getInteractionView();
-		Rectangle rect =  ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), interactionView);
-		int left=rect.x, right=rect.x+rect.width, top = rect.y, bottom = rect.y+rect.height;
-		
-		if (leftNodes != null) {
-			for (Node n : leftNodes) {
-				if (n == null)
-					continue;
-				Rectangle r = n.getBounds();
-				left = Math.max(left, r.x+r.width);
-			}
-		}
-		
-		if (rightNodes != null) {
-			for (Node n : rightNodes) {
-				if (n == null)
-					continue;
-				Rectangle r = n.getBounds();
-				right = Math.min(right, r.x);
-			}
-		}
-		
-		if (topNodes != null) {
-			for (Node n : topNodes) {
-				if (n == null)
-					continue;
-				Rectangle r = n.getBounds();
-				top = Math.max(top, r.y+r.height);
-			}
-		}
-		
-		if (bottomNodes != null) {
-			for (Node n : bottomNodes) {
-				if (n == null)
-					continue;
-				Rectangle r = n.getBounds();
-				bottom= Math.min(bottom, r.y);
-			}
-		}
-		
-		return new Rectangle(left,top, Math.max(0,right-left), Math.max(0,bottom-top));
-	}
+
 	
 	/*
 	private void calculateFragmentsChanges(List<InteractionGraphDiff> diffs) {

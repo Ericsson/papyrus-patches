@@ -67,6 +67,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceDiagramConstants;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceRequestConstant;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageSort;
@@ -290,10 +291,10 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 				"Create Asynchronous Message", graph, null);
 		cmd.addMessage(msgSort, request.getConnectionViewAndElementDescriptor().getCreateElementRequestAdapter(), 
 				request.getConnectionViewAndElementDescriptor(), 
-				(Lifeline)ViewUtil.resolveSemanticElement((View)request.getSourceEditPart().getModel()),
+				(Element)ViewUtil.resolveSemanticElement((View)request.getSourceEditPart().getModel()),
 				srcAnchor,
 				//ViewUtilities.controlToViewer(graph.getEditPartViewer(),srcAnchor.getCopy()), 
-				(Lifeline)ViewUtil.resolveSemanticElement((View)request.getTargetEditPart().getModel()),
+				(Element)ViewUtil.resolveSemanticElement((View)request.getTargetEditPart().getModel()),
 				trgAnchor);
 				//ViewUtilities.controlToViewer(graph.getEditPartViewer(),trgAnchor.getCopy()));
 		

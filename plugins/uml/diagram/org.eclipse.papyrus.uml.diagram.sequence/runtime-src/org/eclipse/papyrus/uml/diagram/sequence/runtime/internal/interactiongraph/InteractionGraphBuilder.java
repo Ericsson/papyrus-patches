@@ -87,7 +87,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		graph.getInteraction().getFragments().forEach(fragment -> doSwitch(fragment));
 		// Synch diagram positions
 		graph.getLifelineClusters().forEach(cluster -> ((ClusterImpl)cluster).
-				updateNodes(RowImpl.NODE_VPOSITION_COMPARATORS));
+				updateNodes(RowImpl.NODE_VPOSITION_COMPARATOR));
 
 		
 		// Link with messages
@@ -144,7 +144,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		Point top = node.getParent().getBounds().getTop();
 		if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 			top = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), top);
-		node.setBounds(new Rectangle(top, new Dimension(1,1)));
+		node.setBounds(new Rectangle(top, new Dimension(1, 1)));
 		return node;
 	}
 
@@ -170,12 +170,12 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 			Point p = node.getParent().getBounds().getTop();
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);			
-			node.setBounds(new Rectangle(p, new Dimension(1,1)));
+			node.setBounds(new Rectangle(p, new Dimension(1, 1)));
 		} else if (isFinishExecutionSpecification) {
 			Point p = node.getParent().getBounds().getBottom();
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
-			node.setBounds(new Rectangle(p, new Dimension(1,1)));
+			node.setBounds(new Rectangle(p, new Dimension(1, 1)));
 		}
 		cache(element, node);
 

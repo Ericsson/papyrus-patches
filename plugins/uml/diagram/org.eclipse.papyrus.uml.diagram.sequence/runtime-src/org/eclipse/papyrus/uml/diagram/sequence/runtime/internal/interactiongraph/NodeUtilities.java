@@ -13,16 +13,17 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
+import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -85,17 +86,34 @@ public class NodeUtilities {
 		return r.y;
 	}
 	
-	public static NodeImpl getLifelineNode(NodeImpl impl) {
+	public static Cluster getLifelineNode(Node impl) {
 		while (impl.getParent() != null) {
 			impl = impl.getParent();
 		}
 		
 		if (impl.getElement() instanceof Lifeline) {
-			return impl;			
+			return (Cluster)impl;			
 		}
 		return null;
 	}
 	
+	public static List<Node> flattenKeepClusters(List<Node> nodes) {
+		List<Node> res = new ArrayList<Node>();
+		List<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
+				flatMap(NodeUtilities::flattenImpl).collect(Collectors.toList());
+		for (Node n : flatNodes) {
+			if (n.getParent() != null && n.getParent().getNodes().indexOf(n) == 0) {
+				if (n.getParent().getParent() != null && n.getParent().getParent() != n.getInteractionGraph()) 
+					res.add(n.getParent());
+			}
+			res.add(n);
+		}
+		return res;
+	}
+
+	public static List<Node> flatten(List<Node> nodes) {
+		return nodes.stream().map(NodeImpl.class::cast).flatMap(NodeUtilities::flattenImpl).collect(Collectors.toList());
+	}
 	
 	
 	public static List<Node> flatten(ClusterImpl cluster) {
@@ -122,4 +140,126 @@ public class NodeUtilities {
 			return Collections.singleton(cluster).stream();
 		}
 	}
+
+	public static List<Node> getBlock(Node source) {
+		List<Node> nodes = new ArrayList<>();
+		getBlock(source, nodes);
+		List<Node> res = nodes.stream().filter(d -> !nodes.contains(d.getParent())).collect(Collectors.toList());
+		return res;
+	}
+	
+	static List<Node> getBlock(Node source, List<Node> nodes) {
+		nodes.add(source);
+		Node n = source.getConnectedNode();
+		if (n == null)
+			return nodes;
+		
+		nodes.add(n);
+		if (n instanceof Cluster) {
+			for (Node nn : ((Cluster) n).getNodes()) {
+				getBlock(nn, nodes);
+			}
+		}
+		
+		return nodes;
+	}	
+	
+	public static void moveNodes(InteractionGraph interactionGraph, List<Node> nodes, Cluster targetCluster, Node insertBefore, int yPos) {
+		Rectangle area = getArea(nodes);
+		
+		int orgPosY = area.y;
+		for (Node n : nodes) {			
+			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
+			((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
+			if (n instanceof Cluster) {
+				// Update position in the children 
+				for (Node child : flattenKeepClusters(Collections.singletonList((ClusterImpl)n))) {
+					child.getBounds().y = yPos + (child.getBounds().y - orgPosY);
+				}
+			} else {
+				n.getBounds().y = yPos + (n.getBounds().y - orgPosY);				
+			}
+		}
+		interactionGraph.layout();
+	}
+
+	public static void nudgeNodes(List<Node> nodes, int xDelta, int yDelta) {
+		for (Node n : nodes) {
+			n.getBounds().x += xDelta;
+			n.getBounds().y += yDelta;
+		}		
+		if (nodes.size() > 0)
+			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
+	}
+
+	public static Rectangle getEmptyArea(InteractionGraphImpl interactionGraph, List<Node> leftNodes, List<Node> topNodes, List<Node> rightNodes, List<Node> bottomNodes) {
+		View interactionView = interactionGraph.getInteractionView();
+		Rectangle rect =  ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), interactionView);
+		int left=rect.x, right=rect.x+rect.width, top = rect.y, bottom = rect.y+rect.height;
+		
+		if (leftNodes != null) {
+			for (Node n : leftNodes) {
+				if (n == null)
+					continue;
+				Rectangle r = n.getBounds();
+				left = Math.max(left, r.x+r.width);
+			}
+		}
+		
+		if (rightNodes != null) {
+			for (Node n : rightNodes) {
+				if (n == null)
+					continue;
+				Rectangle r = n.getBounds();
+				right = Math.min(right, r.x);
+			}
+		}
+		
+		if (topNodes != null) {
+			for (Node n : topNodes) {
+				if (n == null)
+					continue;
+				Rectangle r = n.getBounds();
+				top = Math.max(top, r.y+r.height);
+			}
+		}
+		
+		if (bottomNodes != null) {
+			for (Node n : bottomNodes) {
+				if (n == null)
+					continue;
+				Rectangle r = n.getBounds();
+				bottom= Math.min(bottom, r.y);
+			}
+		}
+		
+		return new Rectangle(left,top, Math.max(0,right-left), Math.max(0,bottom-top));
+	}
+	
+	public static Rectangle getArea(List<Node> nodes) {
+		Rectangle r = null;
+		for (Node n : nodes) {
+			Rectangle b = n.getBounds();
+			if (b.width <= 1 && b.height <= 1) {
+				if (r == null)
+					r = new Rectangle(b.x,b.y,0,0);
+				else
+					r.union(b.x,b.y);
+			} else {
+				if (r == null)
+					r = b.getCopy();
+				else
+					r.union(b);				
+			}				
+		}
+		
+		if (r == null)
+			return new Rectangle(0,0,-1,-1);
+		r.width = Math.max(1,r.width);
+		r.height = Math.max(1,r.height);			
+
+		return r;
+	}
+	
+	
 }

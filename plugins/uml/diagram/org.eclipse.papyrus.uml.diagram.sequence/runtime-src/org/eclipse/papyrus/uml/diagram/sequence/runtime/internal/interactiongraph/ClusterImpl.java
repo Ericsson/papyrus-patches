@@ -92,16 +92,7 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 	}
 	
 	Rectangle getChildrenBounds() {
-		Rectangle r = null;
-		for (Node c : getNodes()) {
-			Rectangle b = c.getBounds();
-			if (b == null)
-				continue;
-			if (r == null)
-				r = b.getCopy();
-			else
-				r.union(b);
-		}		
+		Rectangle r = NodeUtilities.getArea(getNodes());
 		return r;
 	}
 	
