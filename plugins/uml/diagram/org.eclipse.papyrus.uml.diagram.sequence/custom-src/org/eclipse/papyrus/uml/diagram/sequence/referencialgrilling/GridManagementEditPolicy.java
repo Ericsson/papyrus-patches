@@ -56,6 +56,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
 import org.eclipse.papyrus.uml.diagram.sequence.util.LogOptions;
 import org.eclipse.papyrus.uml.diagram.sequence.util.RedirectionOperationListener;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Interaction;
@@ -293,7 +294,7 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 		for (Lifeline lifeline : lifelineList) {
 			ArrayList<InteractionFragment> covered = new ArrayList<>();
 			for (DecorationNode row : rows) {
-				if (row.getElement() instanceof InteractionFragment && (!(row.getElement() instanceof InteractionOperand))) {
+				if (row.getElement() instanceof InteractionFragment) {
 					InteractionFragment interactionFragment = (InteractionFragment) (row.getElement());
 					if (lifeline.getCoveredBys().contains(interactionFragment)) {
 						if (!covered.contains(interactionFragment)) {
@@ -323,7 +324,7 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 			// There are columns.
 
 			ArrayList<InteractionOperand> coveredbyInteractionOperand = new ArrayList<>();
-			covered = new ArrayList<>();
+			// covered = new ArrayList<>();
 			for (DecorationNode column : columns) {
 				if (column.getElement() instanceof InteractionOperand) {
 					// Except for the initial operand creation, coverage is managed
@@ -335,6 +336,35 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 				}
 
 			}
+
+			// 4. put the combined fragment before the owner of the first interactionOperand
+			// remove all CombiendFragment from this list
+			{
+				int index = 0;
+				while (index < covered.size()) {
+					if (covered.get(index) instanceof CombinedFragment) {
+						covered.remove(index);
+					} else {
+						index++;
+					}
+				}
+			}
+			// remove CF owner before the first interactionOperand
+			int index = 0;
+			while (index < covered.size()) {
+				if (covered.get(index) instanceof InteractionOperand) {
+					if (covered.get(index - 1) instanceof CombinedFragment) {
+						index++;
+
+					} else {
+						CombinedFragment cf = (CombinedFragment) ((InteractionOperand) covered.get(index)).eContainer();
+						covered.add(index, cf);
+						index++;
+					}
+				}
+				index++;
+			}
+
 			if (covered.size() > 0) {
 				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "Add Interraction operand");//$NON-NLS-1$
 				covered.addAll(lifeline.getCoveredBys());
