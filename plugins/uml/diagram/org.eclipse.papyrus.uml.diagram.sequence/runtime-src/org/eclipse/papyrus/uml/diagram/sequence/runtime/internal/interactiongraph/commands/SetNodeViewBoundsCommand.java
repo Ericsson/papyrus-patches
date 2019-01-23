@@ -28,8 +28,10 @@ import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.common.core.internal.command.ICommandWithSettableResult;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand;
+import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Shape;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
@@ -47,6 +49,7 @@ public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 		this.interactionGraphNode = (NodeImpl) interactionGraphNode;
 		this.rect = r;
 		this.refreshEditParts = refreshParts;
+		
 	}
 
 	public SetNodeViewBoundsCommand(TransactionalEditingDomain domain, Node interactionGraphNode, Rectangle r, boolean refreshParts, String label, Map options, List affectedFiles) {
@@ -60,8 +63,14 @@ public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		InteractionGraphImpl graph = interactionGraphNode.getInteractionGraph();
 		View v = interactionGraphNode.getView();
-		Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), rect);
-		((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(constraints));
+		if (v instanceof Diagram) {
+			// Case for Graph itself
+			v = ViewUtilities.getViewWithType(v, InteractionEditPart.VISUAL_ID);
+			((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(rect));
+		} else {
+			Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), rect);
+			((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(constraints));
+		}
 		
 		if (refreshEditParts) {
 			GraphicalEditPart ep = (GraphicalEditPart)graph.getEditPartViewer().getEditPartRegistry().get(v);

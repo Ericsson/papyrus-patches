@@ -166,7 +166,7 @@ public class ViewUtilities {
 		}
 		View parent = (View) view.eContainer();
 		Rectangle r = new Rectangle();
-		if (parent != null) {
+		if (parent != null && !(parent instanceof Diagram)) {
 			r = getBounds(viewer, parent).getCopy();
 			GraphicalEditPart ep = getEditPart(viewer, parent);
 			if (ep != null) {
@@ -227,7 +227,7 @@ public class ViewUtilities {
 				p = getAnchorLocationForView(viewer, e, e.getTarget());
 			}
 			return r;
-		}
+		} 
 		return null; // Can not happen
 	}
 

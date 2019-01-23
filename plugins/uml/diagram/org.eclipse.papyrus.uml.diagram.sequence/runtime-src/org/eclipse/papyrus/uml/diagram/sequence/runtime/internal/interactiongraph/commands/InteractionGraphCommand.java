@@ -653,6 +653,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		calculateMessagesChanges(editingDomain, command);
 		calculateFragmentsChanges(editingDomain, command);
 
+		updateBoundsChanges(command, Collections.singletonList(interactionGraph), false);
 		return command;
 	}
 

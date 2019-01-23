@@ -26,6 +26,7 @@ import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
@@ -35,6 +36,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -80,6 +82,11 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	@Override
 	public void setView(View vw) {
+	}
+
+	@Override
+	Rectangle extractBounds() {
+		return ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();
 	}
 
 	@Override
@@ -398,7 +405,25 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		layoutManager.layout();
 		
-		
+		int lastY = Math.max(300,rows.get(rows.size()-1).getYPosition());
+		// Set lifelines size equal.
+		for (Cluster lifeline : lifelineClusters) {
+			boolean destroyed = lifeline.getAllNodes().stream().filter(d -> (d.getElement() instanceof DestructionOccurrenceSpecification)).
+				findFirst().orElse(null) != null; 
+			if (!destroyed) {
+				Rectangle r = lifeline.getBounds();
+				r.height = lastY - r.y;
+				r.setBounds(r);
+			}
+		}
+		Rectangle allLifelinesRect = NodeUtilities.getArea((List)lifelineClusters);
+		Rectangle allClusterRect = NodeUtilities.getArea((List)getFragmentClusters());
+		int lastX = Math.max(allClusterRect.getRight().x, allLifelinesRect.getRight().x);
+		Math.max(lastX,300);
+		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID));
+		r.height = lastY - r.y + 60;
+		r.width = lastX - r.x + 40;
+		setBounds(r);
 	}
 
 	private boolean isNodeConnectedTo(NodeImpl node, List<Node> row) {
