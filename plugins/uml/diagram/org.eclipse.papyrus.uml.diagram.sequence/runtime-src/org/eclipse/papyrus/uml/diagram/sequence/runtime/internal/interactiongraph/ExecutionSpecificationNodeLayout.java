@@ -18,6 +18,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 
 
 /**
@@ -28,9 +29,19 @@ public class ExecutionSpecificationNodeLayout implements InteractionNodeLayout {
 	@Override
 	public void layout(NodeImpl node) {
 		if (node instanceof Cluster) {
+			Node lifeline = NodeUtilities.getLifelineNode(node);
+			int x = lifeline.getBounds().getCenter().x;
+			x = x - (ViewUtilities.EXECUTION_SPECIFICATION_WIDTH / 2);
+			Node parent = node.getParent();
+			while (parent != lifeline) {
+				if (parent.getElement() instanceof ExecutionSpecification) {
+					x += (ViewUtilities.EXECUTION_SPECIFICATION_WIDTH / 2);
+				}
+				parent = parent.getParent();
+			}
 			Rectangle r = ((ClusterImpl)node).getChildrenBounds();
+			r.x = x;
 			r.width = ViewUtilities.EXECUTION_SPECIFICATION_WIDTH;
-			r.x = r.x- (ViewUtilities.EXECUTION_SPECIFICATION_WIDTH / 2);		
 			node.setBounds(r);			
 		} else {
 			ColumnImpl column = node.column;
