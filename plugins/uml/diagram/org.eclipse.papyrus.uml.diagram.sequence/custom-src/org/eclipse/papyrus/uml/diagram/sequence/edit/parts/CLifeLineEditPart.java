@@ -18,6 +18,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -122,6 +123,19 @@ public class CLifeLineEditPart extends LifelineEditPart {
 		if (getPrimaryShape() instanceof LifelineFigure) {
 			// Bug 531520: we redefine the border of the lifeline, in order to include the children
 			// the message are connected to the middle line of the Lifeline, but they must be drawn as connected on the ExecutionSpeficiation
+/*			View container = (View)getModel();
+			final List childrenViews = container.getChildren();
+			getChildren().sort(new Comparator<EditPart>() {
+				@Override
+				public int compare(EditPart o1, EditPart o2) {
+					Object v1 = o1.getModel();
+					Object v2 = o2.getModel();					
+					return Integer.compare(childrenViews.indexOf(v1), childrenViews.indexOf(v2)); 
+				}
+				
+			});*/
+			super.refresh();
+
 			final List<NodeFigure> childrenFigure = new ArrayList<>();
 			for (final Object current : getChildren()) {
 				if (current instanceof AbstractExecutionSpecificationEditPart) {
@@ -132,7 +146,6 @@ public class CLifeLineEditPart extends LifelineEditPart {
 			getPrimaryShape().setChildrenFigure(childrenFigure);
 		}
 
-		super.refresh();
 	}
 
 	/**

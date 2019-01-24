@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ import org.eclipse.emf.edit.command.RemoveCommand;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.emf.workspace.EMFCommandOperation;
+import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
@@ -58,6 +60,7 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
+import org.eclipse.papyrus.uml.diagram.sequence.command.CustomZOrderCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
@@ -642,7 +645,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		for (InteractionGraphEditAction action : actions) {
 			action.handleResult(cmd.getCommandResult());
 		}
-
+		
 		return cmd.getCommandResult();
 	}
 
@@ -654,6 +657,16 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		calculateFragmentsChanges(editingDomain, command);
 
 		updateBoundsChanges(command, Collections.singletonList(interactionGraph), false);
+		
+		// Reorder views inside Lifelines
+		for (Cluster c : interactionGraph.getLifelineClusters()) {
+			List<View> newValues = NodeUtilities.flattenKeepClusters(c.getNodes()).stream().filter(Cluster.class::isInstance).map(d->d.getView()).
+					filter(Objects::nonNull).collect(Collectors.toList());
+			List<View> oldValues = c.getView().getChildren();
+			
+			updateZOrder(command, c.getView(), oldValues, newValues);
+		}
+
 		return command;
 	}
 
@@ -670,7 +683,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				removeCommandFunction, true, true);
 
 
-		// Update lifelines occurrences covered. 
 		for (Cluster c : interactionGraph.getLifelineClusters()) {
 			Lifeline lf = (Lifeline) c.getElement();
 			List<InteractionFragment> fragments = new ArrayList<>();
@@ -928,6 +940,23 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location",
 						Collections.emptyList()));
 			}
+			index++;
+		}
+	}
+
+	private void updateZOrder(ICompositeCommand cmd, View container, List<View> oldList, List<View> newList) {
+		final List<View> oldValues = new ArrayList<>(oldList);
+		final List<View> newValues = new ArrayList<>(newList);
+		int index = 0;
+		for (View v: oldValues) {
+			if (v.getElement() == container.getElement())
+				index++;
+			else 
+				break;
+		}
+			
+		for (View obj : newValues) {
+			cmd.add(new SetNodeViewZOrderCommand(getEditingDomain(), interactionGraph, obj, index));
 			index++;
 		}
 	}

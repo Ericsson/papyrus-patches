@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.draw2d.Border;
+import org.eclipse.draw2d.FigureUtilities;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.LayoutManager;
@@ -545,8 +546,28 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 	 *            the children figures used to define the PolygonList
 	 * @since 5.0
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setChildrenFigure(List<NodeFigure> childrenFigure) {
 		this.childrenFigure = childrenFigure == null ? Collections.emptyList() : childrenFigure;
+		List children = new ArrayList(getChildren());
+		getChildren().sort(new Comparator<IFigure>() {
+			@Override
+			public int compare(IFigure o1, IFigure o2) {
+				IFigure f1 = null;
+				IFigure f2 = null;
+				for (IFigure f : childrenFigure) {
+					if (FigureUtilities.isAncestor(o1, f))
+						f1 = f;
+					else if (FigureUtilities.isAncestor(o2, f))
+						f2 = f;
+				}
+				
+				if (f1 == null || f2 == null) 
+					return Integer.compare(children.indexOf(o1), children.indexOf(o2));
+				
+				return Integer.compare(childrenFigure.indexOf(f1), childrenFigure.indexOf(f2));
+			}
+		});
 	}
 
 	@Override
