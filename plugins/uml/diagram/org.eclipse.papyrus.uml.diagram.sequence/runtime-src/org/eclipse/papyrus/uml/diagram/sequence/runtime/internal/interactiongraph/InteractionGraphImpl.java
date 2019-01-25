@@ -808,15 +808,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		throw new UnsupportedOperationException();
 	}
 
-	// TODO: @etxacam Need to find out how to nudge space left and space needed.
-	// TODO: @etxacam A clear strategy to see what happen when there is no fragment change:
-	//       Special case for there is no parent change? Or try remove / reinsert strategy???
-	// Generic Case: 
-	//  1) If insertion pint is over the current position => Nothing
-	//  2) If the insertion point is after the block => nugdge the block by - its size
-	//  3) If the insertion position is inside the block => No parent changes and we need to nudge the block by 
-	//     ypos - top.y and everything below the block and additional (ypos - top.y) + default insets - (afterblock.y - bottom.y) 
-	
+	// TODO: @etxacam: Need to check if insertion point overlaps with an existing row. If so, needs to nudge 
+	//       by minimum before insert (from the insert before node...)  
 	public void moveNodeBlock(List<Node> nodes, int yPos) {
 		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
@@ -840,7 +833,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 						findFirst().orElse(null);
 				Cluster insertBeforeParent = insertBefore != null ? insertBefore.getParent() : null;
 				if (insertBeforeParent != null && insertBeforeParent != lifelineCluster && insertBeforeParent.getNodes().indexOf(insertBefore) == 0)
-					newPrevNode = insertBeforeParent;
+					insertBefore = insertBeforeParent;
 				
 				int nudgeAfterY = insertBefore == null ? Integer.MAX_VALUE : insertBefore.getBounds().getTop().y;							
 				int prevDist = yPos;

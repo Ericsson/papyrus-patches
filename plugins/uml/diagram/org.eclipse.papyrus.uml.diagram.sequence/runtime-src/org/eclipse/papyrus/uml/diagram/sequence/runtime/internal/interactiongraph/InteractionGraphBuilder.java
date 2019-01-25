@@ -180,8 +180,9 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		cache(element, node);
 
 		if (isFinishExecutionSpecification) {
-			activeLifelineGroups.put(lifeline, parent.getParent());
-		}
+			if (parent.getParent() != null)
+				activeLifelineGroups.put(lifeline, parent.getParent());
+	}
 
 		return node;
 	}
