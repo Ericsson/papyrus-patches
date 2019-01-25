@@ -15,7 +15,9 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.EditPolicy;
+import org.eclipse.gef.editparts.AbstractConnectionEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.notation.FontStyle;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
@@ -24,6 +26,8 @@ import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultSemanticEdit
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.IDirectEdition;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLabelEditPolicy.ICustomMessageLabel;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.MessageLabelLocator;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLinkLabelDragPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UMLTextSelectionEditPolicy;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
@@ -50,6 +54,7 @@ public class CustomMessageName7EditPart extends MessageFoundNameEditPart impleme
 	@Override
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
+		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new MessageLinkLabelDragPolicy());
 		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new DefaultSemanticEditPolicy());
 	}
 
@@ -87,4 +92,11 @@ public class CustomMessageName7EditPart extends MessageFoundNameEditPart impleme
 	private View getFontStyleOwnerView() {
 		return (View) getParent().getModel();
 	}
+	
+	public void refreshBounds() {
+		if (papyrusLabelLocator == null)
+			papyrusLabelLocator = new MessageLabelLocator(((AbstractConnectionEditPart) getParent()).getConnectionFigure(), 
+					new Point(0,0), getKeyPoint());
+		super.refreshBounds();
+	}	
 }

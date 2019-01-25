@@ -15,21 +15,26 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
+import org.eclipse.gef.editparts.AbstractConnectionEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.notation.FontStyle;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultSemanticEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
+import org.eclipse.papyrus.infra.gmfdiag.common.locator.PapyrusLabelLocator;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.IDirectEdition;
 import org.eclipse.papyrus.uml.diagram.common.helper.NotificationHelper;
 import org.eclipse.papyrus.uml.diagram.common.providers.UIAdapterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLabelEditPolicy.ICustomMessageLabel;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLinkLabelDragPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UMLTextSelectionEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.MessageLabelLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.util.GateHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SelfMessageHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceRequestConstant;
@@ -72,6 +77,7 @@ public class CustomMessageName2EditPart extends MessageAsyncNameEditPart impleme
 	@Override
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
+		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new MessageLinkLabelDragPolicy());
 		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new DefaultSemanticEditPolicy());
 	}
 
@@ -113,6 +119,9 @@ public class CustomMessageName2EditPart extends MessageAsyncNameEditPart impleme
 
 	@Override
 	public void refreshBounds() {
+		if (papyrusLabelLocator == null)
+			papyrusLabelLocator = new MessageLabelLocator(((AbstractConnectionEditPart) getParent()).getConnectionFigure(), 
+					new Point(0,0), getKeyPoint());
 		super.refreshBounds();
 		MessageAsyncEditPart parent = (MessageAsyncEditPart) getParent();
 		// Update location of label for self linked message.
