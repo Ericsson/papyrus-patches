@@ -262,6 +262,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	}
 
+	// TODO: @etxacam Self messages
+	// TODO: @etxacam Reply messages
+	// TODO: @etxacam Delete messages
+	// TODO: @etxacam Creation messages
+	
 	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
@@ -488,10 +493,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 	
-	// TODO: @etxacam Need to make to resize the interaction size so we make place for new messages and fragments.  
-	// TODO: @etxacam Need to move the message when no changing order. Why is not working???  
-	// TODO: @etxacam It is not working to move messages in exec specs
-	// TODO: @etxacam Check there is no bucles.
+
+	// TODO: @etxacam Check self messages
+	// TODO: @etxacam move reply messages in and out of the exec spec => Check the destination 
+	// TODO: @etxacam Delete messages
+	// TODO: @etxacam Creation messages
 	public void moveMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
 		Node source = link.getSource();
@@ -656,15 +662,17 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		calculateMessagesChanges(editingDomain, command);
 		calculateFragmentsChanges(editingDomain, command);
 
+		// TODO: @etxacam Why is not resizing when creating new Lifelines????
 		updateBoundsChanges(command, Collections.singletonList(interactionGraph), false);
 		
 		// Reorder views inside Lifelines
 		for (Cluster c : interactionGraph.getLifelineClusters()) {
 			List<View> newValues = NodeUtilities.flattenKeepClusters(c.getNodes()).stream().filter(Cluster.class::isInstance).map(d->d.getView()).
 					filter(Objects::nonNull).collect(Collectors.toList());
-			List<View> oldValues = c.getView().getChildren();
-			
-			updateZOrder(command, c.getView(), oldValues, newValues);
+			if (c.getView() != null) {
+				List<View> oldValues = c.getView().getChildren();			
+				updateZOrder(command, c.getView(), oldValues, newValues);
+			}
 		}
 
 		return command;

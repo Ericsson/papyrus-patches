@@ -419,8 +419,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		Rectangle allLifelinesRect = NodeUtilities.getArea((List)lifelineClusters);
 		Rectangle allClusterRect = NodeUtilities.getArea((List)getFragmentClusters());
 		int lastX = Math.max(allClusterRect.getRight().x, allLifelinesRect.getRight().x);
-		Math.max(lastX,300);
-		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID));
+		lastX = Math.max(lastX,300);
+		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();
 		r.height = lastY - r.y + 60;
 		r.width = lastX - r.x + 40;
 		setBounds(r);

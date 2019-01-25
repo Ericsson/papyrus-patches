@@ -28,7 +28,7 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 	@Override
 	public void layout(NodeImpl node) {
 		Rectangle r = node.getBounds();
-		int width = r == null ? ViewUtilities.LIFELINE_DEFAULT_WIDTH : r.width;
+		int width = r == null || r.width == -1 ? ViewUtilities.LIFELINE_DEFAULT_WIDTH : r.width;
 		int height = ViewUtilities.LIFELINE_HEADER_HEIGHT;
 		
 		Rectangle childrenArea = ((ClusterImpl)node).getChildrenBounds();
