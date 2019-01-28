@@ -119,9 +119,9 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		super.createDefaultEditPolicies();
 		// -- Grilling -- installEditPolicy(ConnectYCoordinateToGrillingEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectExecutionToGridEditPolicy());
 		installEditPolicy(AppliedStereotypeCommentEditPolicy.APPLIED_STEREOTYPE_COMMENT, new AppliedStereotypeCommentCreationEditPolicyEx());
-		installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
-		installEditPolicy(UpdateConnectionReferenceEditPolicy.UDPATE_CONNECTION_REFERENCE, new UpdateConnectionReferenceEditPolicy());
-		installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());
+		//installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy()); 
+		//installEditPolicy(UpdateConnectionReferenceEditPolicy.UDPATE_CONNECTION_REFERENCE, new UpdateConnectionReferenceEditPolicy());
+		//installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());
 
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new ResizableShapeEditPolicy() {
 

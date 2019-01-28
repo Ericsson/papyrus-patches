@@ -159,9 +159,9 @@ public class CLifeLineEditPart extends LifelineEditPart {
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new LifeLineGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new LifelineSelectionEditPolicy());
 		installEditPolicy(LifeLineRestorePositionEditPolicy.KEY, new LifeLineRestorePositionEditPolicy());
-		installEditPolicy(UpdateNodeReferenceEditPolicy.UDPATE_NODE_REFERENCE, new UpdateNodeReferenceEditPolicy());
-		installEditPolicy(UpdateWeakReferenceForMessageSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_MESSAGE, new UpdateWeakReferenceForMessageSpecEditPolicy());
-		installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());
+		//installEditPolicy(UpdateNodeReferenceEditPolicy.UDPATE_NODE_REFERENCE, new UpdateNodeReferenceEditPolicy());
+		//installEditPolicy(UpdateWeakReferenceForMessageSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_MESSAGE, new UpdateWeakReferenceForMessageSpecEditPolicy());
+		//installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());
 	}
 
 	/**
