@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
@@ -169,8 +170,10 @@ public class NodeUtilities {
 		
 		int orgPosY = area.y;
 		for (Node n : nodes) {			
-			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
-			((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
+			if (n != insertBefore) {
+				((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
+				((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
+			}
 			if (n instanceof Cluster) {
 				// Update position in the children 
 				for (Node child : flattenKeepClusters(Collections.singletonList((ClusterImpl)n))) {
@@ -261,5 +264,101 @@ public class NodeUtilities {
 		return r;
 	}
 	
+	public static Cluster getClusterAt(Cluster cluster, Point p) {
+		Node n = getNodeAt(cluster, p);
+		if (n == null)
+			return null;
+		return n instanceof Cluster ? (Cluster)n : n.getParent(); 
+	}
 	
+	public static Node getNodeAt(Cluster cluster, Point p) {
+		if (!isNodeAt(cluster, p))
+			return null;
+		Node n = cluster;
+		while (n instanceof Cluster) {
+			Node child = ((Cluster)n).getNodes().stream().filter(d->isNodeAt(d, p)).findAny().orElse(null);
+			if (child == null || child == n)
+				break;
+			n = child;
+		}
+		return n;
+	}
+
+	public static Cluster getClusterAtVerticalPos(Cluster cluster, int y) {
+		Node n = getNodeAtVerticalPos(cluster, y);
+		if (n == null)
+			return null;
+		return n instanceof Cluster ? (Cluster)n : n.getParent(); 
+	}
+	
+
+	public static Node getNodeAtVerticalPos(Cluster cluster, int y) {
+		if (!isNodeAtVerticalPos(cluster,y))
+			return null;
+		Node n = cluster;
+		while (n instanceof Cluster) {
+			Node child = ((Cluster)n).getNodes().stream().filter(d->isNodeAtVerticalPos(d,y)).findAny().orElse(null);
+			if (child == null || child == n)
+				break;
+			n = child;
+		}
+		return n;
+	}
+	
+	public static Cluster getClusterAtHorizontalPos(Cluster cluster, int x) {
+		Node n = getNodeAtHorizontalPos(cluster, x);
+		if (n == null)
+			return null;
+		return n instanceof Cluster ? (Cluster)n : n.getParent(); 
+	}
+	
+
+	public static Node getNodeAtHorizontalPos(Cluster cluster, int x) {
+		if (!isNodeAtHorizontalPos(cluster,x))
+			return null;
+		Node n = cluster;
+		while (n instanceof Cluster) {
+			Node child = ((Cluster)n).getNodes().stream().filter(d->isNodeAtHorizontalPos(d,x)).findAny().orElse(null);
+			if (child == null || child == n)
+				break;
+			n = child;
+		}
+		return n;
+	}
+
+	public static boolean isNodeAt(Node n, Point p) {
+		return n.getBounds() != null && n.getBounds().contains(p);
+		
+	}
+	
+	public static boolean isNodeAtVerticalPos(Node n, int y) {
+		return n.getBounds() != null && n.getBounds().y <= y && y <= n.getBounds().getBottom().y;
+	}
+
+	public static boolean isNodeAtHorizontalPos(Node n, int x) {
+		return n.getBounds() != null && n.getBounds().x <= x && x <= n.getBounds().getBottom().x;
+	}
+	
+	public static Node getPreviousVerticalNode(Cluster cluster, int y) {
+		Node n = null;
+		for (Node child : cluster.getAllNodes()) {
+			if (child.getBounds() == null || child.getBounds().getBottom().y >= y)
+				break;
+			n = child;
+			
+		}
+		return n;
+	}
+
+	public static Node getNextVerticalNode(Cluster cluster, int y) {
+		Node n = null;
+		for (Node child : cluster.getAllNodes()) {
+			if (child.getBounds() != null && child.getBounds().y < y)
+				continue;
+			n = child;
+			break;			
+		}
+		return n;
+	}
+
 }

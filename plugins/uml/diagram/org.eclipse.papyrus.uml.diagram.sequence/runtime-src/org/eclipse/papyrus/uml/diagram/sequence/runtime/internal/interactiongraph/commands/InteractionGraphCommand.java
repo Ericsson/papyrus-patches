@@ -39,7 +39,6 @@ import org.eclipse.emf.edit.command.RemoveCommand;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.emf.workspace.EMFCommandOperation;
-import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
@@ -60,7 +59,6 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
-import org.eclipse.papyrus.uml.diagram.sequence.command.CustomZOrderCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
@@ -262,10 +260,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	}
 
-	// TODO: @etxacam Self messages
 	// TODO: @etxacam Reply messages
 	// TODO: @etxacam Delete messages
 	// TODO: @etxacam Creation messages
+	// TODO: @etxacam Self messages
 	
 	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
@@ -494,22 +492,27 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 
-	// TODO: @etxacam Check self messages
 	// TODO: @etxacam move reply messages in and out of the exec spec => Check the destination 
 	// TODO: @etxacam Delete messages
 	// TODO: @etxacam Creation messages
+	// TODO: @etxacam Check self messages
 	public void moveMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
-		Node source = link.getSource();
+		Node source = link.getSource();		
 		List<Node> nodes = NodeUtilities.getBlock(source);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
+
+		if (msg.getMessageSort() == MessageSort.REPLY_LITERAL) {
+			if (moveReplyMessage(msg, moveDelta))
+				return;
+		}
+		
+
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
 			}
 			
-			// TODO: @etxacam When moveing to top, the dist should be from lifeline row bottom.
-			// TODO: @etxacam Finish Sync Node (Reply msg) can not dettach from exec spec and include or remove blocks from 
 			@Override
 			public boolean apply(InteractionGraph graph) {
 				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y+moveDelta.y);
@@ -518,56 +521,101 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 	
-	public void moveMessage1(Message msg, Point moveDelta) {
+	private boolean moveReplyMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
+		Node source = link.getSource();		
 
-		Lifeline srcLifeline = ((MessageOccurrenceSpecification)msg.getSendEvent()).getCovered();
-		Cluster srcLifelineNode = interactionGraph.getLifeline(srcLifeline);
-		List<Node> srcLifelineNodes = srcLifelineNode.getAllNodes();  
-		Node source = link.getSource();
-		int newSrcY = link.getSourceLocation().y + moveDelta.y;
-		Node srcMoveBeforeNode = srcLifelineNodes.stream().filter(d -> d.getBounds().getCenter().y > newSrcY).findFirst().orElse(null);
+		Cluster parentSrc = source.getParent();
+		if (parentSrc == null || !(parentSrc.getElement() instanceof ExecutionSpecification))
+			return false;
+		
+		int newY = source.getBounds().y + moveDelta.y;
+		if (parentSrc.getBounds().y >= newY) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return true;
+		}
 
-		Lifeline trgLifeline = ((MessageOccurrenceSpecification)msg.getReceiveEvent()).getCovered();
-		Cluster trgLifelineNode = interactionGraph.getLifeline(trgLifeline);
-		List<Node> trgLifelineNodes = trgLifelineNode.getAllNodes();  
+		// Resize the exec Spec to include or remove nodes.
+		
+		// Check new pos is inside the same parent's parent => Before a node inside parent's parent.
+		Point newSrcPt = source.getBounds().getCenter().getCopy();
+		newSrcPt.translate(moveDelta);
+		
+		Cluster srcParent = source.getParent();
+		Cluster srcLifelineNode = NodeUtilities.getLifelineNode(srcParent);
+		Cluster newSrcParent = NodeUtilities.getClusterAtVerticalPos(srcLifelineNode, newSrcPt.y);					
+		if (newSrcParent != srcParent.getParent() && moveDelta.y > 0) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return true;
+		}
+		
+		if (newSrcParent != srcParent && moveDelta.y <= 0) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return true;
+		}
+		
 		Node target = link.getTarget();
-		int newTrgY = link.getTargetLocation().y + moveDelta.y;
-		Node trgMoveBeforeNode = trgLifelineNodes.stream().filter(d -> d.getBounds().getCenter().y > newTrgY).findFirst().orElse(null);
+		Point newTrgPt = target.getBounds().getCenter().getCopy();
+		newTrgPt.translate(moveDelta);
+		Cluster trgParent = target.getParent();
+		Cluster trgLifelineNode = NodeUtilities.getLifelineNode(trgParent);
+		Cluster newTrgParent = NodeUtilities.getClusterAtVerticalPos(trgLifelineNode, newTrgPt.y);
+		if (newTrgParent != trgParent) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return true;
+		}			
 		
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
 			}
-
+			
 			@Override
-			public boolean apply(InteractionGraph graph) {
-				interactionGraph.disableLayout();
+			public boolean apply(InteractionGraph graph) {							
 				try {
-					source.getBounds().y = newSrcY;
-					interactionGraph.moveMessageOccurrenceSpecification(srcLifeline, (MessageOccurrenceSpecification)source.getElement(), 
-							srcLifeline, srcMoveBeforeNode == null ? null : (InteractionFragment)srcMoveBeforeNode.getElement());				
+					interactionGraph.disableLayout();
+					// Move nodes [ Parent's next node...insert After node] into the parent.
+
+					if (moveDelta.y > 0) {
+						Node untilNode = NodeUtilities.getNextVerticalNode(newSrcParent,  newSrcPt.y);
+						while (untilNode != null && untilNode.getParent() != newSrcParent)
+							untilNode = untilNode.getParent();
+
+						int curIndx = newSrcParent.getNodes().indexOf(srcParent);
+						int lastIdx = newSrcParent.getNodes().indexOf(untilNode);
+						List<Node> nodesToMoveIn = newSrcParent.getNodes().subList(curIndx+1, lastIdx == -1 ? newSrcParent.getNodes().size() : lastIdx);														
+						NodeUtilities.moveNodes(graph, nodesToMoveIn, srcParent, source, NodeUtilities.getArea(nodesToMoveIn).y);
+					} else if (moveDelta.y < 0){
+						Cluster newSrcParent = srcParent.getParent();
+
+						Node fromNode = NodeUtilities.getNextVerticalNode(srcParent, newSrcPt.y);
+						while (fromNode != null && fromNode.getParent() != srcParent)
+							fromNode = fromNode.getParent();
+						List<Node> nodesToMoveIn = srcParent.getNodes().subList(srcParent.getNodes().indexOf(fromNode), srcParent.getNodes().size()-1);														
+						
+						int idx = newSrcParent.getNodes().indexOf(srcParent)+1;
+						Node insertBefore = null; 
+						if (idx < newSrcParent.getNodes().size())
+							insertBefore = newSrcParent.getNodes().get(idx);
+						NodeUtilities.moveNodes(graph, nodesToMoveIn, newSrcParent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
+					}
+					// Move source position
+					source.getBounds().y += moveDelta.y;
+
+					//Move target node
+					Node insertBeforeTrgNode = NodeUtilities.getNextVerticalNode(trgParent,  newTrgPt.y);
+					NodeUtilities.moveNodes(graph, Collections.singletonList(target), trgParent, insertBeforeTrgNode, newTrgPt.y);
+						
 					
-					target.getBounds().y = newTrgY;
-	
-					interactionGraph.moveMessageOccurrenceSpecification(trgLifeline, (MessageOccurrenceSpecification)target.getElement(), 
-							trgLifeline, trgMoveBeforeNode == null ? null : (InteractionFragment)trgMoveBeforeNode.getElement());
+					// TODO: @etxacam Default nudge if required.		
 				} finally {
 					interactionGraph.enableLayout();
+					interactionGraph.layout();
 				}
-				
-				interactionGraph.layout();
-				
-				List<Node> allNodes = ((InteractionGraphImpl)interactionGraph).getLayoutNodes();
-				int index = allNodes.indexOf(source);
-				allNodes = allNodes.subList(index+1,allNodes.size());
-				Element inserBefore = allNodes.stream().filter(d -> ((NodeImpl)d).getConnectedByLink() != null 
-						&& ((NodeImpl)d).getConnectedByLink() != link).map(d -> ((NodeImpl)d).getConnectedByLink().getElement()).
-						findFirst().orElse(null);				
-				interactionGraph.moveMessage(msg, (Message)inserBefore);
 				return true;
 			}
-		});
+		});				
+		return true;
 	}
 	
 	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point newLocation) {		

@@ -47,12 +47,12 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		return Collections.unmodifiableList(nodes);
 	}
 	
-	void addNode(NodeImpl node) {
+	public void addNode(NodeImpl node) {
 		nodes.add(node);
 		node.setParent(this);
 	}
 	
-	void addNode(NodeImpl node, Node beforeNode) {
+	public void addNode(NodeImpl node, Node beforeNode) {
 		if (beforeNode == null) {
 			addNode(node);
 		} else {
@@ -62,18 +62,18 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		}
 	}
 	
-	void addNode(int index, NodeImpl node) {
+	public void addNode(int index, NodeImpl node) {
 		nodes.add(index,node);
 		node.setParent(this);
 	}
 
-	boolean removeNode(NodeImpl node) {
+	public boolean removeNode(NodeImpl node) {
 		boolean res = nodes.remove(node);
 		node.setParent(null);
 		return res;
 	}
 	
-	NodeImpl removeNode(int index) {
+	public NodeImpl removeNode(int index) {
 		NodeImpl n = nodes.remove(index);
 		n.setParent(null);
 		return n;
