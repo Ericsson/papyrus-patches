@@ -82,7 +82,7 @@ public class RowImpl extends SlotImpl implements Row {
 	public static final NodeVPositionComparator NODE_VPOSITION_COMPARATOR = new NodeVPositionComparator();
 	public static final MessageEndNodeComparator MESSAGE_END_NODE_COMPARATOR = new MessageEndNodeComparator();
 
-	private static class MessageEndNodeComparator implements Comparator<Node> {
+	static class MessageEndNodeComparator implements Comparator<Node> {
 		@Override
 		public int compare(Node o1, Node o2) {
 			return Integer.compare(rank(o1), rank(o2));
@@ -104,7 +104,7 @@ public class RowImpl extends SlotImpl implements Row {
 		}
 	}
 
-	private static class NodeVPositionComparator implements Comparator<Node> {
+	static class NodeVPositionComparator implements Comparator<Node> {
 		@Override
 		public int compare(Node o1, Node o2) {
 			Rectangle r1 = (Rectangle)o1.getBounds();
@@ -122,7 +122,7 @@ public class RowImpl extends SlotImpl implements Row {
 		}
 	}
 
-	private static class NodeFragmentComparator implements Comparator<Node> {
+	static class NodeFragmentComparator implements Comparator<Node> {
 		@Override
 		public int compare(Node o1, Node o2) {
 			Rectangle r1 = (Rectangle)o1.getBounds();

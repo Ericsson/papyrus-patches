@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
@@ -56,6 +57,20 @@ public class NodeOrderResolver {
 				nodes.add(node);
 				final NodeImpl node_ = node;
 				lifelinesNodes.stream().forEach(d -> d.remove(node_));
+			}
+			if (node == null && lifelinesNodes.stream().filter(l->!l.isEmpty()).count() > 0) {
+				for (List<Node> lns : lifelinesNodes) {
+					if (lns.isEmpty())
+						continue;
+					Node n = lns.get(0);
+					if (node != null) {
+						int res = RowImpl.NODE_FRAGMENT_COMPARATOR.compare(node, n);
+						if (res > 0)
+							node = (NodeImpl)n;
+					} else
+						node = (NodeImpl)n;
+					
+				}
 			}
 		}  while(node != null);
 		

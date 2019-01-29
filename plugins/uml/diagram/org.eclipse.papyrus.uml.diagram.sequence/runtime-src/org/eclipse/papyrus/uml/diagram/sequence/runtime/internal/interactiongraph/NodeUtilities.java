@@ -145,20 +145,38 @@ public class NodeUtilities {
 	public static List<Node> getBlock(Node source) {
 		List<Node> nodes = new ArrayList<>();
 		getBlock(source, nodes);
-		List<Node> res = nodes.stream().filter(d -> !nodes.contains(d.getParent())).collect(Collectors.toList());
+		// Remove children and order by YPos
+		List<Node> res = nodes.stream().filter(d -> !nodes.contains(d.getParent())).
+				sorted(RowImpl.NODE_FRAGMENT_COMPARATOR).collect(Collectors.toList());
 		return res;
 	}
 	
 	static List<Node> getBlock(Node source, List<Node> nodes) {
-		nodes.add(source);
-		Node n = source.getConnectedNode();
-		if (n == null)
+		if (nodes.contains(source))
 			return nodes;
 		
-		nodes.add(n);
-		if (n instanceof Cluster) {
-			for (Node nn : ((Cluster) n).getNodes()) {
+		nodes.add(source);
+		Node rn = source.getConnectedByNode();
+		if (rn != null)
+			getBlock(rn,nodes);
+		Node cn = source.getConnectedNode();
+		if (cn != null)
+			getBlock(cn,nodes);
+		
+		if (source instanceof Cluster) {
+			Cluster c = (Cluster) source;
+			for (Node nn : c.getNodes()) {
 				getBlock(nn, nodes);
+			}
+			
+			Node ret = c.getNodes().get(c.getNodes().size()-1);
+			Node retTrg = ret.getConnectedNode();
+			if (rn != null && retTrg != null && rn.getParent() == retTrg.getParent()) {
+				// Add to the block the nodes between the triggering one and the return
+				List<Node> parentNodes = rn.getParent().getNodes();
+				for (int i=parentNodes.indexOf(rn); i<=parentNodes.indexOf(retTrg); i++) {
+					getBlock(parentNodes.get(i),nodes);
+				}
 			}
 		}
 		
