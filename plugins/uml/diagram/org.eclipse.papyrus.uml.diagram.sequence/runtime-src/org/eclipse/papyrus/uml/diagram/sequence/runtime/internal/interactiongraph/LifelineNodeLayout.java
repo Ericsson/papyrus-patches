@@ -36,10 +36,7 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		View containerContentPane = ViewUtilities.getViewWithType(node.getInteractionGraph().getInteractionView(), CInteractionInteractionCompartmentEditPart.VISUAL_ID);
 		if (containerContentPane != null) {
 			Rectangle area = ViewUtilities.getClientAreaBounds(node.getInteractionGraph().getEditPartViewer(), containerContentPane);
-			//area.height = childrenArea.height + (childrenArea.y - area.y) + 10;    
 			height = (childrenArea.height + (childrenArea.y - area.y) + 10) - (r != null ? r.y - area.y : 10 ) /*- 14*/ + 20;   
-			/*if (r != null && height - r.height < 20)
-				height = r.height;*/
 		}
 
 		

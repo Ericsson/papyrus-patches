@@ -46,6 +46,7 @@ import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
+import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 public class InteractionGraphImpl extends FragmentClusterImpl implements InteractionGraph {
@@ -385,6 +386,21 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			columns.add(rightGatesColumn);
 		}
 
+		// Create Message:
+		for (Link lnk : getMessageLinks()) {
+			Message msg = (Message)lnk.getElement();
+			if (msg == null)
+				continue;
+			
+			if (msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL) {
+				NodeImpl trg = (NodeImpl)lnk.getTarget();
+				ClusterImpl lifeline = (ClusterImpl)NodeUtilities.getLifelineNode(trg);
+				lifeline.getRow().removeNode(lifeline);
+				lifeline.setRow(trg.getRow());
+				trg.getRow().addNode(lifeline);
+			}
+		}
+		
 		// TODO: Columns & Rows for floating Nodes
 
 		rows.stream().forEach(d -> d.setIndex(rows.indexOf(d)));
@@ -405,7 +421,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		layoutManager.layout();
 		
-		int lastY = Math.max(300,rows.get(rows.size()-1).getYPosition());
+		int lastY = Math.max(300,rows.get(rows.size()-1).getYPosition()+40);
 		// Set lifelines size equal.
 		for (Cluster lifeline : lifelineClusters) {
 			boolean destroyed = lifeline.getAllNodes().stream().filter(d -> (d.getElement() instanceof DestructionOccurrenceSpecification)).
@@ -422,7 +438,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		lastX = Math.max(lastX,300);
 		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();
 		r.height = lastY - r.y + 60;
-		r.width = lastX - r.x + 40;
+		r.width = lastX - r.x + 60;
 		setBounds(r);
 	}
 
@@ -850,7 +866,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				if (insertBefore != null) {
 					target = insertBefore.getParent();
 				}
-				NodeUtilities.moveNodes(this, ns, target, insertBefore, yPos);					
+				int offsetPerLifeline = NodeUtilities.getArea(ans).y - totalArea.y;						
+				NodeUtilities.moveNodes(this, ns, target, insertBefore, yPos+offsetPerLifeline);					
 			}
 
 			List<Node> nodesToNudge = getLayoutNodes().stream().filter(d->(d.getBounds().y >= totalArea.y)).
