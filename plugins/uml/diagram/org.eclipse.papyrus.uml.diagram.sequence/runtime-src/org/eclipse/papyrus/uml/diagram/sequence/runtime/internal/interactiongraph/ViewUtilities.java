@@ -316,6 +316,10 @@ public class ViewUtilities {
 		PrecisionPoint loc = SlidableAnchor.parseTerminalString(anchorId);
 		GraphicalEditPart anchoringEp = getEditPart(viewer, anchoringView);
 		Rectangle rect = getBounds(viewer, anchoringView);
+		if (loc == null) {
+			return rect.getCenter().getCopy();
+		}
+
 		if (anchoringEp != null) {
 			rect = anchoringEp.getContentPane().getBounds().getCopy();
 			anchoringEp.getContentPane().translateToAbsolute(rect);
@@ -323,7 +327,6 @@ public class ViewUtilities {
 		} else if (anchoringView.getElement() instanceof Lifeline) {
 
 		}
-
 		Point p = new Point((int) (rect.x + (rect.width * loc.preciseX())),
 				(int) (rect.y + (rect.height * loc.preciseY())));
 		return p;

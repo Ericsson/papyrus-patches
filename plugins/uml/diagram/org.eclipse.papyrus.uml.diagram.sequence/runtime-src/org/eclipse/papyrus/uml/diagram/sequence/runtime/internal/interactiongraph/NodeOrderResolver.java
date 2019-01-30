@@ -53,12 +53,8 @@ public class NodeOrderResolver {
 		do {
 			// 1-. Choose the first head node.
 			node = chooseNode(nodes.isEmpty() ? null : nodes.get(nodes.size()-1), lifelinesNodes);
-			if (node != null) {
-				nodes.add(node);
-				final NodeImpl node_ = node;
-				lifelinesNodes.stream().forEach(d -> d.remove(node_));
-			}
 			if (node == null && lifelinesNodes.stream().filter(l->!l.isEmpty()).count() > 0) {
+				System.out.println("WARNING! Fragment order can not be resolved.");
 				for (List<Node> lns : lifelinesNodes) {
 					if (lns.isEmpty())
 						continue;
@@ -68,9 +64,13 @@ public class NodeOrderResolver {
 						if (res > 0)
 							node = (NodeImpl)n;
 					} else
-						node = (NodeImpl)n;
-					
-				}
+						node = (NodeImpl)n;					
+				}							
+			}
+			if (node != null) {
+				nodes.add(node);
+				final NodeImpl node_ = node;
+				lifelinesNodes.stream().forEach(d -> d.remove(node_));
 			}
 		}  while(node != null);
 		

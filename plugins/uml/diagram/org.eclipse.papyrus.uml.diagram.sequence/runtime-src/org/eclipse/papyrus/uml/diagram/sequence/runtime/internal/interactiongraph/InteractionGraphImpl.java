@@ -266,7 +266,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				prevRow = new RowImpl(this);
 				rows.add(prevRow);
 				if (node.getBounds() != null) {
-					y = node.getBounds()./*.getCenter().*/y;
+					y = node.getBounds().getCenter().y;
 					prevRow.setYPosition(y);
 				}
 				else

@@ -61,6 +61,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
@@ -78,6 +79,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.RowImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
@@ -261,8 +263,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	// TODO: @etxacam Reply messages
-	// TODO: @etxacam Delete messages
-	// TODO: @etxacam Creation messages
 	// TODO: @etxacam Self messages
 	
 	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
@@ -299,7 +299,13 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						msg.setName("Message");
 					
 					MessageOccurrenceSpecification mosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-					MessageOccurrenceSpecification mosTrg= UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+					MessageOccurrenceSpecification mosTrg= null;
+					if (msg.getMessageSort() == MessageSort.DELETE_MESSAGE_LITERAL) {
+						mosTrg = UMLFactory.eINSTANCE.createDestructionOccurrenceSpecification();
+					} else {
+						mosTrg = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+					}
+					
 					msg.setSendEvent(mosSrc);
 					mosSrc.setMessage(msg);
 					msg.setReceiveEvent(mosTrg);				
@@ -492,7 +498,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 
-	// TODO: @etxacam move reply messages in and out of the exec spec => Check the destination 
 	// TODO: @etxacam Delete messages
 	// TODO: @etxacam Creation messages
 	// TODO: @etxacam Check self messages
@@ -747,7 +752,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (el instanceof OccurrenceSpecification || el instanceof ExecutionSpecification) {
 					fragments.add((InteractionFragment)el);
 				}
-			}
+			}			
 			createCommandsForCollectionChanges(editingDomain, command, lf,
 					UMLPackage.Literals.LIFELINE__COVERED_BY, lf.getCoveredBys(), fragments, false, false);
 		}						
@@ -882,8 +887,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			Edge edge = lk.getEdge();
 			if (edge != null) {
 				if (lk.getSource() != null) {
-					Point p = lk.getSource().getBounds().getTopLeft();
-					View endView = lk.getSource().getParent().getView();
+					Point p = lk.getSource().getBounds().getCenter();
+					View endView = lk.getSourceAnchoringNode().getView();
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.SOURCE, 
 							endView, p, "Set Source Link Anchor", null));
 				} else {
@@ -894,8 +899,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				}
 			
 				if (lk.getTarget() != null) {
-					Point p = lk.getTarget().getBounds().getTopLeft();
-					View endView = lk.getTarget().getParent().getView();
+					Point p = lk.getTarget().getBounds().getCenter();
+					View endView = lk.getTargetAnchoringNode().getView();
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.TARGET, 
 							endView, p, "Set Target Link Anchor", null));
 				} else {
@@ -906,7 +911,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				}
 			}
 		}
-	}
+	}	
 	
 	private ICommand createMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
 		Link link = interactionGraph.getLinkFor(message);
@@ -932,14 +937,28 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain,
 				interactionGraph.getInteraction(), type);
 		cmd.add(new CreateNodeElementCommand(createReq, message));
+		boolean isDestroyMessage = (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification);
+		if (isDestroyMessage) {
+			String hint = DestructionOccurrenceSpecificationEditPart.VISUAL_ID;
+			DestructionOccurrenceSpecification dos = (DestructionOccurrenceSpecification)message.getReceiveEvent();
+			Cluster lifelineCluster = NodeUtilities.getLifelineNode(link.getTarget());
+			cmd.add(new CreateNodeViewCommand(editingDomain, link.getTarget(),
+					new ViewDescriptor(
+							new SemanticElementAdapter(dos,UMLElementTypes.getElementType(hint)),
+							org.eclipse.gmf.runtime.notation.Node.class, hint,
+							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
+						lifelineCluster.getView()));
+		}
+
 		cmd.add(new CreateEdgeViewCommand(editingDomain, interactionGraph.getLinkFor(message),
-				new ViewDescriptor(
-						new SemanticElementAdapter(message,
-								UMLElementTypes.getElementType(visualId)),
-						org.eclipse.gmf.runtime.notation.Edge.class, visualId,
-						((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
-					interactionGraph.getDiagram(), 
-					link.getSource().getParent(), link.getSourceLocation(), link.getTarget().getParent(), link.getTargetLocation()));
+					new ViewDescriptor(
+							new SemanticElementAdapter(message,
+									UMLElementTypes.getElementType(visualId)),
+							org.eclipse.gmf.runtime.notation.Edge.class, visualId,
+							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
+						interactionGraph.getDiagram(), 
+						link.getSourceAnchoringNode(), link.getSourceLocation(), 
+						link.getTargetAnchoringNode(), link.getTargetLocation()));
 		return cmd;
 	}
 

@@ -18,6 +18,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.Edge;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 
 /**
  * @author ETXACAM
@@ -25,8 +26,11 @@ import org.eclipse.gmf.runtime.notation.Edge;
  */
 public interface Link extends GraphItem {
 	Node getSource();
+	Node getSourceAnchoringNode();
 	Point getSourceLocation();
+	
 	Node getTarget();
+	Node getTargetAnchoringNode();
 	Point getTargetLocation();
 
 	Edge getEdge();

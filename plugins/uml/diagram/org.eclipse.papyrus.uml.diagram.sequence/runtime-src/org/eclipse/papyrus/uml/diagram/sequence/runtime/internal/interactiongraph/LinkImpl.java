@@ -23,6 +23,7 @@ import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 
 /**
@@ -91,7 +92,27 @@ public class LinkImpl extends GraphItemImpl implements Link {
 	public void setView(View view) {
 		setEdge((Edge)view);
 	}
+
+	public NodeImpl getSourceAnchoringNode() {
+		NodeImpl src = getSource();
+		if (src.getView() != null)
+			return src;
+		
+		return src.getParent();
+	}
 	
+	public NodeImpl getTargetAnchoringNode() {
+		NodeImpl trg = getTarget();
+		if (trg.getView() != null)
+			return trg;
+		
+		if (trg.getElement() instanceof DestructionOccurrenceSpecification) {
+			return trg;
+		}
+		
+		return trg.getParent();
+	}
+
 	public Edge getEdge() {
 		return edge;
 	}

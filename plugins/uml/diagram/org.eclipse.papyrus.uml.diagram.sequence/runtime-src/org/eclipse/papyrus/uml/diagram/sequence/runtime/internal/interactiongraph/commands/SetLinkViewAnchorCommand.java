@@ -66,6 +66,8 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 			}
 			
 			Node n = graph.getClusterFor((Element)anchoringView.getElement());
+			if (n == null)
+				n = graph.getNodeFor((Element)anchoringView.getElement());
 			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
 			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
@@ -77,6 +79,8 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 			}
 
 			Node n = graph.getClusterFor((Element)anchoringView.getElement());
+			if (n == null)
+				n = graph.getNodeFor((Element)anchoringView.getElement());
 			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
 			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();

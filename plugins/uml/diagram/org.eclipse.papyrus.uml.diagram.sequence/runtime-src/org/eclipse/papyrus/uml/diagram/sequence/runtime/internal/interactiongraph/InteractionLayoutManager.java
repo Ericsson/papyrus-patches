@@ -19,14 +19,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.papyrus.infra.ui.multidiagram.actionbarcontributor.ActionBarContributorExtensionFactory;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.BehaviorExecutionSpecification;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
-import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
 
 /**
@@ -99,6 +96,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 
 	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeNodeLayouts() {
 		Map<Class<? extends Element>, InteractionNodeLayout> map = new HashMap<>();
+		map.put(DestructionOccurrenceSpecification.class, new DestructionOcurrentceSpecificationNodeLayout());
 		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		return map;

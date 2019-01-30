@@ -18,6 +18,9 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 
 
 /**
@@ -48,6 +51,12 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		r.x = column.getXPosition() - (width / 2);
 		r.width = width;
 		r.height = height;
+		Node dosNode = ((Cluster)node).getNodes().stream().filter(
+				d->d.getElement() instanceof DestructionOccurrenceSpecification).
+			findFirst().orElse(null);
+		if (dosNode != null) {
+			r.height = dosNode.getBounds().getCenter().y - r.y;
+		}
 		node.setBounds(r);		
 	}
 
