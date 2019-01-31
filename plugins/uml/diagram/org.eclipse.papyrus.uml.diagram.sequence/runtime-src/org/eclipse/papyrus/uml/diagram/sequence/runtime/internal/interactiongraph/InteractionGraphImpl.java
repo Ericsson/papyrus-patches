@@ -889,7 +889,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				int lastY = totalArea.bottom() + delta + 20; // TODO: @etxacam Need to get a default space between rows.
 				//NodeUtilities.nudgeNodes(NodeUtilities.flatten(nodes), 0, yPos - totalArea.y);
 				NodeUtilities.nudgeNodes(nodesToNudge, 0, Math.max(0, lastY - prevNodesArea.y));
+			}		
+			
+			int spaceToNext = yPos - NodeUtilities.getArea(nodesToNudge2).y; 
+			if ( spaceToNext >= -3 && spaceToNext < 23) {
+				NodeUtilities.nudgeNodes(nodesToNudge2, 0, 20 - spaceToNext);
 			}
+				
 		} finally {
 			enableLayout();
 				

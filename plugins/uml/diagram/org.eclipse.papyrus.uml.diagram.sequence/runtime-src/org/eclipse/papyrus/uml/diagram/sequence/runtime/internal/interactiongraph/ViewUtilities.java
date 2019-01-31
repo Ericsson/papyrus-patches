@@ -16,7 +16,6 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import java.util.List;
 
 import org.eclipse.draw2d.IFigure;
-import org.eclipse.draw2d.Viewport;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
@@ -25,7 +24,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
-import org.eclipse.gmf.runtime.diagram.core.preferences.PreferencesHint;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.parts.DiagramGraphicalViewer;
 import org.eclipse.gmf.runtime.gef.ui.figures.SlidableAnchor;
@@ -42,6 +40,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
 import org.eclipse.papyrus.infra.gmfdiag.common.preferences.PreferencesConstantsHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure.LifelineHeaderFigure;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Lifeline;
@@ -236,11 +235,27 @@ public class ViewUtilities {
 			org.eclipse.gmf.runtime.notation.Node node = (org.eclipse.gmf.runtime.notation.Node) view;
 			GraphicalEditPart ep = getEditPart(viewer, view);
 			if (ep == null) {
-				return absoluteLayoutConstraint(viewer, view);
+				Rectangle r = absoluteLayoutConstraint(viewer, view);
+				if (view.getElement() instanceof Lifeline) {
+					r.y += 19;
+					r.height -= 19;
+				}
+				return r;
 			}
 
 			Rectangle r = getAbsoluteBounds(ep.getContentPane());
 			cancelViewportEffects(ep, r);
+
+			if (view.getElement() instanceof Lifeline) {
+				// Remove the header.
+				LifelineHeaderFigure header = findFigure(ep.getContentPane(), LifelineHeaderFigure.class);
+				Rectangle rh = getAbsoluteBounds(header);
+				cancelViewportEffects(ep, rh);
+				int rem = (rh.y + rh.height) - r.y;
+				r.y = rh.y + rh.height;
+				r.height -= rem;
+			}
+
 			return r;
 		}
 		return null; // Can not happen
@@ -663,5 +678,20 @@ public class ViewUtilities {
 			gridSpacing = preferenceStore.getDouble(PreferencesConstantsHelper.GRID_SPACING_CONSTANT);
 		}
 		return NotationUtils.getDoubleValue(diagram, PreferencesConstantsHelper.GRID_SPACING_CONSTANT, gridSpacing);
+	}
+	
+	private static <T extends IFigure> T findFigure(IFigure container, Class<T> cls) {
+		for (IFigure ch : (List<IFigure>)container.getChildren()) {
+			if (cls.isInstance(ch)) {
+				return (T)ch;
+			}
+		}
+
+		for (IFigure ch : (List<IFigure>)container.getChildren()) {
+			IFigure res = findFigure(ch, cls);
+			if (res != null)
+				return (T)res;
+		}
+		return null;
 	}
 }

@@ -14,6 +14,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -158,7 +159,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
 		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
 
-		Rectangle clientAreaBounds = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(),
+		Rectangle clientAreaBounds = ViewUtilities.getBounds(interactionGraph.getEditPartViewer(),
 				lifelineNode.getView());
 		final Rectangle newClientAreaBounds = clientAreaBounds.getCopy();
 		newClientAreaBounds.translate(moveDelta.x, 0);
@@ -386,30 +387,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	public void nudgeMessage(Message msg, Point delta) {
 		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message. 
-		Link link = interactionGraph.getLinkFor(msg);
-		
+		Link link = interactionGraph.getLinkFor(msg);		
 		Node source = link.getSource();
-		Set<Node> limitNodes = new HashSet<Node>();
-		Row row = source.getRow();
-		// Add row nodes except ExecSpecs
-		limitNodes.addAll(row.getNodes());
-		
-		
-		if (row.getIndex() > 1)
-			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
-		
 		Node target = link.getTarget();
-		row = target.getRow();
-		limitNodes.addAll(row.getNodes());
-		if (row.getIndex() > 1)
-			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
 		
-		limitNodes.remove(source);
-		limitNodes.remove(target);
-		limitNodes.removeAll(limitNodes.stream().filter(d -> d.getElement() instanceof ExecutionSpecification).
-				collect(Collectors.toList()));
-		Rectangle validArea = NodeUtilities.getEmptyArea(interactionGraph, null, new ArrayList<>(limitNodes), null, null);
-		Rectangle msgArea = link.getBounds();
+		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgArea)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -446,7 +428,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Set<Node> limitNodes = new HashSet<Node>();
 		Row row = msgEndNode.getRow();
 		limitNodes.addAll(row.getNodes());
-		if (row.getIndex() > 1)
+		if (row.getIndex() > 0)
 			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
 
 		Node target = link.getTarget();
@@ -503,10 +485,26 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	// TODO: @etxacam Check self messages
 	public void moveMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
-		Node source = link.getSource();		
+		Node source = link.getSource();
+		Node target = link.getTarget();
+		
+		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+				NodeUtilities.getLifelineNode(source).getView());
+		int minY = lifelineArea.y;
+		if (msg.getMessageSort() != MessageSort.CREATE_MESSAGE_LITERAL) {
+			minY = Math.max(minY, ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+					NodeUtilities.getLifelineNode(target).getView()).y);
+		}
+		
+		
 		List<Node> nodes = NodeUtilities.getBlock(source);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
-
+		totalArea.translate(moveDelta);
+		if (totalArea.y <= minY) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+				
 		if (msg.getMessageSort() == MessageSort.REPLY_LITERAL) {
 			if (moveReplyMessage(msg, moveDelta))
 				return;
@@ -520,7 +518,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y+moveDelta.y);
+				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y);
 				return true;
 			}
 		});
@@ -1041,8 +1039,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location", Collections.emptyList()));
 		}
 	}
-	
-
 	
 	/*
 	private void calculateFragmentsChanges(List<InteractionGraphDiff> diffs) {

@@ -15,7 +15,9 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,10 +25,12 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -378,5 +382,57 @@ public class NodeUtilities {
 		}
 		return n;
 	}
+
+	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical) {
+		Set<Node> vLimitNodes = null;
+		Set<Node> hLimitNodes = null;
+		for (Node n : nodesToNudge) {
+			if (vertical) {
+				if (vLimitNodes == null)
+					vLimitNodes = new HashSet<Node>();
+				Row row = n.getRow();
+				vLimitNodes.addAll(row.getNodes());
+							
+				if (row.getIndex() > 0)
+					vLimitNodes.addAll(graph.getRows().get(row.getIndex()-1).getNodes());
+			}
+			
+			if (horizontal) {
+				if (hLimitNodes == null)
+					hLimitNodes = new HashSet<Node>();
+				Column col = n.getColumn();
+				hLimitNodes.addAll(col.getNodes());
+							
+				if (col.getIndex() > 0)
+					hLimitNodes.addAll(graph.getColumns().get(col.getIndex()-1).getNodes());				
+			}
+				
+		}
+		
+		if (vertical)
+			vLimitNodes.removeAll(nodesToNudge);
+		if (horizontal)
+			hLimitNodes.removeAll(nodesToNudge);
+		
+		int minY = Integer.MIN_VALUE; 
+		if (vLimitNodes != null) {
+			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList()); 
+			vLimitNodes.removeAll(lifelines);
+			
+			for (Node n : lifelines) {
+				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
+				minY = Math.max(minY, clientArea.y);
+			}
+		}
+				
+		Rectangle validArea = getEmptyArea(graph, horizontal ? new ArrayList<>(hLimitNodes) : null, 
+					vertical ? new ArrayList<>(vLimitNodes) : null, null, null);
+			
+		if (vLimitNodes != null) {
+			validArea.y = Math.max(minY, validArea.y);
+		}
+		return validArea;
+	}
+	
 
 }
