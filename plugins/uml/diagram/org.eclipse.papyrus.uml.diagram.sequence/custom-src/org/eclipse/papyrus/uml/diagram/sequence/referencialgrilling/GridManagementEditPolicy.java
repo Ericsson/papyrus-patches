@@ -353,7 +353,7 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 			int index = 0;
 			while (index < covered.size()) {
 				if (covered.get(index) instanceof InteractionOperand) {
-					if (covered.get(index - 1) instanceof CombinedFragment) {
+					if (index > 1 && (covered.get(index - 1) instanceof CombinedFragment)) {
 						index++;
 
 					} else {
