@@ -175,7 +175,7 @@ public class NodeUtilities {
 			
 			Node ret = c.getNodes().get(c.getNodes().size()-1);
 			Node retTrg = ret.getConnectedNode();
-			if (rn != null && retTrg != null && rn.getParent() == retTrg.getParent()) {
+			if (rn != null && retTrg != null && rn.getParent() == retTrg.getParent() && nodes.contains(rn.getParent())) {
 				// Add to the block the nodes between the triggering one and the return
 				List<Node> parentNodes = rn.getParent().getNodes();
 				for (int i=parentNodes.indexOf(rn); i<=parentNodes.indexOf(retTrg); i++) {
