@@ -95,6 +95,9 @@ public class LinkImpl extends GraphItemImpl implements Link {
 
 	public NodeImpl getSourceAnchoringNode() {
 		NodeImpl src = getSource();
+		if (src == null)
+			return null;
+		
 		if (src.getView() != null)
 			return src;
 		
@@ -103,6 +106,9 @@ public class LinkImpl extends GraphItemImpl implements Link {
 	
 	public NodeImpl getTargetAnchoringNode() {
 		NodeImpl trg = getTarget();
+		if (trg == null)
+			return null;
+		
 		if (trg.getView() != null)
 			return trg;
 		

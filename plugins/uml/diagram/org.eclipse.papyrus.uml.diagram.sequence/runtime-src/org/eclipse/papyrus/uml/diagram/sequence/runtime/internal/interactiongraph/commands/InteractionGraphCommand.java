@@ -873,12 +873,18 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		EditPartViewer viewer = interactionGraph.getEditPartViewer();
 		for (Link lk : interactionGraph.getMessageLinks()) {
 			Message msg = (Message)lk.getElement();
-			if (msg.getSendEvent() != lk.getSource().getElement()) {
+			if (lk.getSource() == null) {
+				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, SetCommand.UNSET_VALUE)));				
+			} else if (msg.getSendEvent() != lk.getSource().getElement()) {
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, lk.getSource().getElement())));
 			}
 
-			if (msg.getReceiveEvent() != lk.getTarget().getElement()) {
+			if (lk.getTarget() == null) {
+				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, SetCommand.UNSET_VALUE)));
+			} else if (msg.getReceiveEvent() != lk.getTarget().getElement()) {
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, lk.getTarget().getElement())));
 			}
@@ -891,9 +897,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							endView, p, "Set Source Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, null)));					
+							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, SetCommand.UNSET_VALUE)));					
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE_ANCHOR, null)));					
+							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
 			
 				if (lk.getTarget() != null) {
@@ -903,9 +909,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							endView, p, "Set Target Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, null)));					
+							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, SetCommand.UNSET_VALUE)));					
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR, null)));					
+							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
 			}
 		}

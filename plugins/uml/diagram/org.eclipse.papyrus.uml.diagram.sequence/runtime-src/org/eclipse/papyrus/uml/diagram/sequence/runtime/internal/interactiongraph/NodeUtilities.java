@@ -15,6 +15,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -186,7 +187,58 @@ public class NodeUtilities {
 		
 		return nodes;
 	}	
+
+	public static List<Node> getBlockOtherNodes(List<Node> blockNodes) {
+		List<Node> allNodes = NodeUtilities.flattenKeepClusters(blockNodes);
+		List<Node> otherNodes = new ArrayList<>();
+		InteractionGraph interactionGraph = blockNodes.stream().map(Node::getInteractionGraph).findFirst().orElse(null);
+		if (interactionGraph == null)
+			return otherNodes;
+		
+		int firstRow = allNodes.stream().filter(d->d.getRow() != null).map(d->d.getRow().getIndex()).min(Integer::compareTo).orElse(-1); 
+		int lastRow = allNodes.stream().filter(d->d.getRow() != null).map(d->d.getRow().getIndex()).min(Comparator.reverseOrder()).orElse(-1); 
+		int firstRowWithOtherContent = lastRow;
+		int lastRowWithOtherContent = firstRow;
+		for (int i=firstRow; i<=lastRow; i++) {
+			otherNodes.addAll(interactionGraph.getRows().get(i).getNodes());
+			if (!allNodes.containsAll(interactionGraph.getRows().get(i).getNodes())) {
+				firstRowWithOtherContent = Math.min(firstRowWithOtherContent, i);
+				lastRowWithOtherContent = Math.max(lastRowWithOtherContent, i);
+			}
+		}
+		otherNodes.removeAll(allNodes);
+		otherNodes.removeIf(d->d.getElement() instanceof Lifeline);
+		return otherNodes;
+	}
 	
+	public static void removeNodes(InteractionGraph interactionGraph, List<Node> nodes) {
+		for (Node n : nodes) {
+			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
+			//((NodeImpl)n).disconnectNode();
+		}		
+		interactionGraph.layout();
+	}
+	
+	public static void insertNodes(InteractionGraph interactionGraph, List<Node> nodes, Cluster targetCluster, Node insertBefore, int yPos) {
+		Rectangle area = getArea(nodes);
+		
+		int orgPosY = area.y;
+		for (Node n : nodes) {			
+			if (n != insertBefore) {
+				((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
+			}
+			if (n instanceof Cluster) {
+				// Update position in the children 
+				for (Node child : flattenKeepClusters(Collections.singletonList((ClusterImpl)n))) {
+					child.getBounds().y = yPos + (child.getBounds().y - orgPosY);
+				}
+			} else {
+				n.getBounds().y = yPos + (n.getBounds().y - orgPosY);				
+			}
+		}
+		interactionGraph.layout();
+	}
+
 	public static void moveNodes(InteractionGraph interactionGraph, List<Node> nodes, Cluster targetCluster, Node insertBefore, int yPos) {
 		Rectangle area = getArea(nodes);
 		

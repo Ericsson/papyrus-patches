@@ -44,7 +44,7 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		while (n != null && !(n.parent instanceof InteractionGraph)) {
 			n = n.parent;
 		}
-		return (InteractionGraphImpl) n.parent;
+		return n == null ? null : (InteractionGraphImpl) n.parent;
 	}
 
 	@Override
@@ -84,8 +84,8 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		this.connects = true;
 		connectedNode.oppositeNode = this;
 		connectedNode.connects = false;
-		connectedNode.connectingLink = (LinkImpl)link;
-		connectingLink = (LinkImpl)link;
+		((NodeImpl)link.getSource()).connectingLink = (LinkImpl)link;
+		((NodeImpl)link.getTarget()).connectingLink = (LinkImpl)link;
 	}
 
 	void disconnectNode() {
@@ -94,6 +94,10 @@ public class NodeImpl extends GraphItemImpl implements Node {
 			this.oppositeNode.connects = false;
 			this.oppositeNode = null;
 			this.connects = false;
+			if (this.connectingLink.getSource() == this)
+				this.connectingLink.setSource(null);
+			if (this.connectingLink.getTarget() == this)
+				this.connectingLink.setTarget(null);
 			this.connectingLink = null;
 		}
 	}
