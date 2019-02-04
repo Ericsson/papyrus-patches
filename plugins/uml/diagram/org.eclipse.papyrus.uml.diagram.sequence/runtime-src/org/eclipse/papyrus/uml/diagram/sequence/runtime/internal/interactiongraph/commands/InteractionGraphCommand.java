@@ -586,8 +586,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 						int curIndx = newSrcParent.getNodes().indexOf(srcParent);
 						int lastIdx = newSrcParent.getNodes().indexOf(untilNode);
-						List<Node> nodesToMoveIn = newSrcParent.getNodes().subList(curIndx+1, lastIdx == -1 ? newSrcParent.getNodes().size() : lastIdx);														
-						NodeUtilities.moveNodes(graph, nodesToMoveIn, srcParent, source, NodeUtilities.getArea(nodesToMoveIn).y);
+						List<Node> nodesToMoveIn = newSrcParent.getNodes().subList(curIndx+1, lastIdx == -1 ? newSrcParent.getNodes().size() : lastIdx);
+						if (!nodesToMoveIn.isEmpty()) {
+							NodeUtilities.moveNodes(graph, nodesToMoveIn, srcParent, source, NodeUtilities.getArea(nodesToMoveIn).y);
+						}
 					} else if (moveDelta.y < 0){
 						Cluster newSrcParent = srcParent.getParent();
 
@@ -595,12 +597,13 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						while (fromNode != null && fromNode.getParent() != srcParent)
 							fromNode = fromNode.getParent();
 						List<Node> nodesToMoveIn = srcParent.getNodes().subList(srcParent.getNodes().indexOf(fromNode), srcParent.getNodes().size()-1);														
-						
-						int idx = newSrcParent.getNodes().indexOf(srcParent)+1;
-						Node insertBefore = null; 
-						if (idx < newSrcParent.getNodes().size())
-							insertBefore = newSrcParent.getNodes().get(idx);
-						NodeUtilities.moveNodes(graph, nodesToMoveIn, newSrcParent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
+						if (!nodesToMoveIn.isEmpty()) {
+							int idx = newSrcParent.getNodes().indexOf(srcParent)+1;
+							Node insertBefore = null; 
+							if (idx < newSrcParent.getNodes().size())
+								insertBefore = newSrcParent.getNodes().get(idx);						
+							NodeUtilities.moveNodes(graph, nodesToMoveIn, newSrcParent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
+						}
 					}
 					// Move source position
 					source.getBounds().y += moveDelta.y;
@@ -1016,7 +1019,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 			if (updateBounds) {
 				NodeImpl node = interactionGraph.getNodeFor((Element) obj);
-				cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location",
+				cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getConstraints(), updateParts, "Set location",
 						Collections.emptyList()));
 			}
 			index++;
@@ -1042,7 +1045,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	private void updateBoundsChanges(ICompositeCommand cmd, List<Node> nodes, boolean updateParts) {
 		for (Node node : nodes) {
-			cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getBounds(), updateParts, "Set location", Collections.emptyList()));
+			cmd.add(new SetNodeViewBoundsCommand(getEditingDomain(), node, node.getConstraints(), updateParts, "Set location", Collections.emptyList()));
 		}
 	}
 	

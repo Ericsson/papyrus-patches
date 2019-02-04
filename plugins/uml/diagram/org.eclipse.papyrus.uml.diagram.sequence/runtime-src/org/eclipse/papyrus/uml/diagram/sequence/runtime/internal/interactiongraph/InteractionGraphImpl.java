@@ -435,13 +435,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				r.setBounds(r);
 			}
 		}
+		int lastX = 0;
 		Rectangle allLifelinesRect = NodeUtilities.getArea((List)lifelineClusters);
+		if (allLifelinesRect != null)
+			lastX = allLifelinesRect.getRight().x;
 		Rectangle allClusterRect = NodeUtilities.getArea((List)getFragmentClusters());
-		int lastX = Math.max(allClusterRect.getRight().x, allLifelinesRect.getRight().x);
+		if (allClusterRect != null)
+			lastX = Math.max(allClusterRect.getRight().x, lastX);
+		
 		lastX = Math.max(lastX,300);
-		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();
+		
+		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();		
 		r.height = lastY - r.y + 60;
-		r.width = lastX - r.x + 60;
+		r.width = lastX - r.x + 60;		
 		setBounds(r);
 	}
 
@@ -838,8 +844,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 		int blockStartPoint = blockArea.y;
 		int blockEndPoint = blockStartPoint + blockArea.height;
-		int otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
-		int otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;		
+		int otherStartPoint = blockStartPoint;
+		int otherEndPoint = blockEndPoint;
+		if (otherArea != null) {
+			otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
+			otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;
+		}
 		int prev = otherStartPoint - blockStartPoint;
 		int after = blockEndPoint - otherEndPoint; 
 		
@@ -878,8 +888,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 		int blockStartPoint = blockArea.y;
 		int blockEndPoint = blockStartPoint + blockArea.height;
-		int otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
-		int otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;		
+		int otherStartPoint = blockStartPoint;
+		int otherEndPoint = blockEndPoint;
+		if (otherArea != null) {
+			otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
+			otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;
+		}
 		int prev = otherStartPoint - blockStartPoint;
 		int after = blockEndPoint - otherEndPoint; 
 		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
@@ -909,7 +923,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		List<Node> nodes = nodesByLifelines.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
 		//Map<Cluster,List<Node>> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
-		
 		// @TODO: etxacam Check if insertion point is on an existing row to nudge the default size
 		
 		// Make place for the block.
@@ -954,112 +967,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			layout();
 		}	
 	}
-	
-	// TODO: @etxacam: Need to check if insertion point overlaps with an existing row. If so, needs to nudge 
-	//       by minimum before insert (from the insert before node...)  
-	public void moveNodeBlock_(List<Node> nodes, int yPos) {
-		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
-		Rectangle totalArea = NodeUtilities.getArea(nodes);
 
-		disableLayout();
-		int minPrevDist = Integer.MAX_VALUE;
-		int minNudgeAfterY = Integer.MAX_VALUE;
-		try {
-			Set<Cluster> lifelines = nodes.stream().map(d -> NodeUtilities.getLifelineNode(d)).collect(Collectors.toSet());
-			for (Cluster lifelineCluster : lifelines) {
-				List<Node> ns = nodes.stream().filter(d -> NodeUtilities.getLifelineNode(d) == lifelineCluster).collect(Collectors.toList());
-				List<Node> ans = allNodes.stream().filter(d -> NodeUtilities.getLifelineNode(d) == lifelineCluster).collect(Collectors.toList()); 
-				
-				Node newPrevNode = lifelineCluster.getAllNodes().stream().filter(d->(d.getBounds().y < yPos)).
-						filter(d->!ans.contains(d)).sorted(Collections.reverseOrder(RowImpl.NODE_VPOSITION_COMPARATOR)).findFirst().orElse(null);
-				Cluster prevParent = newPrevNode != null ? newPrevNode.getParent() : null;
-				if (prevParent != null && prevParent != lifelineCluster && prevParent.getNodes().indexOf(newPrevNode) == prevParent.getNodes().size() -1)
-					newPrevNode = prevParent;
-				
-				Node insertBefore = lifelineCluster.getAllNodes().stream().filter(d->!ans.contains(d) && d.getBounds().y >= yPos).
-						findFirst().orElse(null);
-				Cluster insertBeforeParent = insertBefore != null ? insertBefore.getParent() : null;
-				if (insertBeforeParent != null && insertBeforeParent != lifelineCluster && insertBeforeParent.getNodes().indexOf(insertBefore) == 0)
-					insertBefore = insertBeforeParent;
-				
-				int nudgeAfterY = insertBefore == null ? Integer.MAX_VALUE : insertBefore.getBounds().getTop().y;							
-				int prevDist = yPos;
-				if (newPrevNode != null) {
-					Rectangle r = newPrevNode.getBounds();
-					prevDist = yPos - r.getBottom().y;
-					if (r.height == 1)
-						prevDist --;
-				}
-				
-				minPrevDist = Math.min(minPrevDist, prevDist);
-				minNudgeAfterY = Math.min(minNudgeAfterY, nudgeAfterY);
-				Cluster target = lifelineCluster;
-				if (insertBefore != null) {
-					target = insertBefore.getParent();
-				}
-				int offsetPerLifeline = NodeUtilities.getArea(ans).y - totalArea.y;						
-				NodeUtilities.moveNodes(this, ns, target, insertBefore, yPos+offsetPerLifeline);					
-			}
-
-			List<Node> nodesToNudge = getLayoutNodes().stream().filter(d->(d.getBounds().y >= totalArea.y)).
-					filter(d->!allNodes.contains(d)).collect(Collectors.toList());
-			int minNudgeAfterY_ = minNudgeAfterY;
-			List<Node> nodesToNudge2 = getLayoutNodes().stream().filter(d->(d.getBounds().y >= minNudgeAfterY_)).
-					filter(d->!allNodes.contains(d)).collect(Collectors.toList());
-						
-			Rectangle prevNodesArea = NodeUtilities.getArea(nodesToNudge); 
-			Rectangle nextNodesArea = NodeUtilities.getArea(nodesToNudge2); 
-			NodeUtilities.nudgeNodes(nodesToNudge2, 0, totalArea.height);		
-			
-			int firstRow = allNodes.stream().filter(d->d.getRow() != null).map(d->d.getRow().getIndex()).min(Integer::compareTo).orElse(-1); 
-			int lastRow = allNodes.stream().filter(d->d.getRow() != null).map(d->d.getRow().getIndex()).min(Comparator.reverseOrder()).orElse(-1); 
-			int firstRowWithContent = lastRow;
-			int lastRowWithContent = firstRow;
-			for (int i=firstRow; i<=lastRow; i++) {
-				if (!allNodes.containsAll(getRows().get(i).getNodes())) {
-					firstRowWithContent = Math.min(firstRowWithContent, i);
-					lastRowWithContent = Math.max(lastRowWithContent, i);
-				}
-			}
-			
-			if (firstRowWithContent != lastRow|| lastRowWithContent != firstRow) {
-				int sp = (getRows().get(firstRowWithContent).getYPosition() - getRows().get(firstRow).getYPosition());			
-				List<Node> adjustNodes = new ArrayList<>(nodesToNudge); 
-				for (int i=firstRowWithContent; i<=lastRowWithContent; i++) {
-					List<Node> n = new ArrayList<Node>(getRows().get(i).getNodes());
-					n.removeAll(allNodes);
-					adjustNodes.removeAll(n);
-					NodeUtilities.nudgeNodes(n, 0, -sp);					
-				} 
-				sp = (getRows().get(lastRow).getYPosition() - getRows().get(lastRowWithContent).getYPosition());
-				NodeUtilities.nudgeNodes(adjustNodes, 0, -sp);
-			} else {
-				NodeUtilities.nudgeNodes(nodesToNudge, 0, -totalArea.height);
-			}
-			
-			// Need to nudge Extra
-			if (yPos >= totalArea.y + totalArea.height ) {
-				NodeUtilities.nudgeNodes(new ArrayList<>(allNodes.stream().filter(d->!(d instanceof Cluster)).collect(Collectors.toSet())),
-						0, -totalArea.height);
-			} else if (yPos >= totalArea.y) {
-				int delta = yPos - totalArea.y;				
-				int lastY = totalArea.bottom() + delta + 20; // TODO: @etxacam Need to get a default space between rows.
-				//NodeUtilities.nudgeNodes(NodeUtilities.flatten(nodes), 0, yPos - totalArea.y);
-				NodeUtilities.nudgeNodes(nodesToNudge, 0, Math.max(0, lastY - prevNodesArea.y));
-			}		
-			
-			int spaceToNext = yPos + totalArea.height - NodeUtilities.getArea(nodesToNudge2).y; 
-			if ( spaceToNext >= -3 && spaceToNext < 23) {
-				NodeUtilities.nudgeNodes(nodesToNudge2, 0, 20 - spaceToNext);
-			}
-				
-		} finally {
-			enableLayout();
-				
-		}
-		layout();
-	}
-	
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
 		if (fromCluster == null || toCluster == null || node == null) {
 			return false;

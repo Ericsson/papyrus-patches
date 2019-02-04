@@ -125,14 +125,14 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getSource());
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
-			node.setBounds(new Rectangle(p,new Dimension(1, 1)));
+			node.setBounds(new Rectangle(p,new Dimension(0, 0)));
 		} else if (msg.getReceiveEvent() == element) {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getTarget());
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 
 			if (p != null) {
-				node.setBounds(new Rectangle(p,new Dimension(1, 1)));
+				node.setBounds(new Rectangle(p,new Dimension(0, 0)));
 			}
 		}
 		return node;
@@ -144,7 +144,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		Point top = node.getParent().getBounds().getTop();
 		if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 			top = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), top);
-		node.setBounds(new Rectangle(top, new Dimension(1, 1)));
+		node.setBounds(new Rectangle(top, new Dimension(0, 0)));
 		return node;
 	}
 
@@ -170,12 +170,12 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 			Point p = node.getParent().getBounds().getTop();
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);			
-			node.setBounds(new Rectangle(p, new Dimension(1, 1)));
+			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
 		} else if (isFinishExecutionSpecification) {
 			Point p = node.getParent().getBounds().getBottom();
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
-			node.setBounds(new Rectangle(p, new Dimension(1, 1)));
+			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
 		}
 		cache(element, node);
 

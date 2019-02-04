@@ -13,15 +13,11 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.gef.GraphicalEditPart;
-import org.eclipse.gmf.runtime.notation.Location;
-import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.uml2.uml.CombinedFragment;
-import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
-import org.eclipse.uml2.uml.Gate;
-import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
@@ -91,5 +87,10 @@ public interface Node extends GraphItem {
 	 */
 	public Column getColumn();
 
+	public Point getLocation();
+	public Dimension getSize();
 	public Rectangle getBounds();
+	public Rectangle getConstraints();
+
+
 }

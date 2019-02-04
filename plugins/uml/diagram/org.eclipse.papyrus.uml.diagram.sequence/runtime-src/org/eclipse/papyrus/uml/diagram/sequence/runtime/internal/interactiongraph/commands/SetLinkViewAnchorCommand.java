@@ -69,7 +69,7 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 			if (n == null)
 				n = graph.getNodeFor((Element)anchoringView.getElement());
 			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
-			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
+			String anchorId = ViewUtilities.formatAnchorId(n.getConstraints(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
 			anchor.setId(anchorId);
 			edge.setSourceAnchor(anchor);
@@ -82,7 +82,7 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 			if (n == null)
 				n = graph.getNodeFor((Element)anchoringView.getElement());
 			//String anchorId = ViewUtilities.formatAnchorId(graph.getEditPartViewer(), anchoringView, point);
-			String anchorId = ViewUtilities.formatAnchorId(n.getBounds(), point);
+			String anchorId = ViewUtilities.formatAnchorId(n.getConstraints(), point);
 			IdentityAnchor anchor = NotationFactory.eINSTANCE.createIdentityAnchor();
 			anchor.setId(anchorId);
 			edge.setTargetAnchor(anchor);			

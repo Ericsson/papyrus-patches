@@ -16,27 +16,32 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
-import org.eclipse.uml2.uml.ExecutionSpecification;
 
 
 /**
  * @author ETXACAM
  *
  */
-public class DestructionOcurrentceSpecificationNodeLayout implements InteractionNodeLayout {
+public class DestructionOcurrenceSpecificationNodeLayout implements InteractionNodeLayout {
 	@Override
 	public void layout(NodeImpl node) {
 		ColumnImpl column = node.column;
 		RowImpl row = node.row;
 
 		Rectangle r = new Rectangle();
-		r.x = column.getXPosition()-20;
-		r.y = row.getYPosition()-20;
-		r.width = 40;
-		r.height = 40;
+		r.x = column.getXPosition();
+		r.y = row.getYPosition();
+		r.width = 0;
+		r.height = 0;
 		node.setBounds(r);
+	}
+
+	@Override
+	public Rectangle getConstraints(NodeImpl node) {
+		Rectangle r = node.getBounds().getCopy();
+		r.translate(-20,-20);
+		r.setSize(40, 40);
+		return r;
 	}
 
 }

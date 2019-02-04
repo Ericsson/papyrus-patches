@@ -39,21 +39,22 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 	}
 
 	public void layout() {
-		/**
-		for (Column column : interactionGraph.getColumns()) {
-			for (Node n : column.getNodes()) {
-				layout((NodeImpl)n);
-			}
-		}
-
-		for (Row row : interactionGraph.getRows()) {
-			for (Node n : row.getNodes()) {
-				layout((NodeImpl)n);
-			}
-		}*/
-		
-
 		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));		
+	}
+	
+	@Override
+	public Rectangle getConstraints(NodeImpl node) {
+		if (node instanceof ClusterImpl) {
+			InteractionNodeLayout layout = getClusterLayoutFor((ClusterImpl)node);
+			if (layout != null)
+				return layout.getConstraints(node);
+		} 
+
+		InteractionNodeLayout layout = getNodeLayoutFor(node);
+		if (layout != null)
+			return layout.getConstraints(node);
+		
+		return node.getBounds().getCopy();
 	}
 	
 	@Override
@@ -76,8 +77,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 			layout.layout(node);
 		} else {
 			Rectangle r = node.getBounds();
-			if (r != null) {
-				
+			if (r != null) {				
 				r.x = node.getColumn().getXPosition() - (r.width / 2);
 				r.y = node.getRow().getYPosition() - (r.height / 2);
 			}				
@@ -96,7 +96,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 
 	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeNodeLayouts() {
 		Map<Class<? extends Element>, InteractionNodeLayout> map = new HashMap<>();
-		map.put(DestructionOccurrenceSpecification.class, new DestructionOcurrentceSpecificationNodeLayout());
+		map.put(DestructionOccurrenceSpecification.class, new DestructionOcurrenceSpecificationNodeLayout());
 		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		return map;

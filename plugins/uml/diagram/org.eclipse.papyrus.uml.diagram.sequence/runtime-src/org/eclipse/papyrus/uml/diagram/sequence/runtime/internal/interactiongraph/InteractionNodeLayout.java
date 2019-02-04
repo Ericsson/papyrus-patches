@@ -15,10 +15,24 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.emf.validation.internal.service.GetBatchConstraintsOperation;
+
 /**
  * @author ETXACAM
  *
  */
 public interface InteractionNodeLayout {
-	public void layout(NodeImpl node);
+	public default void layout(NodeImpl node) {
+		Rectangle r = node.getBounds();
+		if (r != null) {				
+			r.x = node.getColumn().getXPosition() - (r.width / 2);
+			r.y = node.getRow().getYPosition() - (r.height / 2);			
+		}				
+		node.setBounds(r);
+	};
+	
+	public default Rectangle getConstraints(NodeImpl node) {
+		return node.getBounds().getCopy();
+	}
 }

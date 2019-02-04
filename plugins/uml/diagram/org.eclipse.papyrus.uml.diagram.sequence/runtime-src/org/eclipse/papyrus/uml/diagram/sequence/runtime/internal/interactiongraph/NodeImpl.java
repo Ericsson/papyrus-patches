@@ -13,10 +13,11 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
-import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
@@ -84,8 +85,8 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		this.connects = true;
 		connectedNode.oppositeNode = this;
 		connectedNode.connects = false;
-		((NodeImpl)link.getSource()).connectingLink = (LinkImpl)link;
-		((NodeImpl)link.getTarget()).connectingLink = (LinkImpl)link;
+		this.connectingLink = (LinkImpl)link;
+		connectedNode.connectingLink= (LinkImpl)link;
 	}
 
 	void disconnectNode() {
@@ -94,10 +95,6 @@ public class NodeImpl extends GraphItemImpl implements Node {
 			this.oppositeNode.connects = false;
 			this.oppositeNode = null;
 			this.connects = false;
-			if (this.connectingLink.getSource() == this)
-				this.connectingLink.setSource(null);
-			if (this.connectingLink.getTarget() == this)
-				this.connectingLink.setTarget(null);
 			this.connectingLink = null;
 		}
 	}
@@ -144,7 +141,11 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		if (r == null) {
 			return null;
 		}
-
+		r = r.getCopy();
+		if (r.width == 1 && r.height == 1) {
+			r.width = 0;
+			r.height = 0;
+		}
 		return r.getCopy();
 	}
 
@@ -174,9 +175,25 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		if (bounds.equals(this.bounds)) {
 			return;
 		}
+		
 		this.bounds = bounds;
 	}
 
+	@Override
+	public Point getLocation() {
+		return getBounds().getTopLeft();
+	}
+
+	@Override
+	public Dimension getSize() {
+		return getBounds().getSize();
+	}
+
+	@Override
+	public Rectangle getConstraints() {
+		return getInteractionGraph().getLayoutManager().getConstraints(this);
+	}
+	
 	@Override
 	public String toString() {
 		if (element == null) {

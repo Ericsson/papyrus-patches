@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
@@ -335,7 +336,8 @@ public class NodeUtilities {
 		}
 		
 		if (r == null)
-			return new Rectangle(0,0,-1,-1);
+			return null;//	new Rectangle(0,0,-1,-1);
+		
 		r.width = Math.max(1,r.width);
 		r.height = Math.max(1,r.height);			
 
@@ -461,8 +463,7 @@ public class NodeUtilities {
 							
 				if (col.getIndex() > 0)
 					hLimitNodes.addAll(graph.getColumns().get(col.getIndex()-1).getNodes());				
-			}
-				
+			}			
 		}
 		
 		if (vertical)
@@ -474,9 +475,12 @@ public class NodeUtilities {
 		if (vLimitNodes != null) {
 			List<Node> createLifelines = nodesToNudge.stream().filter(NodeUtilities::isCreateOcurrenceSpecification)
 					.map(NodeUtilities::getLifelineNode).collect(Collectors.toList());
-			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList()); 
-			vLimitNodes.removeAll(lifelines);
+			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList());
+			List<Node> execSpecs = vLimitNodes.stream().filter(d->d.getElement() instanceof ExecutionSpecification).
+					filter(d->nodesToNudge.contains(d.getParent().getConnectedByNode())).collect(Collectors.toList());
 			
+			vLimitNodes.removeAll(lifelines);
+			vLimitNodes.removeAll(execSpecs);
 			for (Node n : lifelines) {
 				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
 				if (!createLifelines.contains(n))
@@ -498,7 +502,6 @@ public class NodeUtilities {
 		if (!MessageOccurrenceSpecification.class.isInstance(el))
 			return false;
 		Message msg = ((MessageOccurrenceSpecification)el).getMessage();
-		return msg.getReceiveEvent() == el && msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL;
-		
-	}
+		return msg.getReceiveEvent() == el && msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL;		
+	}	
 }

@@ -15,6 +15,7 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
@@ -46,9 +47,10 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		ColumnImpl column = node.column;
 		RowImpl row = node.row;
 
+		Point origin = new Point((width / 2), (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2));
 		r = new Rectangle();
-		r.y = row.getYPosition() - (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
-		r.x = column.getXPosition() - (width / 2);
+		r.y = row.getYPosition() - origin.y;
+		r.x = column.getXPosition() - origin.x;
 		r.width = width;
 		r.height = height;
 		Node dosNode = ((Cluster)node).getNodes().stream().filter(
@@ -59,5 +61,4 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		}
 		node.setBounds(r);		
 	}
-
 }
