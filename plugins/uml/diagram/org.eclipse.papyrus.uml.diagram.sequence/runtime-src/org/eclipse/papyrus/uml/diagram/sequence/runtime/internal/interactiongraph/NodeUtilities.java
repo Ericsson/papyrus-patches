@@ -32,9 +32,13 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
+import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
+import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
+import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 /**
@@ -468,11 +472,14 @@ public class NodeUtilities {
 		
 		int minY = Integer.MIN_VALUE; 
 		if (vLimitNodes != null) {
+			List<Node> createLifelines = nodesToNudge.stream().filter(NodeUtilities::isCreateOcurrenceSpecification)
+					.map(NodeUtilities::getLifelineNode).collect(Collectors.toList());
 			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList()); 
 			vLimitNodes.removeAll(lifelines);
 			
 			for (Node n : lifelines) {
 				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
+				if (!createLifelines.contains(n))
 				minY = Math.max(minY, clientArea.y);
 			}
 		}
@@ -486,5 +493,12 @@ public class NodeUtilities {
 		return validArea;
 	}
 	
-
+	public static boolean isCreateOcurrenceSpecification(Node node) {
+		Element el = node.getElement();
+		if (!MessageOccurrenceSpecification.class.isInstance(el))
+			return false;
+		Message msg = ((MessageOccurrenceSpecification)el).getMessage();
+		return msg.getReceiveEvent() == el && msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL;
+		
+	}
 }
