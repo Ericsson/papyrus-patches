@@ -218,7 +218,8 @@ public class NodeUtilities {
 	
 	public static void removeNodes(InteractionGraph interactionGraph, List<Node> nodes) {
 		for (Node n : nodes) {
-			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
+			if (n.getParent() != null)
+				((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
 			//((NodeImpl)n).disconnectNode();
 		}		
 		interactionGraph.layout();

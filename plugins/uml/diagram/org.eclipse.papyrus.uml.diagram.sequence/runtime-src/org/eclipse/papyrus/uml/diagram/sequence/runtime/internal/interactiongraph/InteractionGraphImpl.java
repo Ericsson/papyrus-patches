@@ -894,12 +894,14 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int blockEndPoint = blockStartPoint + blockArea.height;
 		int otherStartPoint = blockStartPoint;
 		int otherEndPoint = blockEndPoint;
+		int prev = blockArea.height; 
+		int after = 0;
 		if (otherArea != null) {
 			otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
 			otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;
+			prev = otherStartPoint - blockStartPoint;
+			after = blockEndPoint - otherEndPoint; 
 		}
-		int prev = otherStartPoint - blockStartPoint;
-		int after = blockEndPoint - otherEndPoint; 
 		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		int nudge = after + prev; 
 		if (nudge == 1) {
@@ -927,8 +929,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		List<Node> nodes = nodesByLifelines.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
 		//Map<Cluster,List<Node>> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
-		// @TODO: etxacam Check if insertion point is on an existing row to nudge the default size
-		
+		Row row = rows.stream().filter(d->Math.abs(yPos - d.getYPosition()) <= 3).findFirst().orElse(null);
+		if (row != null) {
+			for (int r = row.getIndex(); r<rows.size(); r++) {
+				rows.get(r).nudge(20);
+			}
+		}
 		// Make place for the block.
 		List<Node> nodesAfter = getLayoutNodes().stream().filter(d->d.getBounds().y > yPos).collect(Collectors.toList());
 		disableLayout();
