@@ -254,12 +254,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		for (int i = 0; i < orderedNodes.size(); i++) {
 			NodeImpl node = orderedNodes.get(i);
 			if (prevNode != null) {
-				isNewRow = !NodeUtilities.areNodesHorizontallyConnected(prevNode, node) ||
-						   !isNodeConnectedTo(node, prevRow.getNodes());
-				if (prevNode.getConnectedNode() == node &&
-						NodeUtilities.getLifelineNode(prevNode) == NodeUtilities.getLifelineNode(node)) {
-					// Self Message
-					isNewRow = true;
+				if (node.getBounds() != null && prevNode.getBounds() != null) {
+					isNewRow =  (Math.abs(node.getBounds().y - prevNode.getBounds().y) > 3);
+				} else {
+					isNewRow = !NodeUtilities.areNodesHorizontallyConnected(prevNode, node) ||
+							   !isNodeConnectedTo(node, prevRow.getNodes());
+					if (prevNode.getConnectedNode() == node &&
+							NodeUtilities.getLifelineNode(prevNode) == NodeUtilities.getLifelineNode(node)) {
+						// Self Message
+						isNewRow = true;
+					}
 				}
 			}
 
