@@ -104,10 +104,17 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 	public String toString() {
 		if (getElement() == null)
 			return "Cluster[--]";
-		return String.format("Cluster[%s]", 
-				getElement() instanceof NamedElement ? ((NamedElement)getElement()).getName() : "A " + getElement().eClass().getName());
+		return String.format("Cluster[%s - %s Col:%s Row:%s]",
+				getPrintableString(getElement()),
+				bounds == null ? "--" : bounds.toString(),
+				column == null ? "-" : ("[" + column.getIndex() +"]("+column.getXPosition()+")"),
+				row == null ? "-" : ("[" + row.getIndex() +"]("+row.getYPosition()+")"));
+
 	}
 
+	private String getPrintableString(Element element) {
+		return getElement() instanceof NamedElement ? ((NamedElement)getElement()).getName() : "A " + getElement().eClass().getName();
+	}
 	private FragmentClusterImpl fragmentCluster;
 	private List<NodeImpl> nodes = new ArrayList<NodeImpl>();
 }

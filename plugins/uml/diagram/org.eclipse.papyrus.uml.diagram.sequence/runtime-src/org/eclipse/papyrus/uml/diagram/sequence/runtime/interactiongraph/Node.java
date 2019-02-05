@@ -16,6 +16,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionUse;
@@ -91,6 +92,8 @@ public interface Node extends GraphItem {
 	public Dimension getSize();
 	public Rectangle getBounds();
 	public Rectangle getConstraints();
+
+	public LinkImpl getConnectedByLink();
 
 
 }

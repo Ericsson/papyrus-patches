@@ -73,7 +73,7 @@ public class NodeImpl extends GraphItemImpl implements Node {
 
 		return (!connects ? oppositeNode : null);
 	}
-
+	@Override
 	public LinkImpl getConnectedByLink() {
 		return connectingLink;
 	}

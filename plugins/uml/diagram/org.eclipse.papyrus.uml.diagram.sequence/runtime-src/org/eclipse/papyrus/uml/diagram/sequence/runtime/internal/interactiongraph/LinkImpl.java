@@ -25,6 +25,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.NamedElement;
 
 /**
  * @author ETXACAM
@@ -145,6 +146,18 @@ public class LinkImpl extends GraphItemImpl implements Link {
 		this.editPart = editPart;
 	}
 
+	public String toString() {
+		if (getElement() == null)
+			return "Link[--]";
+		return String.format("Link[%s]",
+				getPrintableString(getElement()));
+
+	}
+
+	private String getPrintableString(Element element) {
+		return getElement() instanceof NamedElement ? ((NamedElement)getElement()).getName() : "A " + getElement().eClass().getName();
+	}
+	
 	private InteractionGraphImpl graph;
 	private  Element element;
 	protected NodeImpl source;
