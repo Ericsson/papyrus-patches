@@ -33,6 +33,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
@@ -249,7 +250,7 @@ public class NodeUtilities {
 		Rectangle area = getArea(nodes);
 		
 		int orgPosY = area.y;
-		for (Node n : nodes) {			
+		for (Node n : new ArrayList<>(nodes)) {			
 			if (n != insertBefore) {
 				((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
 				((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
@@ -495,6 +496,7 @@ public class NodeUtilities {
 		if (vLimitNodes != null) {
 			validArea.y = Math.max(minY, validArea.y);
 		}
+		validArea.shrink(3, 3);
 		return validArea;
 	}
 	
@@ -504,5 +506,18 @@ public class NodeUtilities {
 			return false;
 		Message msg = ((MessageOccurrenceSpecification)el).getMessage();
 		return msg.getReceiveEvent() == el && msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL;		
+	}	
+
+	public static boolean isDestroyOcurrenceSpecification(Node node) {
+		Element el = node.getElement();
+		return (el instanceof DestructionOccurrenceSpecification);
+	}	
+
+	public static boolean isNodeLifelineEndsWithDestroyOcurrenceSpecification(Node node) {
+		Cluster lifeline = getLifelineNode(node);
+		List<Node> nodes = lifeline.getNodes();
+		if (nodes.isEmpty())
+			return false;
+		return isDestroyOcurrenceSpecification(nodes.get(nodes.size()-1));
 	}	
 }

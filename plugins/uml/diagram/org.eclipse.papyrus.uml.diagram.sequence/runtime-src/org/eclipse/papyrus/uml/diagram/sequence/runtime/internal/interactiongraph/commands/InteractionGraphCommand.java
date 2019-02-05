@@ -391,7 +391,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Node source = link.getSource();
 		Node target = link.getTarget();
 		
-		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);
+		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);		
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgArea)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -495,12 +495,23 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			minY = Math.max(minY, ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
 					NodeUtilities.getLifelineNode(target).getView()).y);
 		}
-		
+
+		int maxY = Integer.MAX_VALUE;
+		if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(source)) 
+			maxY = lifelineArea.y + lifelineArea.height - 1;
+
+		if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(target)) {
+			if (msg.getMessageSort() != MessageSort.DELETE_MESSAGE_LITERAL)	{			
+				lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+						NodeUtilities.getLifelineNode(target).getView());
+				maxY = Math.min(maxY, lifelineArea.y + lifelineArea.height - 1);
+			}
+		}
 		
 		List<Node> nodes = NodeUtilities.getBlock(source);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
 		totalArea.translate(moveDelta);
-		if (totalArea.y <= minY) {
+		if (totalArea.y <= minY || totalArea.y >= maxY) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
