@@ -41,21 +41,13 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
-	protected KeyboardHandler keyHandler = new KeyboardHandler();
-
 	public InteractionContainerLayoutEditPolicy() {
 	}
 
 	@Override
 	public void activate() {
 		super.activate();
-		keyHandler.activate();
-	}
-
-	@Override
-	public void deactivate() {
-		super.deactivate();
-		keyHandler.deactivate();
+		KeyboardHandler.getKeyboardHandler(); // Force the keyboard handler to be active
 	}
 
 	@Override
@@ -110,7 +102,7 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 			
 			Dimension sizeDelta = ViewUtilities.controlToViewer(graph.getEditPartViewer(), request.getSizeDelta().getCopy());
 			
-			if (!keyHandler.isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+			if (!KeyboardHandler.getKeyboardHandler().isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
 				// No reordering. Resizing is never reordering
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
 				if (moveDelta.x != 0 || moveDelta.y != 0) {					

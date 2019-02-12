@@ -58,21 +58,8 @@ import org.eclipse.uml2.uml.Message;
  */
 @SuppressWarnings("restriction")
 public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditPolicy {
-	protected KeyboardHandler keyHandler = new KeyboardHandler();
 	private static final String CLICK_LOCATION_KEY = "clickLocation";
 	
-	@Override
-	public void activate() {
-		super.activate();
-		keyHandler.activate();
-	}
-
-	@Override
-	public void deactivate() {
-		super.deactivate();
-		keyHandler.deactivate();
-	}
-
 	protected Command getBendpointsChangedCommand(BendpointRequest request) {
 		Point loc = SequenceUtil.getSnappedLocation(request.getSource(),request.getLocation().getCopy());
 		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer) &&
@@ -103,7 +90,7 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
 		p = SequenceUtil.getSnappedLocation(request.getSource(),p);
 		
-		if (keyHandler.isAnyPressed() ) {
+		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
 			cmd.moveMessage(message, new Point(p.x - srcLoc.x, p.y - srcLoc.y));
 		} else {
 			cmd.nudgeMessage(message, new Point(p.x - srcLoc.x, p.y - srcLoc.y));

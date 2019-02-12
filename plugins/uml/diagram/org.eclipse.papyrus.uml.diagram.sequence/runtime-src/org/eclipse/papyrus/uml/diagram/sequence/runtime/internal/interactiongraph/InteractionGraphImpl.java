@@ -14,11 +14,11 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -136,7 +136,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	@Override
 	public List<Node> getOrderedNodes() {
-		return rows.subList(1, rows.size()).stream().flatMap(d->d.getNodes().stream()).
+		return rows.stream().flatMap(d->d.getNodes().stream().filter(e->!(e.getElement() instanceof Lifeline))).
 				filter(Node.class::isInstance).collect(Collectors.toList());
 	}
 
@@ -204,6 +204,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return layoutManager;
 	}
 
+	@Override
 	public List<Node> getLayoutNodes() {
 		return rows.stream().flatMap(r -> r.getNodes().stream()).collect(Collectors.toList());
 	}
@@ -415,8 +416,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		// TODO: Layout Y Positions.
 		for (RowImpl r : rows) {
-			// y = r.getYPosition();
-			// row.nodes.stream().forEach(d -> d.verticalLayout(y));
+			// Order nodes in each row.
+			r.nodes.sort(RowImpl.MESSAGE_END_NODE_COMPARATOR);
 		}
 
 
@@ -535,6 +536,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return link;
 	}
 	
+	// TODO: @etxacam Check if remove
 	@Override
 	public void moveMessage(Message message, Message insertBefore) {
 		LinkImpl msgToMove = getMessage(message);
@@ -838,6 +840,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	public void moveNodeBlock(List<Node> nodes, int yPos) {
+		moveNodeBlock(nodes, yPos, Collections.emptyMap());
+	}
+	public void moveNodeBlock(List<Node> nodes, int yPos, Map<Node, Cluster> toLifelines) {
 		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		// 1) Calculate graph nodes in block area that are not part of the block
 		List<Node> otherNodes = NodeUtilities.getBlockOtherNodes(nodes);
@@ -876,7 +881,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			postInsertionNudge = yPos - blockStartPoint;
 		}		
 		
-		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(NodeUtilities::getLifelineNode));
+		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
+				d -> (toLifelines.containsKey(d) ? toLifelines.get(d) : NodeUtilities.getLifelineNode(d))));
 		removeNodeBlockImpl(nodes,otherNodes);		
 		addNodeBlock(nodesByLifeline, newYPos, postInsertionNudge);
 	}
@@ -910,8 +916,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		disableLayout();
 		try {
-			NodeUtilities.removeNodes(this, nodes);	
-		
+			NodeUtilities.removeNodes(this, nodes);			
 			List<Node> nodesAfter = getLayoutNodes().stream().filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).collect(Collectors.toList());
 			NodeUtilities.nudgeNodes(otherNodes, 0, -prev);
 			NodeUtilities.nudgeNodes(nodesAfter, 0, -nudge);
@@ -929,12 +934,23 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		List<Node> nodes = nodesByLifelines.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
 		//Map<Cluster,List<Node>> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
+		List<Node> firstNodes = nodes.stream().filter(d->d.getBounds() != null && d.getBounds().y == totalArea.y).collect(Collectors.toList());		
 		Row row = rows.stream().filter(d->Math.abs(yPos - d.getYPosition()) <= 3).findFirst().orElse(null);
 		if (row != null) {
-			for (int r = row.getIndex(); r<rows.size(); r++) {
+			boolean nudgeOverlap = true;
+			for (Node n : firstNodes) {
+				if (NodeUtilities.getBlock(firstNodes.get(0)).stream().anyMatch(row.getNodes()::contains)) {
+					nudgeOverlap = false;
+					break;
+				}
+//				NodeUtilities.nudgeNodes(Arrays.asList(n), 0,20);				
+			}
+
+			for (int r = row.getIndex(); nudgeOverlap && r<rows.size(); r++) {
 				rows.get(r).nudge(20);
 			}
 		}
+
 		// Make place for the block.
 		List<Node> nodesAfter = getLayoutNodes().stream().filter(d->d.getBounds().y > yPos).collect(Collectors.toList());
 		disableLayout();
@@ -978,6 +994,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}	
 	}
 
+	// TODO: @etxacam Check if remove
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
 		if (fromCluster == null || toCluster == null || node == null) {
 			return false;

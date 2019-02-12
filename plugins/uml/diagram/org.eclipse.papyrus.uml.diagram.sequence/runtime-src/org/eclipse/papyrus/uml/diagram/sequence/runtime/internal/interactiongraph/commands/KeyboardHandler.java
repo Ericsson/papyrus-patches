@@ -27,7 +27,15 @@ import org.eclipse.ui.PlatformUI;
  *
  */
 public class KeyboardHandler implements Listener {
-	static final int REORDER_KEY = SWT.SHIFT;
+	static final int REORDER_KEY = SWT.MOD1;
+	private static final KeyboardHandler INSTANCE = new KeyboardHandler(REORDER_KEY);
+	
+	public static KeyboardHandler getKeyboardHandler() {
+		if (!INSTANCE.activated)
+			INSTANCE.activate();
+		INSTANCE.activated = true;
+		return INSTANCE;
+	}
 
 	/*
 	 * static {
@@ -39,25 +47,25 @@ public class KeyboardHandler implements Listener {
 	 * }
 	 */
 
-	public KeyboardHandler() {
+	private KeyboardHandler() {
 		this(REORDER_KEY);
 	}
 
 
-	public KeyboardHandler(int... keyCodeMasks) {
+	private KeyboardHandler(int... keyCodeMasks) {
 		for (int kcm : keyCodeMasks) {
 			keyPressState.put(kcm, false);
 		}
 	}
 
-	public void activate() {
+	private void activate() {
 		PlatformUI.getWorkbench().getDisplay().addFilter(SWT.KeyDown, this);
 		PlatformUI.getWorkbench().getDisplay().addFilter(SWT.KeyUp, this);
 		keyPressState.entrySet().forEach(e -> e.setValue(false));
 	}
 
 
-	public void deactivate() {
+	private void deactivate() {
 		PlatformUI.getWorkbench().getDisplay().removeFilter(SWT.KeyDown, this);
 		PlatformUI.getWorkbench().getDisplay().removeFilter(SWT.KeyUp, this);
 		keyPressState.entrySet().forEach(e -> e.setValue(false));
@@ -67,11 +75,10 @@ public class KeyboardHandler implements Listener {
 	public void handleEvent(Event event) {
 		if (keyPressState.containsKey(event.keyCode)) {
 			if (event.type == 1) {
-				keyPressState.put(event.keyCode, true);
+				keyPressState.put(event.keyCode, Boolean.TRUE);
 			} else if (event.type == 2) {
-				keyPressState.put(event.keyCode, false);
-			}
-
+				keyPressState.put(event.keyCode, Boolean.FALSE);
+			}	
 		}
 	}
 
@@ -80,8 +87,9 @@ public class KeyboardHandler implements Listener {
 	}
 
 	public boolean isAnyPressed() {
-		return keyPressState.values().stream().filter(d -> d).findFirst().orElse(false);
+		return keyPressState.values().stream().filter(d -> d.booleanValue()).findFirst().orElse(false);
 	}
 
 	protected HashMap<Integer, Boolean> keyPressState = new HashMap<>();
+	protected boolean activated = false; 
 }

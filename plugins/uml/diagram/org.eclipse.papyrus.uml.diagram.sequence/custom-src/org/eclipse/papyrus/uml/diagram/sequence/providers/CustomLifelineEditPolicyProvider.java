@@ -53,7 +53,7 @@ public class CustomLifelineEditPolicyProvider extends AbstractProvider implement
 	public void createEditPolicies(final EditPart editPart) {
 		CLifeLineEditPart lifeline = (CLifeLineEditPart) editPart;
 
-		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new CustomLifelineSemanticEditPolicy());
+		//editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new CustomLifelineSemanticEditPolicy());
 		editPart.installEditPolicy(TimeElementCreationFeedbackEditPolicy.ROLE, new TimeElementCreationFeedbackEditPolicy(
 				parentFigure -> getTimeElementLocator(lifeline, parentFigure)));
 	}

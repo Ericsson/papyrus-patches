@@ -16,12 +16,10 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,6 +32,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.edit.command.AddCommand;
 import org.eclipse.emf.edit.command.MoveCommand;
 import org.eclipse.emf.edit.command.RemoveCommand;
@@ -60,6 +59,7 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
+import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
@@ -90,7 +90,6 @@ import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
-import org.eclipse.uml2.uml.UMLFactory;
 import org.eclipse.uml2.uml.UMLPackage;
 
 public class InteractionGraphCommand extends AbstractTransactionalCommand {
@@ -137,7 +136,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				int x = rect.x;
 				Cluster nextLifeline = graph.getLifelineClusters().stream()
 						.filter(d -> ((ClusterImpl) d).getBounds().x >= x).findFirst().orElse(null);
-				Lifeline lifeline = UMLFactory.eINSTANCE.createLifeline();
+				Lifeline lifeline = SemanticElementsService.createElement(
+						getEditingDomain(), interactionGraph.getInteraction(), 
+						UMLElementTypes.Lifeline_Shape);
+				lifeline.setName(NodeUtilities.getNewElementName(graph, lifeline));
 				cluster = graph.addLifeline(lifeline, nextLifeline);
 				Rectangle r = ((ClusterImpl) cluster).getBounds();
 				if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
@@ -266,14 +268,44 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	// TODO: @etxacam Reply messages
 	// TODO: @etxacam Self messages
 	
-	public void addMessage(int msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
+	public void addMessage(MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
 		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram())) {
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor);
 			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor);
 		}
-
+		
+		if (trgAnchor.y < srcAnchor.y) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;			
+		}
+		
+		Cluster	targetCluster = interactionGraph.getClusterFor(target);		
+		if (msgSort == MessageSort.CREATE_MESSAGE_LITERAL) {
+			if (!(target instanceof Lifeline) || NodeUtilities.isNodeLifelineStartByCreateMessage(targetCluster)) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}	
+			
+			List<Node> nodes = targetCluster.getNodes();
+			if (!nodes.isEmpty() && nodes.get(0).getBounds().y <= trgAnchor.y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}
+							
+		} else if (msgSort == MessageSort.DELETE_MESSAGE_LITERAL) {
+			if (!(target instanceof Lifeline) || NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(targetCluster)) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}			
+			List<Node> nodes = targetCluster.getNodes();
+			if (!nodes.isEmpty() && nodes.get(nodes.size()-1).getBounds().y >= trgAnchor.y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}
+		}
+		
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
@@ -286,87 +318,90 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {	
-				((InteractionGraphImpl)graph).disableLayout();
+				interactionGraph.disableLayout();
 				try {
-					Message msg = UMLFactory.eINSTANCE.createMessage();
-					msg.setMessageSort(MessageSort.get(msgSort));
-					// TODO generate message name.
-					int nCount = graph.getMessageLinks().stream().map(d -> Message.class.cast(d.getElement()).getName()).
-							filter(d -> d.matches("Message[0-9]*")).map(d-> d.equals("Message") ? 1 : Integer.parseInt(d.replaceFirst("Message", ""))).						
-							sorted(Comparator.reverseOrder()).findFirst().orElse(0)+1;
-					if (nCount > 1)
-						msg.setName("Message"+nCount);
-					else
-						msg.setName("Message");
+
+					Message msg = SemanticElementsService.createRelationship(getEditingDomain(), interactionGraph.getInteraction(), source, target, 
+							(IElementType)elementAdapter.getAdapter(IElementType.class)); 
+					msg.setName(NodeUtilities.getNewElementName(graph, msg));
 					
-					MessageOccurrenceSpecification mosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-					MessageOccurrenceSpecification mosTrg= null;
-					if (msg.getMessageSort() == MessageSort.DELETE_MESSAGE_LITERAL) {
-						mosTrg = UMLFactory.eINSTANCE.createDestructionOccurrenceSpecification();
-					} else {
-						mosTrg = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+					MessageOccurrenceSpecification mosSrc = (MessageOccurrenceSpecification)msg.getSendEvent();
+					mosSrc.setName("Send "+msg.getName());
+
+					MessageOccurrenceSpecification mosTrg= (MessageOccurrenceSpecification)msg.getReceiveEvent();
+					mosTrg.setName("Receive "+msg.getName());
+
+					Row r = NodeUtilities.getRowAt(graph, srcAnchor.y);
+					if (r != null) {
+						graph.getRows().subList(r.getIndex(),graph.getRows().size()).forEach(d->((RowImpl)d).nudge(20));
 					}
-					
-					msg.setSendEvent(mosSrc);
-					mosSrc.setMessage(msg);
-					msg.setReceiveEvent(mosTrg);				
-					mosTrg.setMessage(msg);
-					
+
+					r = NodeUtilities.getRowAt(graph, trgAnchor.y);
+					if (r != null) {
+						graph.getRows().subList(r.getIndex(),graph.getRows().size()).forEach(d->((RowImpl)d).nudge(20));
+					}
+
 					ClusterImpl sourceCluster = (ClusterImpl)graph.getClusterFor(source);
 					Node srcBeforeFrag = NodeUtilities.flatten(sourceCluster).stream().
 						filter(n -> n.getBounds() != null && srcAnchor.y < n.getBounds().y).findFirst().orElse(null);
+
 					ClusterImpl targetCluster = (ClusterImpl)graph.getClusterFor(target);
 					Node trgBeforeFrag = NodeUtilities.flatten(targetCluster).stream().
 							filter(n -> n.getBounds() != null && trgAnchor.y < n.getBounds().y).findFirst().orElse(null);
 					
 					Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
 					NodeImpl srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, mosSrc, srcBeforeFrag);
-					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(1, 1)));
-					
+					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(0, 0)));
 					Lifeline trgLifeline = (Lifeline)NodeUtilities.getLifelineNode(targetCluster).getElement();
 					NodeImpl trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, mosTrg, trgBeforeFrag);				
-					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(1, 1)));
-					
+					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(0, 0)));
 					message = graph.connectMessageOcurrenceSpecification(mosSrc, mosTrg);
-					((InteractionGraphImpl)graph).enableLayout();
-					graph.layout();
+					interactionGraph.enableLayout();
+					interactionGraph.layout();
 					
 					if (msg.getMessageSort() == MessageSort.SYNCH_CALL_LITERAL) {
 						// TODO: @etxacam Check preferences for auto create of behavior spc...
-						// TODO: @etxacam Show menu to create action / behavior exec spec.
+						// TODO: @etxacam Show menu to create action / behavior exec spec | or provides two tools.
 						
 						// TODO @etxacam if horizontal message, nudge there are more nodes in the same row (inclusive message 
-						//   if there are in previous columns)  
-						graph.getRows().stream().filter(d -> (d.getIndex() > srcNode.getRow().getIndex() 
-								|| d.getIndex() > trgNode.getRow().getIndex()))
-								.map(RowImpl.class::cast).forEach(d -> d.nudge(40));
-						graph.layout();
+						//   if there are in previous columns) 
 						
-						((InteractionGraphImpl)graph).disableLayout();
+						int nudgeFrom = trgNode.getBounds().y;
+						List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().filter(
+								d-> d != srcNode && d != trgNode && d.getBounds().y >= nudgeFrom).collect(Collectors.toList());
+						interactionGraph.disableLayout();
+						try {
+							NodeUtilities.nudgeNodes(nodesAfter, 0, 40);
+						} finally {
+							interactionGraph.enableLayout();
+							interactionGraph.layout();
+						}
+						
+						interactionGraph.disableLayout();
 
 						// Create reply message
-						Message replyMsg = UMLFactory.eINSTANCE.createMessage();
-						replyMsg.setMessageSort(MessageSort.REPLY_LITERAL);
+						Message replyMsg = SemanticElementsService.createRelationship(getEditingDomain(), interactionGraph.getInteraction(), 
+								source, target, UMLElementTypes.Message_ReplyEdge);
 						replyMsg.setName("Reply " + msg.getName());
 	
-						MessageOccurrenceSpecification repMosSrc = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-						MessageOccurrenceSpecification repMosTrg= UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
-						replyMsg.setSendEvent(repMosSrc);
-						repMosSrc.setMessage(replyMsg);
-						replyMsg.setReceiveEvent(repMosTrg);				
-						repMosTrg.setMessage(replyMsg);
+						MessageOccurrenceSpecification repMosSrc = (MessageOccurrenceSpecification)replyMsg.getSendEvent();
+						repMosSrc.setName("Send "+replyMsg.getName());
+						MessageOccurrenceSpecification repMosTrg= (MessageOccurrenceSpecification)replyMsg.getReceiveEvent();
+						repMosTrg.setName("Receive "+replyMsg.getName());
 						
 						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, repMosSrc, trgBeforeFrag);
-						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + 60);
-						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(1, 1)));
+						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + 40);
+						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(0, 0)));
 						
 						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, repMosTrg, srcBeforeFrag);				
 						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y);
-						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(1, 1)));
+						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(0, 0)));
 	
 						message = graph.connectMessageOcurrenceSpecification(repMosSrc, repMosTrg);
 	
-						ExecutionSpecification execSpec = UMLFactory.eINSTANCE.createBehaviorExecutionSpecification();
+						ExecutionSpecification execSpec = SemanticElementsService.createElement(
+								getEditingDomain(), interactionGraph.getInteraction(), UMLElementTypes.BehaviorExecutionSpecification_Shape);
+						execSpec.setName(NodeUtilities.getNewElementName(graph, UMLPackage.Literals.EXECUTION_SPECIFICATION));
 						execSpec.setStart(mosTrg);
 						execSpec.setFinish(repMosSrc);
 						ClusterImpl execSpecCluster = (ClusterImpl)graph.addExecutionSpecification(trgLifeline, execSpec);
@@ -425,20 +460,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Link link = interactionGraph.getLinkFor(msgEnd.getMessage());
 		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);		
 		
-		Set<Node> limitNodes = new HashSet<Node>();
-		Row row = msgEndNode.getRow();
-		limitNodes.addAll(row.getNodes());
-		if (row.getIndex() > 0)
-			limitNodes.addAll(interactionGraph.getRows().get(row.getIndex()-1).getNodes());
-
-		Node target = link.getTarget();
 		Node source = link.getSource();
-		limitNodes.remove(source);
-		limitNodes.remove(target);
-
-		Rectangle validArea = NodeUtilities.getEmptyArea(interactionGraph, null,new ArrayList<>(limitNodes),null,null);
-		validArea.x = msgEndNode.getParent().getBounds().x;
-		validArea.width = msgEndNode.getParent().getBounds().width;
+		Node target = link.getTarget();		
+		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);
 		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgEndPos)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -468,6 +492,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (isRecvEvent) {
 					graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
 							.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+					List<Node> ownRowNodes = msgEndNode.getRow().getNodes().stream().filter(d-> (d!=source && d!=target)).
+							collect(Collectors.toList());
+					NodeUtilities.nudgeNodes(ownRowNodes, 0, delta.y);
 					graph.layout();
 				}
 				
@@ -480,8 +507,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 
-	// TODO: @etxacam Delete messages
-	// TODO: @etxacam Creation messages
 	// TODO: @etxacam Check self messages
 	public void moveMessage(Message msg, Point moveDelta) {
 		Link link = interactionGraph.getLinkFor(msg);
@@ -635,38 +660,67 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return true;
 	}
 	
-	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point newLocation) {		
+	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point moveDelta) {		
 		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
 			// TODO @etxacam We need to handle Gates
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
-		
-		boolean isRecvEvent = msgEnd.getMessage().getReceiveEvent() == msgEnd; 
-		Link link = interactionGraph.getLinkFor(msgEnd.getMessage());
-		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);		
-		Lifeline currLifeline = ((MessageOccurrenceSpecification)msgEnd).getCovered();
-		
+		Message msg = msgEnd.getMessage();
+		boolean isRecvEvent = msg.getReceiveEvent() == msgEnd; 
+		Link link = interactionGraph.getLinkFor(msg);
+		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
+		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
+				
 		Node target = link.getTarget();
 		Node source = link.getSource();
 
+		Point newLoc = msgEndNode.getBounds().getTopLeft();
+		newLoc.translate(moveDelta);
 		if (isRecvEvent) {
-			if (newLocation.y < source.getBounds().y) {
+			if (newLoc.y < source.getBounds().y) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
 			}				
 		} else {
-			if (newLocation.y > target.getBounds().y) {
+			if (newLoc.y > target.getBounds().y) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
-			}				
-			
+			}							
 		}
 
-		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
-		List<Node> toLifelineNodes = toLifelineNode.getAllNodes();  
-		Node toMoveBeforeNode = toLifelineNodes.stream().filter(d -> d.getBounds().getCenter().y > newLocation.y).findFirst().orElse(null);
-
+		if (isRecvEvent && NodeUtilities.getLifelineNode(msgEndNode) != toLifelineNode) {
+			if (NodeUtilities.isNodeLifelineStartByCreateMessage(toLifelineNode) && NodeUtilities.isCreateOcurrenceSpecification(msgEndNode)) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;				
+			}
+			
+			if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(toLifelineNode) && NodeUtilities.isDestroyOcurrenceSpecification(msgEndNode)) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;				
+			}
+			
+		}
+		
+		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+				NodeUtilities.getLifelineNode(toLifelineNode).getView());
+		int minY = lifelineArea.y;
+		int maxY = lifelineArea.y + lifelineArea.height - 1;
+		
+		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
+		if (isRecvEvent) {
+			nodes.remove(source);
+		} 
+		
+		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
+		totalArea.translate(moveDelta);
+		if (totalArea.y <= minY || totalArea.y >= maxY) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+		
+		// TODO: Handle Reply source endpoints
+				
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
@@ -674,11 +728,18 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				msgEndNode.getBounds().y = newLocation.y;
-				msgEndNode.getBounds().x = toLifelineNode.getBounds().getCenter().x;
+				Map<Node, Cluster> moveToLifelines = new HashMap<>();
+				Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
+				if (toLifelineNode != NodeUtilities.getLifelineNode(msgEndNode)) {
+					moveToLifelines.put(msgEndNode, toLifelineNode);
+					if (source.getConnectedNode() != null && source.getConnectedNode().getElement() instanceof ExecutionSpecification) {
+						Cluster c = (Cluster)source.getConnectedNode();
+						moveToLifelines.put(c, toLifelineNode);
+						c.getAllNodes().forEach(d -> moveToLifelines.put(d, toLifelineNode));
+					}
+				}
 
-				interactionGraph.moveMessageOccurrenceSpecification(currLifeline, (MessageOccurrenceSpecification)msgEndNode.getElement(), 
-						toLifeline, toMoveBeforeNode == null ? null: (InteractionFragment)toMoveBeforeNode.getElement());
+				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y, moveToLifelines);
 				return true;
 			}
 		});
@@ -810,6 +871,19 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				UMLPackage.Literals.INTERACTION__FRAGMENT, executionSpecifications, graphExecutionSpecifications, addCommandFunction,
 				removeCommandFunction, false, false);
 		
+		
+		// Update Parents
+		interactionGraph.getLifelineClusters().stream().flatMap(d->d.getAllNodes().stream()).
+			filter(d->d.getElement() instanceof ExecutionSpecification).
+			filter(d->d.getView() != null && d.getView().eContainer() != NodeUtilities.getLifelineNode(d).getView()).
+			forEach(d-> {
+				command.add(new EMFCommandOperation(getEditingDomain(), RemoveCommand.create(
+						getEditingDomain(), d.getView())));
+				command.add(new EMFCommandOperation(getEditingDomain(), AddCommand.create(
+						getEditingDomain(), NodeUtilities.getLifelineNode(d).getView(), 
+						NotationPackage.Literals.VIEW__PERSISTED_CHILDREN, d.getView())));
+			});
+
 		updateBoundsChanges(command, interactionGraph.getLifelineClusters().stream().
 				flatMap(d->d.getAllNodes().stream()).filter(d -> d.getElement() instanceof ExecutionSpecification).
 				map(Node::getParent).collect(Collectors.toList()), true);
@@ -928,6 +1002,19 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
 			}
+			
+			// Handling Destroy Ocurrences
+			if (NodeUtilities.isDestroyOcurrenceSpecification(lk.getTarget())) {
+				View lifelineView = (View)edge.getTarget().eContainer(); 
+				Node lifelineNode = NodeUtilities.getLifelineNode(lk.getTarget());
+				if (lifelineView != null && lifelineView.getElement() != lifelineNode.getElement()) {
+					command.add(new EMFCommandOperation(getEditingDomain(), RemoveCommand.create(
+							getEditingDomain(), edge.getTarget())));
+					command.add(new EMFCommandOperation(getEditingDomain(), AddCommand.create(
+							getEditingDomain(), lifelineNode.getView(), 
+							NotationPackage.Literals.VIEW__PERSISTED_CHILDREN, lk.getTarget().getView())));
+				}
+			}
 		}
 	}	
 	
@@ -950,10 +1037,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				type = UMLElementTypes.Message_ReplyEdge; break;
 		}
 		
-		String visualId = ((IHintedType)type).getSemanticHint();
 		
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain,
 				interactionGraph.getInteraction(), type);
+		String visualId = ((IHintedType)type).getSemanticHint();
+		
 		cmd.add(new CreateNodeElementCommand(createReq, message));
 		boolean isDestroyMessage = (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification);
 		if (isDestroyMessage) {

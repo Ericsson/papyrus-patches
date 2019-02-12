@@ -35,12 +35,16 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		int width = r == null || r.width == -1 ? ViewUtilities.LIFELINE_DEFAULT_WIDTH : r.width;
 		int height = ViewUtilities.LIFELINE_HEADER_HEIGHT;
 		
-		Rectangle childrenArea = ((ClusterImpl)node).getChildrenBounds();
-
 		View containerContentPane = ViewUtilities.getViewWithType(node.getInteractionGraph().getInteractionView(), CInteractionInteractionCompartmentEditPart.VISUAL_ID);
 		if (containerContentPane != null) {
 			Rectangle area = ViewUtilities.getClientAreaBounds(node.getInteractionGraph().getEditPartViewer(), containerContentPane);
-			height = (childrenArea.height + (childrenArea.y - area.y) + 10) - (r != null ? r.y - area.y : 10 ) /*- 14*/ + 20;   
+			Rectangle childrenArea = ((ClusterImpl)node).getChildrenBounds();
+			if (childrenArea != null) {
+				height = (childrenArea.height + (childrenArea.y - area.y) + 10) - (r != null ? r.y - area.y : 10 ) /*- 14*/ + 20;   
+			} else {
+				height = area.y;
+			}
+			
 		}
 
 		

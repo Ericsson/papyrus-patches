@@ -23,12 +23,16 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.UnexecutableCommand;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
+import org.eclipse.gmf.runtime.emf.type.core.requests.ReorientRelationshipRequest;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.CustomDefaultSemanticEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.DisplayEvent;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 import org.eclipse.papyrus.uml.service.types.utils.ElementUtil;
 import org.eclipse.papyrus.uml.service.types.utils.SequenceRequestConstant;
+import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageKind;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
+import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.TimeConstraint;
 
 /**
@@ -50,6 +54,21 @@ public class CustomLifelineSemanticEditPolicy extends CustomDefaultSemanticEditP
 	public void setHost(EditPart host) {
 		super.setHost(host);
 		displayEvent = new DisplayEvent(host);
+	}
+
+	@Override
+	protected Command getReorientRelationshipCommand(ReorientRelationshipRequest req) {
+		// Special Case for Delete Messages, we avoid the semantic command, so we can 
+		// move the DestroyMessageOcurrence view afterwards.
+		/*if (req.getRelationship() instanceof Message) {
+			Message msg = (Message)req.getRelationship();
+			if (msg.getMessageSort() == MessageSort.DELETE_MESSAGE_LITERAL && 
+				req.getDirection() == ReorientRelationshipRequest.REORIENT_TARGET) {
+				return null;
+			}				
+		}
+		return super.getReorientRelationshipCommand(req);*/
+		return null;
 	}
 
 	@Override

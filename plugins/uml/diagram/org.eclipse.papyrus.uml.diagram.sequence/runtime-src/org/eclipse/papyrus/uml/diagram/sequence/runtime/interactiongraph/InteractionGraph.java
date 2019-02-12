@@ -121,6 +121,7 @@ public interface InteractionGraph {
 	 * @return a list with the nodes.
 	 */
 	public List<Node> getOrderedNodes();
+	public List<Node> getLayoutNodes();
 
 	/**
 	 * Return the node representing the given {@link Element}
@@ -185,45 +186,35 @@ public interface InteractionGraph {
 
 
 	public Cluster getLifeline(Lifeline lifeline);
-
 	public Cluster addLifeline(Lifeline lifeline);
-
 	public Cluster addLifeline(Lifeline lifeline, Cluster beforeLifeline);
-
 	public Cluster removeLifeline(Lifeline lifeline);
-
 	public void moveLifeline(Lifeline lifelineToMove, Lifeline beforeLifeline);
 
+	// TODO: @etxacam Review this APIs... Are they need with out positional info??? 
+	//       They could provide "default" positions, for a nice layout....
 	public Link getMessage(Message message);
 	public Link addMessage(Message message);
 	public Link addMessage(Message message, Link insertBefore);
 	public void moveMessage(Message message, Message insertBefore);
 
 	public Node getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
-
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos, Node insertBefore);
-
 	public Node removeMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
-
 	public boolean moveMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mosToMove,
 			Lifeline toLifeline, InteractionFragment fragmentBefore);
 
 	public Link connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv);
 
 	public Cluster getExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
-
 	public Cluster addExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
-
 	public Cluster removeExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
-
 	public boolean moveExecutionSpecification(Lifeline lifeline, ExecutionSpecification execToMove, Lifeline toLifeline, InteractionFragment fragmentBefore);
 
 	public boolean replaceExecutionSpecificationStart(ExecutionSpecification exec, OccurrenceSpecification ocurrSpec);
-
 	public boolean moveExecutionSpecificationStart(ExecutionSpecification ocurrSpec, InteractionFragment beforeFragment);
 
 	public boolean replaceExecutionSpecificationFinish(ExecutionSpecification exec, OccurrenceSpecification ocurrSpec);
-
 	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment);
 }

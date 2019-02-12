@@ -19,17 +19,19 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.emf.ecore.EClass;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
@@ -41,6 +43,7 @@ import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
+import org.eclipse.uml2.uml.NamedElement;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 /**
@@ -214,6 +217,12 @@ public class NodeUtilities {
 		}
 		otherNodes.removeAll(allNodes);
 		otherNodes.removeIf(d->d.getElement() instanceof Lifeline);
+		
+		// Remove Nodes that are before or after the nodes.
+		List<Node> orderedNodes = interactionGraph.getOrderedNodes();
+		int min = blockNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).min(Integer::compare).orElse(0);
+		int max = blockNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
+		otherNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i< min || i > max);});
 		return otherNodes;
 	}
 	
@@ -340,8 +349,8 @@ public class NodeUtilities {
 		if (r == null)
 			return null;//	new Rectangle(0,0,-1,-1);
 		
-		r.width = Math.max(1,r.width);
-		r.height = Math.max(1,r.height);			
+		//r.width = Math.max(1,r.width);
+		//r.height = Math.max(1,r.height);			
 
 		return r;
 	}
@@ -366,6 +375,14 @@ public class NodeUtilities {
 		return n;
 	}
 
+	public static Column getColumnAt(InteractionGraph graph, int x) {
+		return graph.getColumns().stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
+	}
+
+	public static Row getRowAt(InteractionGraph graph, int y) {
+		return graph.getRows().stream().filter(d->d.getYPosition() == y).findFirst().orElse(null);
+	}
+	
 	public static Cluster getClusterAtVerticalPos(Cluster cluster, int y) {
 		Node n = getNodeAtVerticalPos(cluster, y);
 		if (n == null)
@@ -443,7 +460,18 @@ public class NodeUtilities {
 		return n;
 	}
 
+	public static final List<Node> getNodesAfter(InteractionGraphImpl graph, List<Node> nodes) {
+		List<Node> orderedNodes = graph.getOrderedNodes();
+		int max = nodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
+		orderedNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i > max);});
+		return orderedNodes;
+	}
+	
 	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical) {
+		return getNudgeArea(graph, nodesToNudge, horizontal, vertical, null); 
+	}
+	
+	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical, List<Node> excludeNodes) {
 		Set<Node> vLimitNodes = null;
 		Set<Node> hLimitNodes = null;
 		for (Node n : nodesToNudge) {
@@ -455,6 +483,9 @@ public class NodeUtilities {
 							
 				if (row.getIndex() > 0)
 					vLimitNodes.addAll(graph.getRows().get(row.getIndex()-1).getNodes());
+				
+				if (excludeNodes != null)
+					vLimitNodes.removeAll(excludeNodes);
 			}
 			
 			if (horizontal) {
@@ -465,6 +496,9 @@ public class NodeUtilities {
 							
 				if (col.getIndex() > 0)
 					hLimitNodes.addAll(graph.getColumns().get(col.getIndex()-1).getNodes());				
+
+				if (excludeNodes != null)
+					hLimitNodes.removeAll(excludeNodes);
 			}			
 		}
 		
@@ -508,6 +542,14 @@ public class NodeUtilities {
 		return msg.getReceiveEvent() == el && msg.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL;		
 	}	
 
+	public static boolean isNodeLifelineStartByCreateMessage(Node node) {
+		Cluster lifeline = getLifelineNode(node);
+		List<Node> nodes = lifeline.getNodes();
+		if (nodes.isEmpty())
+			return false;
+		return isCreateOcurrenceSpecification(nodes.get(0));
+	}	
+
 	public static boolean isDestroyOcurrenceSpecification(Node node) {
 		Element el = node.getElement();
 		return (el instanceof DestructionOccurrenceSpecification);
@@ -520,4 +562,28 @@ public class NodeUtilities {
 			return false;
 		return isDestroyOcurrenceSpecification(nodes.get(nodes.size()-1));
 	}	
+	
+	public static String getNewElementName(InteractionGraph graph, Element element) {
+		EClass eClass = element.eClass(); 
+		return getNewElementName(graph, eClass);
+	}
+	
+	public static String getNewElementName(InteractionGraph graph, EClass eClass) {
+		String prefix = eClass.getName();
+		return getNewElementName(graph, eClass, prefix);
+	}
+
+	public static String getNewElementName(InteractionGraph graph, EClass eClass, String prefix) {
+		int nCount = Stream.concat(graph.getMessageLinks().stream().map(Link::getElement), 
+								   graph.getLayoutNodes().stream().map(Node::getElement)).		
+				filter(d -> eClass.isInstance(d)).
+				filter(NamedElement.class::isInstance).map(d -> NamedElement.class.cast(d).getName()).
+				filter(d -> d.matches(prefix+"[0-9]*")).
+				map(d-> d.equals(prefix) ? 1 : Integer.parseInt(d.replaceFirst(prefix, ""))).						
+				sorted(Comparator.reverseOrder()).findFirst().orElse(0)+1;
+		if (nCount > 1)
+			return prefix+nCount;
+		else
+			return prefix;
+	}
 }

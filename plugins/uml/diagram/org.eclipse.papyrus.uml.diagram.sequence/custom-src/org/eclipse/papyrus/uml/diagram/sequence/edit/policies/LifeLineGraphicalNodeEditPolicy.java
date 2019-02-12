@@ -18,12 +18,12 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
-import java.util.List;
 import java.util.Map;
 
 import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.ConnectionRouter;
+import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
@@ -31,10 +31,12 @@ import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.commands.UnexecutableCommand;
 import org.eclipse.gef.editpolicies.FeedbackHelper;
 import org.eclipse.gef.requests.CreateConnectionRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
+import org.eclipse.gef.ui.parts.ScrollingGraphicalViewer;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
@@ -42,6 +44,7 @@ import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramRootEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElementRequest;
+import org.eclipse.gmf.runtime.diagram.ui.util.SelectInDiagramHelper;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.Edge;
@@ -54,7 +57,6 @@ import org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramEditPartsUtil;
 import org.eclipse.papyrus.infra.services.edit.utils.RequestParameterConstants;
 import org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers.MessageRouter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteEditPart;
@@ -64,7 +66,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
-import org.eclipse.papyrus.uml.diagram.sequence.util.LifelineEditPartUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceDiagramConstants;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceRequestConstant;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
@@ -72,31 +73,19 @@ import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
+import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
-import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 /**
  * This class overload all creation of link between lifelines
  * pay attention : this editpolicy launch a display of event during the move of the mouse
  */
 public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPolicy {
-	protected KeyboardHandler keyHandler = new KeyboardHandler();
 	private static final String CLICK_LOCATION_KEY = "clickLocation";
 
 	/** the router to use for messages */
 	public static ConnectionRouter messageRouter = new MessageRouter();
-
-	@Override
-	public void activate() {
-		super.activate();
-		keyHandler.activate();
-	}
-
-	@Override
-	public void deactivate() {
-		super.deactivate();
-		keyHandler.deactivate();
-	}
 
 	/**
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy#getConnectionCreateCommand(org.eclipse.gef.requests.CreateConnectionRequest)
@@ -257,14 +246,7 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 	protected ICommand getAfterConnectionCompleteCommand(CreateConnectionViewAndElementRequest request, TransactionalEditingDomain editingDomain) {
 		return null;
 	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy#getConnectionAndRelationshipCompleteCommand(org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElementRequest)
-	 *
-	 */
-
+	
 	@Override
 	protected Command getConnectionAndRelationshipCompleteCommand(CreateConnectionViewAndElementRequest request) {
 		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
@@ -278,19 +260,19 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		trgAnchor = ViewUtilities.controlToViewer(graph.getEditPartViewer(), trgAnchor.getCopy());
 		
 		String hint = request.getConnectionViewDescriptor().getSemanticHint();
-		int msgSort = -1;
+		MessageSort msgSort = null;
 		switch (hint) {
 			case MessageAsyncEditPart.VISUAL_ID:
-				msgSort = MessageSort.ASYNCH_CALL; break;
+				msgSort = MessageSort.ASYNCH_CALL_LITERAL; break;
 			case MessageSyncEditPart.VISUAL_ID:
-				msgSort = MessageSort.SYNCH_CALL; break;
+				msgSort = MessageSort.SYNCH_CALL_LITERAL; break;
 			case MessageCreateEditPart.VISUAL_ID:
-				msgSort = MessageSort.CREATE_MESSAGE; break;
+				msgSort = MessageSort.CREATE_MESSAGE_LITERAL; break;
 			case MessageDeleteEditPart.VISUAL_ID:
-				msgSort = MessageSort.DELETE_MESSAGE; break;
+				msgSort = MessageSort.DELETE_MESSAGE_LITERAL; break;
 		}
 		
-		if (msgSort == -1)
+		if (msgSort == null)
 			return null;
 		
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
@@ -334,21 +316,6 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 
 
 	/**
-	 * Validation1:
-	 * Check if the Target point is Lower than the Source.
-	 * The target should be lower than the source to be valid.
-	 *
-	 * @param request
-	 *            The Connection END creation Request
-	 *
-	 * @return true if target location point is lower than source location point
-	 */
-	private Boolean isTargetLowerThanSource(Point sourceLocation, Point targetLocation) {
-		// only message with a target lower than the source is allowed.
-		return sourceLocation.y() <= targetLocation.y();
-	}
-
-	/**
 	 * {@inheritDoc}
 	 *
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy#getReconnectSourceCommand(org.eclipse.gef.requests.ReconnectRequest)
@@ -356,36 +323,7 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Command getReconnectSourceCommand(final ReconnectRequest request) {
-		if (isMoveMessageRequest(request)) {
-			return null;
-		}
-
-		Point loc = SequenceUtil.getSnappedLocation(request.getConnectionEditPart(), request.getLocation());
-		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
-		if (srcLoc == null) {
-			srcLoc = loc.getCopy();
-			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
-		}
-		
-		Connection connection = (Connection)request.getConnectionEditPart().getFigure();
-		Edge connectionView = (Edge) request.getConnectionEditPart().getModel();
-		if (!(connectionView.getElement() instanceof Message))
-			return null;
-		Message message = (Message)connectionView.getElement(); 
-		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
-		if (graph == null)
-			return null;
-		
-		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
-				"Move Message", graph, null);
-		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
-		if (keyHandler.isAnyPressed() ) {
-			cmd.moveMessageEnd(message.getSendEvent(), (Lifeline)((View)getHost().getModel()).getElement(), p);		
-		} else {
-			Point p1 = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(srcLoc.x, srcLoc.y));
-			cmd.nudgeMessageEnd(message.getSendEvent(), new Point(p.x-p1.x, p.y-p1.y)); 
-		}
-		return new ICommandProxy(cmd);
+		return getReconnectCommand(request, true);
 	}
 
 	/**
@@ -395,14 +333,25 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 	 */
 	@Override
 	protected Command getReconnectTargetCommand(final ReconnectRequest request) {
+		return getReconnectCommand(request, false);
+	}
+
+	protected Command getReconnectCommand(final ReconnectRequest request, boolean isSrc) {
 		if (isMoveMessageRequest(request)) {
 			return null;
 		}
 
-		Point loc = request.getLocation();
+		Point loc = request.getLocation();		
+		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer) &&
+				(getHost().getViewer().getControl() instanceof FigureCanvas)){
+				SelectInDiagramHelper.exposeLocation((FigureCanvas)getHost().getViewer().getControl(),loc);
+			}
+		
 		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
 		if (srcLoc == null) {
 			srcLoc = loc.getCopy();
+			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), new Point(srcLoc.x, srcLoc.y));
+			srcLoc = SequenceUtil.getSnappedLocation(request.getTarget(),srcLoc);
 			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
 		}
 		
@@ -415,28 +364,26 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		if (graph == null)
 			return null;
 		
+		Lifeline newLifeline = (Lifeline)((View)getHost().getModel()).getElement();
+		MessageEnd messageEnd = isSrc ? message.getSendEvent() : message.getReceiveEvent();
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
+
 		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
-		if (keyHandler.isAnyPressed() ) {
-			cmd.moveMessageEnd(message.getReceiveEvent(), (Lifeline)((View)getHost().getModel()).getElement(), p);		
+		p = SequenceUtil.getSnappedLocation(request.getTarget(),p);
+
+		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
+			cmd.moveMessageEnd(messageEnd, newLifeline, new Point(p.x-srcLoc.x, p.y-srcLoc.y));		
 		} else {
-			Point p1 = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(srcLoc.x, srcLoc.y));
-			cmd.nudgeMessageEnd(message.getReceiveEvent(),new Point(p.x-p1.x, p.y-p1.y)); 
+			if (!(messageEnd instanceof MessageOccurrenceSpecification))
+				return UnexecutableCommand.INSTANCE;
+			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)messageEnd;
+			if (mos.getCovered() != newLifeline)
+				return UnexecutableCommand.INSTANCE;
+			cmd.nudgeMessageEnd(messageEnd, new Point(p.x-srcLoc.x, p.y-srcLoc.y)); 
 		}
 		return new ICommandProxy(cmd);
-	}
-
-
-	/**
-	 * This method must look for event that are upper than the given position
-	 *
-	 * @param point
-	 *            the position on the lifeline
-	 */
-	public OccurrenceSpecification getPreviousEventFromPosition(final Point point) {
-		List<OccurrenceSpecification> previousEventsFromPosition = LifelineEditPartUtil.getPreviousEventsFromPosition(point, (LifelineEditPart) getHost());
-		return previousEventsFromPosition.isEmpty() ? null : previousEventsFromPosition.get(0);
+	
 	}
 
 	/**
