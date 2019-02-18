@@ -56,7 +56,8 @@ public class SemanticOccurrenceEditPolicyProvider extends AbstractProvider imple
 
 	@Override
 	public void createEditPolicies(EditPart editPart) {
-		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new OccurenceSemanticEditPolicy());
+		//editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new OccurenceSemanticEditPolicy());
+		editPart.removeEditPolicy(EditPolicyRoles.SEMANTIC_ROLE);
 	}
 
 }
