@@ -19,8 +19,12 @@ import java.util.Arrays;
 
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.commands.UnexecutableCommand;
+import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
+import org.eclipse.gmf.runtime.emf.type.core.requests.ReorientReferenceRelationshipRequest;
+import org.eclipse.gmf.runtime.emf.type.core.requests.ReorientRelationshipRequest;
 import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 import org.eclipse.papyrus.uml.service.types.utils.ElementUtil;
@@ -57,5 +61,13 @@ public class CustomExecutionSpecificationSemanticEditPolicy extends OccurenceSem
 		return super.getCreateCommand(req);
 	}
 
+	protected Command getReorientReferenceRelationshipCommand(ReorientReferenceRelationshipRequest req) {
+		Command cmd = super.getReorientReferenceRelationshipCommand(req);
+		if (cmd == UnexecutableCommand.INSTANCE) {
+			// By pass the default ElementTypes framework.
+			return null;
+		}
+		return cmd;
+	}
 
 }
