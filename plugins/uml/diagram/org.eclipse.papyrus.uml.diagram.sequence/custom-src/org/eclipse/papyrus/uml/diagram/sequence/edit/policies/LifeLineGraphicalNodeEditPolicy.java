@@ -100,6 +100,17 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		return super.getConnectionCreateCommand(request);
 	}
 
+	@Override
+	protected Command getConnectionAndRelationshipCreateCommand(
+			CreateConnectionViewAndElementRequest request) {
+		Command cmd = super.getConnectionAndRelationshipCreateCommand(request);
+		if (cmd == null) {
+			// No semantic policy, so we delegate to the 
+			return super.getConnectionCreateCommand(request);
+		}
+		
+		return cmd;
+	}
 
 	/**
 	 * This method take into account the horizontal Delta to have an horizontal feedback if the target point is in the Y delta.
