@@ -702,6 +702,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 		}
 		
+		
 		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
 				NodeUtilities.getLifelineNode(toLifelineNode).getView());
 		int minY = lifelineArea.y;
@@ -712,6 +713,15 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			nodes.remove(source);
 		} 
 		
+		Link l = NodeUtilities.getStartLink(link);
+		if ( l != null && l != link) {
+			minY = l.getTarget().getBounds().y;
+		}
+		l = NodeUtilities.getFinishLink(link);
+		if ( l != null && l != link) {
+			maxY = l.getSource().getBounds().y;
+		}
+
 		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
 		totalArea.translate(moveDelta);
 		if (totalArea.y <= minY || totalArea.y >= maxY) {
@@ -719,8 +729,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			return;
 		}
 		
-		// TODO: Handle Reply source endpoints
-				
+		Link otherLink = isRecvEvent ? NodeUtilities.getStartLink(link) : NodeUtilities.getFinishLink(link);
+
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
