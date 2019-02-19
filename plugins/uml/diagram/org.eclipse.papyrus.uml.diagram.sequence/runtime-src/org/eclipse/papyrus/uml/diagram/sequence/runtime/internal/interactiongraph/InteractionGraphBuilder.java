@@ -102,7 +102,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	@Override
 	public NodeImpl caseLifeline(Lifeline element) {
 		ClusterImpl cluster = new ClusterImpl(element);
-		graph.addLifeline(cluster, null);
+		graph.addLifelineCluster(cluster, null);
 		cluster.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
 		activeLifelineGroups.put(element, cluster);
 		cache(element, cluster);

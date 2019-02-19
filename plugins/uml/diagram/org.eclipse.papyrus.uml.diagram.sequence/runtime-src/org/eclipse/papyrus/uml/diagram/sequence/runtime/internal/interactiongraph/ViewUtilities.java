@@ -57,7 +57,7 @@ public class ViewUtilities {
 	public static final int LIFELINE_DEFAULT_WIDTH = 100;
 	public static final int EXECUTION_SPECIFICATION_WIDTH = AbstractExecutionSpecificationEditPart.DEFAUT_WIDTH;
 
-	static View getViewForElement(View containerView, Element element) {
+	public static View getViewForElement(View containerView, Element element) {
 		if (containerView == null) {
 			return null;
 		}

@@ -17,6 +17,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Request;
+import org.eclipse.gmf.runtime.emf.type.core.requests.IEditCommandRequest;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.uml2.uml.Interaction;
@@ -28,8 +29,12 @@ import org.eclipse.uml2.uml.Interaction;
 public class InteractionGraphRequestHelper {
 	private static final String REQ_PROPERTY = "InteractionGraph";
 
-	public static InteractionGraph getInteractiongraph(Request req) {
+	public static InteractionGraph getInteractionGraph(Request req) {
 		return (InteractionGraph) req.getExtendedData().get(REQ_PROPERTY);
+	}
+
+	public static InteractionGraph getInteractionGraph(IEditCommandRequest req) {
+		return (InteractionGraph) req.getParameter(REQ_PROPERTY);
 	}
 
 	public static InteractionGraph getOrCreateInteractionGraph(Request req, GraphicalEditPart gep) {
@@ -74,7 +79,15 @@ public class InteractionGraphRequestHelper {
 		req.getExtendedData().put(REQ_PROPERTY, graph);
 	}
 
+	public static void bound(IEditCommandRequest req, InteractionGraph graph) {
+		req.setParameter(REQ_PROPERTY, graph);
+	}
+
 	public static void unbound(Request req, InteractionGraph graph) {
 		req.getExtendedData().remove(REQ_PROPERTY, graph);
+	}
+
+	public static void unbound(IEditCommandRequest req, InteractionGraph graph) {
+		req.setParameter(REQ_PROPERTY, null);
 	}
 }

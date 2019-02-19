@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -113,17 +112,16 @@ public class NodeUtilities {
 	}
 	
 	public static List<Node> flattenKeepClusters(List<Node> nodes) {
-		List<Node> res = new ArrayList<Node>();
-		List<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
-				flatMap(NodeUtilities::flattenImpl).collect(Collectors.toList());
-		for (Node n : flatNodes) {
-			if (n.getParent() != null && n.getParent().getNodes().indexOf(n) == 0) {
-				if (n.getParent().getParent() != null && n.getParent().getParent() != n.getInteractionGraph()) 
-					res.add(n.getParent());
-			}
-			res.add(n);
-		}
-		return res;
+		Set<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
+				flatMap(d -> { 
+					List<Node> l = new ArrayList<Node>();
+					l.add(d);
+					if (d instanceof Cluster)
+						l.addAll(flattenKeepClusters(((Cluster)d).getNodes()));
+					return l.stream();
+				}).collect(Collectors.toSet());
+		
+		return new ArrayList<>(flatNodes);
 	}
 
 	public static List<Node> flatten(List<Node> nodes) {
@@ -156,6 +154,21 @@ public class NodeUtilities {
 		}
 	}
 
+	public static List<List<Node>> getBlocks(List<Node> sources) {
+		Set<Node> flat = new HashSet<>();
+		List<List<Node>> blocks = new ArrayList<>();
+		
+		for (Node n : sources) {
+			List<Node> block = getBlock(n);
+			if (!flat.containsAll(block)) {
+				blocks.add(block);
+				flat.addAll(NodeUtilities.flattenKeepClusters(block));
+			}
+		}
+		
+		return blocks;
+	}
+
 	public static List<Node> getBlock(Node source) {
 		List<Node> nodes = new ArrayList<>();
 		getBlock(source, nodes);
@@ -183,17 +196,18 @@ public class NodeUtilities {
 				getBlock(nn, nodes);
 			}
 			
-			Node ret = c.getNodes().get(c.getNodes().size()-1);
-			Node retTrg = ret.getConnectedNode();
-			if (rn != null && retTrg != null && rn.getParent() == retTrg.getParent() && nodes.contains(rn.getParent())) {
-				// Add to the block the nodes between the triggering one and the return
-				List<Node> parentNodes = rn.getParent().getNodes();
-				for (int i=parentNodes.indexOf(rn); i<=parentNodes.indexOf(retTrg); i++) {
-					getBlock(parentNodes.get(i),nodes);
+			if (!c.getNodes().isEmpty()) {
+				Node ret = c.getNodes().get(c.getNodes().size()-1);
+				Node retTrg = ret.getConnectedNode();
+				if (rn != null && retTrg != null && rn.getParent() == retTrg.getParent() && nodes.contains(rn.getParent())) {
+					// Add to the block the nodes between the triggering one and the return
+					List<Node> parentNodes = rn.getParent().getNodes();
+					for (int i=parentNodes.indexOf(rn); i<=parentNodes.indexOf(retTrg); i++) {
+						getBlock(parentNodes.get(i),nodes);
+					}
 				}
 			}
-		}
-		
+		}		
 		return nodes;
 	}	
 
@@ -209,8 +223,10 @@ public class NodeUtilities {
 		int firstRowWithOtherContent = lastRow;
 		int lastRowWithOtherContent = firstRow;
 		for (int i=firstRow; i<=lastRow; i++) {
-			otherNodes.addAll(interactionGraph.getRows().get(i).getNodes());
-			if (!allNodes.containsAll(interactionGraph.getRows().get(i).getNodes())) {
+			List<Node> rowNodes = interactionGraph.getRows().get(i).getNodes().stream().
+					filter(d->!NodeUtilities.isLifelineNode(d)).collect(Collectors.toList());
+			otherNodes.addAll(rowNodes);
+			if (!allNodes.containsAll(rowNodes)) {
 				firstRowWithOtherContent = Math.min(firstRowWithOtherContent, i);
 				lastRowWithOtherContent = Math.max(lastRowWithOtherContent, i);
 			}
@@ -230,11 +246,23 @@ public class NodeUtilities {
 		for (Node n : nodes) {
 			if (n.getParent() != null)
 				((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
-			//((NodeImpl)n).disconnectNode();
+			else if (interactionGraph.getLifelineClusters().contains(n)) {
+				((InteractionGraphImpl)interactionGraph).removeLifelineCluster((ClusterImpl)n);
+			}
 		}		
 		interactionGraph.layout();
 	}
 	
+	public static void removeMessageLinks(InteractionGraph interactionGraph, List<Link> links) {
+		for (Link ln : links) {
+			LinkImpl impl = (LinkImpl)ln;
+			((InteractionGraphImpl)interactionGraph).removeMessage(impl);
+			impl.getSource().connectingLink = null;
+			impl.getTarget().connectingLink = null;
+		}		
+		interactionGraph.layout();
+	}
+
 	public static void insertNodes(InteractionGraph interactionGraph, List<Node> nodes, Cluster targetCluster, Node insertBefore, int yPos) {
 		Rectangle area = getArea(nodes);
 		
@@ -534,6 +562,10 @@ public class NodeUtilities {
 		return validArea;
 	}
 	
+	public static boolean isLifelineNode(Node node) {
+		return getLifelineNode(node) == node;		
+	}	
+
 	public static boolean isCreateOcurrenceSpecification(Node node) {
 		Element el = node.getElement();
 		if (!MessageOccurrenceSpecification.class.isInstance(el))

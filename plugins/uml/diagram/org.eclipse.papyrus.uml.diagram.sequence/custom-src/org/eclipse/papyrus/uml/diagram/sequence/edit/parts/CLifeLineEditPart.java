@@ -18,7 +18,6 @@
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -49,9 +48,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineRestorePositionEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineSelectionEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateNodeReferenceEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateWeakReferenceForExecSpecEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateWeakReferenceForMessageSpecEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.ILifelineInternalFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifeLineLayoutManager;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure;
@@ -60,6 +56,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.locator.MessageCreateLifelineAnc
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.DisplayEvent;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.editpolicies.InteractionGraphSemanticEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -160,7 +157,7 @@ public class CLifeLineEditPart extends LifelineEditPart {
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new LifeLineGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new LifelineSelectionEditPolicy());
 		installEditPolicy(LifeLineRestorePositionEditPolicy.KEY, new LifeLineRestorePositionEditPolicy());
-		removeEditPolicy(EditPolicyRoles.SEMANTIC_ROLE);
+		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new InteractionGraphSemanticEditPolicy());
 		//installEditPolicy(UpdateNodeReferenceEditPolicy.UDPATE_NODE_REFERENCE, new UpdateNodeReferenceEditPolicy());
 		//installEditPolicy(UpdateWeakReferenceForMessageSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_MESSAGE, new UpdateWeakReferenceForMessageSpecEditPolicy());
 		//installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());

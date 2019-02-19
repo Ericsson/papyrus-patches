@@ -14,7 +14,6 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -105,7 +104,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return Collections.unmodifiableList(lifelineClusters);
 	}
 
-	void addLifeline(ClusterImpl lifeline, ClusterImpl insertBeforeCluster) {
+	public void removeLifelineCluster(ClusterImpl lifeline) {
+		lifelineClusters.remove(lifeline);
+		lifeline.setParent(null);		
+	}
+	
+	public void addLifelineCluster(ClusterImpl lifeline, ClusterImpl insertBeforeCluster) {
 		int indexNext = insertBeforeCluster == null ? -1 : lifelineClusters.indexOf(insertBeforeCluster);
 		if (indexNext == -1) {
 			lifelineClusters.add(lifeline);
@@ -155,6 +159,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		addMessage(message,insertBeforeMessage);
 	}
 	
+	void removeMessage(LinkImpl message) {
+		messageLinks.remove(message);
+	}
+
 	@Override
 	public List<Row> getRows() {
 		return Collections.unmodifiableList(rows);
@@ -479,7 +487,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	@Override
 	public Cluster addLifeline(Lifeline lifeline, Cluster insertBefore) {
 		ClusterImpl cluster = new ClusterImpl(lifeline);
-		addLifeline(cluster, (ClusterImpl) insertBefore);
+		addLifelineCluster(cluster, (ClusterImpl) insertBefore);
 		builder.nodeCache.put(lifeline, cluster);
 		if (rows.size() == 0) {
 			rows.add(new RowImpl(this));
@@ -536,6 +544,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return link;
 	}
 	
+	public LinkImpl removeMessage(Message message) {
+		LinkImpl msgLink = getMessage(message);
+		if (msgLink != null) {
+			disableLayout();
+			removeMessage(msgLink);
+			removeNodeImpl(msgLink.getSource());
+			removeNodeImpl(msgLink.getTarget());
+			enableLayout();
+			layout();
+		}
+		return msgLink;
+	}
+
 	// TODO: @etxacam Check if remove
 	@Override
 	public void moveMessage(Message message, Message insertBefore) {
@@ -882,17 +903,29 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}		
 		
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
-				d -> (toLifelines.containsKey(d) ? toLifelines.get(d) : NodeUtilities.getLifelineNode(d))));
-		removeNodeBlockImpl(nodes,otherNodes);		
+				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getLifelineNode(d))));
+		removeNodeBlockImpl(nodes,otherNodes,0);		
 		addNodeBlock(nodesByLifeline, newYPos, postInsertionNudge);
 	}
 	
+	public void removeNodeBlocks(List<List<Node>> blocks) {
+		for (List<Node> block : blocks) {
+			removeNodeBlock(block);
+		}
+	}
+	
 	public void removeNodeBlock(List<Node> nodes) {
-		removeNodeBlockImpl(nodes, NodeUtilities.getBlockOtherNodes(nodes));
+		Rectangle r = NodeUtilities.getArea(nodes);
+		Row row = NodeUtilities.getRowAt(this, r.y);
+		Row prevRow = (row == null || row.getIndex() == 0) ? null : getRows().get(row.getIndex()-1);
+		int nudge = prevRow == null ? 0 : row.getYPosition() - prevRow.getYPosition();
+		List<Node> others = NodeUtilities.getBlockOtherNodes(nodes);
+		removeNodeBlockImpl(nodes, others, (others != null && !others.isEmpty()) ? 0 : nudge);
+		
 		// TODO: @etxacam Remove all references from: Links, lifelines, clusters, etc... 
 	}
 	
-	private void removeNodeBlockImpl(List<Node> nodes, List<Node> otherNodes) {
+	private void removeNodeBlockImpl(List<Node> nodes, List<Node> otherNodes, int extraNudge) {
 		Rectangle blockArea = NodeUtilities.getArea(nodes);
 		Rectangle otherArea = NodeUtilities.getArea(otherNodes);
 		
@@ -910,10 +943,11 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		int nudge = after + prev; 
-		if (nudge == 1) {
-			nudge--;
+		if (nudge <= 1) {
+			nudge = 0;
 		}
-
+		nudge += extraNudge;
+		
 		disableLayout();
 		try {
 			NodeUtilities.removeNodes(this, nodes);			

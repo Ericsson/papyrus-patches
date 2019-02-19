@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.commands.ExecutionException;
@@ -67,6 +68,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractio
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -198,6 +200,46 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
+	public void deleteLifeline(Lifeline lifeline) {
+		Cluster lifelineNode = (Cluster)interactionGraph.getNodeFor(lifeline);
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				List<List<Node>> blocksToDelete = NodeUtilities.getBlocks(lifelineNode.getNodes());
+				List<Node> flatBlocksToDelete = blocksToDelete.stream().flatMap(d->d.stream()).collect(Collectors.toList()); 
+				List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(flatBlocksToDelete).stream().map(Node::getConnectedByLink).
+						filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
+				try {
+					// Remove nodes & Messages
+					interactionGraph.disableLayout();
+					NodeUtilities.removeMessageLinks(graph, linksToDelete);
+				} finally {
+					interactionGraph.enableLayout();
+				}
+				
+				try {
+					((InteractionGraphImpl)graph).removeNodeBlocks(blocksToDelete);			
+					Column col = lifelineNode.getColumn();
+					Column prev = col.getIndex() == 0 ? null : interactionGraph.getColumns().get(col.getIndex()-1);
+					int prevSize = prev == null ? 0 : (lifelineNode.getBounds().x  - NodeUtilities.getArea(prev.getNodes()).right());
+					int horzNudge = lifelineNode.getBounds().width + prevSize;
+					interactionGraph.disableLayout();
+					NodeUtilities.removeNodes(graph, Collections.singletonList(lifelineNode));
+					graph.getColumns().stream().filter(d->d.getIndex() > col.getIndex()).forEach(d -> ((ColumnImpl)d).nudge(-horzNudge));
+				} finally {
+					interactionGraph.enableLayout();
+					interactionGraph.layout();					
+				}
+				return true;
+				
+			}
+		});
+	}
+	
 	/**
 	 * @param moveDelta
 	 */
@@ -418,6 +460,29 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			Link message;
 		});
 		
+	}
+
+	public void deleteMessage(Message msg) {
+		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message. 
+		Link link = interactionGraph.getLinkFor(msg);		
+		Node source = link.getSource();
+		
+		List<Node> nodes = NodeUtilities.getBlock(source);
+		List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(nodes).stream().map(Node::getConnectedByLink).
+				filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+			
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				((InteractionGraphImpl)graph).removeNodeBlock(nodes);
+				NodeUtilities.removeMessageLinks(graph, linksToDelete);
+				return true;
+			}
+		});
 	}
 
 	public void nudgeMessage(Message msg, Point delta) {
@@ -859,7 +924,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	private ICommand deleteLifelinesEditingCommand(TransactionalEditingDomain editingDomain, Lifeline lifeline) {
 		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline");
-		cmd.add(new DeleteCommand(editingDomain, interactionGraph.getLifeline(lifeline).getView()));
+		cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), lifeline)));
 		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, lifeline, false)));
 		return cmd;
 	}
@@ -945,15 +1010,20 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		List<InteractionFragment> graphFragments = orderResolver.getOrderedNodes().stream()
 				.map(Node::getElement).filter(InteractionFragment.class::isInstance)
 				.map(InteractionFragment.class::cast).collect(Collectors.toList());
-				
-		Function<InteractionFragment, IUndoableOperation> addCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
-				AddCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
-		Function<InteractionFragment, IUndoableOperation> removeCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
-				RemoveCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
 
+		// Here we can only handle the fragment order.
+		// Elements are created in the Actions and added here.
+		// Behavior specs delete and add itself to fragments.
+		// TODO: Messages Occurrence need to do that also.
+		
+//		Function<InteractionFragment, IUndoableOperation> addCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
+//				AddCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
+//		Function<InteractionFragment, IUndoableOperation> removeCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
+//				RemoveCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
+
+		// Reorder fragments
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
-				UMLPackage.Literals.INTERACTION__FRAGMENT, fragments, graphFragments, addCommandFunction,
-				removeCommandFunction, false, false);
+				UMLPackage.Literals.INTERACTION__FRAGMENT, fragments, graphFragments, null, null, false, false);
 	}
 
 	private void calculateMessagesChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
@@ -1029,6 +1099,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}	
 	
 	private ICommand createMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
+		// MessageOcurrenceSpecifications are created by the MessageEditHelper
 		Link link = interactionGraph.getLinkFor(message);
 		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create Message");
 		// TODO: @etxacam Check the message to get the Element Type 
@@ -1046,13 +1117,22 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			case REPLY_LITERAL:
 				type = UMLElementTypes.Message_ReplyEdge; break;
 		}
+				
+		cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+				org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.MESSAGE_OCCURRENCE_SPECIFICATION), 
+				message.getSendEvent()));
 		
-		
+		cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+				message.getReceiveEvent() instanceof DestructionOccurrenceSpecification ? 
+					UMLElementTypes.DestructionOccurrenceSpecification_Shape : 	
+					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.MESSAGE_OCCURRENCE_SPECIFICATION), 
+				message.getReceiveEvent()));
+
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain,
 				interactionGraph.getInteraction(), type);
 		String visualId = ((IHintedType)type).getSemanticHint();
-		
 		cmd.add(new CreateNodeElementCommand(createReq, message));
+		
 		boolean isDestroyMessage = (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification);
 		if (isDestroyMessage) {
 			String hint = DestructionOccurrenceSpecificationEditPart.VISUAL_ID;
@@ -1079,10 +1159,16 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand deleteMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Message");
-		cmd.add(new DeleteCommand(editingDomain, interactionGraph.getMessage(message).getView()));
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Message");		
+		cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message)));
+		if (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification) {
+			cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message.getReceiveEvent())));			
+		}
+		
+		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, message.getSendEvent(), false)));
+		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, message.getReceiveEvent(), false)));
 		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, message, false)));
-		// TODO: @etxacam Check when to destroy mos
+
 		return cmd;
 	}
 
@@ -1107,12 +1193,16 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		List<T> objToRemove = oldValues.stream().filter(d -> !newValues.contains(d)).collect(Collectors.toList());
 		List<T> objToAdd = newValues.stream().filter(d -> !oldValues.contains(d)).collect(Collectors.toList());
 
-		for (T obj : objToRemove)
-			cmd.add(removeCommand.apply(obj));
-
-		for (T obj : objToAdd)
-			cmd.add(addCommand.apply(obj));
-
+		if (removeCommand != null) {
+			for (int i=objToRemove.size()-1; i>=0; i--)
+				cmd.add(removeCommand.apply(objToRemove.get(i)));
+		}
+		
+		if (addCommand != null) {
+			for (T obj : objToAdd)
+				cmd.add(addCommand.apply(obj));
+		}
+		
 		// ReorderCommands		'
 		int index = 0;
 		for (T obj : newValues) {
