@@ -358,14 +358,6 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 				SelectInDiagramHelper.exposeLocation((FigureCanvas)getHost().getViewer().getControl(),loc);
 			}
 		
-		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
-		if (srcLoc == null) {
-			srcLoc = loc.getCopy();
-			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), new Point(srcLoc.x, srcLoc.y));
-			srcLoc = SequenceUtil.getSnappedLocation(request.getTarget(),srcLoc);
-			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
-		}
-		
 		Connection connection = (Connection)request.getConnectionEditPart().getFigure();
 		Edge connectionView = (Edge) request.getConnectionEditPart().getModel();
 		if (!(connectionView.getElement() instanceof Message))
@@ -380,18 +372,17 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
 
-		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
-		p = SequenceUtil.getSnappedLocation(request.getTarget(),p);
-
+		Point p = SequenceUtil.getSnappedLocation(request.getTarget(),loc.getCopy());
+		p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), p);				
 		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-			cmd.moveMessageEnd(messageEnd, newLifeline, new Point(p.x-srcLoc.x, p.y-srcLoc.y));		
+			cmd.moveMessageEnd(messageEnd, newLifeline, p);		
 		} else {
 			if (!(messageEnd instanceof MessageOccurrenceSpecification))
 				return UnexecutableCommand.INSTANCE;
 			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)messageEnd;
 			if (mos.getCovered() != newLifeline)
 				return UnexecutableCommand.INSTANCE;
-			cmd.nudgeMessageEnd(messageEnd, new Point(p.x-srcLoc.x, p.y-srcLoc.y)); 
+			cmd.nudgeMessageEnd(messageEnd, p); 
 		}
 		return new ICommandProxy(cmd);
 	

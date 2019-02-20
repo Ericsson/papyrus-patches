@@ -514,7 +514,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
-	public void nudgeMessageEnd(MessageEnd msgEnd, Point delta) {
+	public void nudgeMessageEnd(MessageEnd msgEnd, Point location) {
 		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
 			// TODO @etxacam We need to handle Gates
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -528,7 +528,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Node source = link.getSource();
 		Node target = link.getTarget();		
 		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);
-		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().translate(delta);
+		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().setLocation(location);
+		Dimension delta = newMsgEndPos.getLocation().getDifference(msgEndNode.getBounds().getLocation());
 		if (!validArea.contains(newMsgEndPos)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
@@ -556,10 +557,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			public boolean apply(InteractionGraph graph) {
 				if (isRecvEvent) {
 					graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
-							.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+							.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.height));
 					List<Node> ownRowNodes = msgEndNode.getRow().getNodes().stream().filter(d-> (d!=source && d!=target)).
 							collect(Collectors.toList());
-					NodeUtilities.nudgeNodes(ownRowNodes, 0, delta.y);
+					NodeUtilities.nudgeNodes(ownRowNodes, 0, delta.height);
 					graph.layout();
 				}
 				
@@ -725,7 +726,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return true;
 	}
 	
-	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point moveDelta) {		
+	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
 		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
 			// TODO @etxacam We need to handle Gates
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -740,8 +741,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Node target = link.getTarget();
 		Node source = link.getSource();
 
-		Point newLoc = msgEndNode.getBounds().getTopLeft();
-		newLoc.translate(moveDelta);
+		Point newLoc = location.getCopy();
 		if (isRecvEvent) {
 			if (newLoc.y < source.getBounds().y) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -788,7 +788,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 
 		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
-		totalArea.translate(moveDelta);
+		totalArea.setLocation(newLoc);
 		if (totalArea.y <= minY || totalArea.y >= maxY) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;

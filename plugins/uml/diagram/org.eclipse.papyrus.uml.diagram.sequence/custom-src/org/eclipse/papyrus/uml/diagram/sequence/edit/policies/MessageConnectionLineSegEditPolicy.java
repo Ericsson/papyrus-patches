@@ -70,8 +70,7 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
 		if (srcLoc == null) {
 			srcLoc = loc.getCopy();
-			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), new Point(srcLoc.x, srcLoc.y));
-			srcLoc = SequenceUtil.getSnappedLocation(request.getSource(),srcLoc);
+			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), srcLoc);
 			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
 		}
 		
@@ -87,8 +86,8 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
-		Point p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(loc.x, loc.y));				
-		p = SequenceUtil.getSnappedLocation(request.getSource(),p);
+		Point p = SequenceUtil.getSnappedLocation(request.getSource(),loc.getCopy());
+		p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), p);				
 		
 		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
 			cmd.moveMessage(message, new Point(p.x - srcLoc.x, p.y - srcLoc.y));
@@ -110,13 +109,13 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
 		if (srcLoc == null) {
 			srcLoc = loc.getCopy();
-			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), new Point(srcLoc.x, srcLoc.y));
 			srcLoc = SequenceUtil.getSnappedLocation(request.getSource(),srcLoc);
+			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), srcLoc);
 			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
 		}
 		
-		Point p = ViewUtilities.controlToViewer(getHost().getViewer(), new Point(loc.x, loc.y));				
-		p = SequenceUtil.getSnappedLocation(request.getSource(),p);
+		Point p = SequenceUtil.getSnappedLocation(request.getSource(),loc.getCopy());
+		p = ViewUtilities.controlToViewer(getHost().getViewer(), p);				
 		if (originalSourceAnchor == null || originalTargetAnchor == null) {
 			originalSourceAnchor = con.getSourceAnchor();
 			originalTargetAnchor = con.getTargetAnchor();
