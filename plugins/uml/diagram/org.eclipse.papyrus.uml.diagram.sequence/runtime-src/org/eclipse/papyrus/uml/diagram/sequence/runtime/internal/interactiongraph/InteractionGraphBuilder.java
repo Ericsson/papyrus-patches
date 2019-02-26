@@ -31,6 +31,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphIt
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities.EdgeSide;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Continuation;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
@@ -122,12 +123,12 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		Edge msgView = (Edge)ViewUtilities.getViewForElement(graph.getDiagram(), msg);
 		
 		if (msg.getSendEvent() == element) {
-			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getSource());
+			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, EdgeSide.Source);
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 			node.setBounds(new Rectangle(p,new Dimension(0, 0)));
 		} else if (msg.getReceiveEvent() == element) {
-			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, msgView.getTarget());
+			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, EdgeSide.Target);
 			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
 				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 

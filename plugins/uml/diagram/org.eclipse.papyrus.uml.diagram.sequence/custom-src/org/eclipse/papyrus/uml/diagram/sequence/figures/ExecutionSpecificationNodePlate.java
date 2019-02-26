@@ -20,10 +20,13 @@ import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.TreeSearch;
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.BorderedNodeFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSVGNodePlateFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSlidableRoundedRectangleAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.AnchorConstants;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeBottomAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeTopAnchor;
@@ -69,6 +72,23 @@ public class ExecutionSpecificationNodePlate extends LinkLFSVGNodePlateFigure im
 			}
 		}
 		return super.getConnectionAnchor(terminal);
+	}
+
+	@Override
+	protected ConnectionAnchor createAnchor(PrecisionPoint p) {
+		return new LinkLFSlidableRoundedRectangleAnchor(this, p) {
+			@Override
+			public Point getLocation(Point refParent, Point refPort) {
+				Rectangle r = super.getOwner().getBounds().getCopy();
+				getOwner().translateToAbsolute(r);
+				Point loc = refParent.getCopy();
+				loc.x = r.x;
+				if (refParent.x < refPort.x) {
+					loc.x += r.width;					
+				}			
+				return loc;
+			}			
+		};
 	}
 
 	@Override

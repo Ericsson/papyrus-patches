@@ -16,6 +16,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -863,8 +864,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	public void moveNodeBlock(List<Node> nodes, int yPos) {
 		moveNodeBlock(nodes, yPos, Collections.emptyMap());
 	}
-	public void moveNodeBlock(List<Node> nodes, int yPos, Map<Node, Cluster> toLifelines) {
-		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
+	
+	public void moveNodeBlock(List<Node> nodes, int yPos, Map<Node, Cluster> toCluters) {
+		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
 		// 1) Calculate graph nodes in block area that are not part of the block
 		List<Node> otherNodes = NodeUtilities.getBlockOtherNodes(nodes);
 		
@@ -898,7 +900,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			newYPos -= prev;
 		} else if (yPos > otherEndPoint) {
 			// Insertion point inside block before the other content
-			newYPos = blockStartPoint;
+			newYPos = yPos;
 			postInsertionNudge = yPos - blockStartPoint;
 		}		
 		
@@ -941,7 +943,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			prev = otherStartPoint - blockStartPoint;
 			after = blockEndPoint - otherEndPoint; 
 		}
-		List<Node> allNodes = NodeUtilities.flattenKeepClusters(nodes);
+		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
 		int nudge = after + prev; 
 		if (nudge <= 1) {
 			nudge = 0;
@@ -952,8 +954,21 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		try {
 			NodeUtilities.removeNodes(this, nodes);			
 			List<Node> nodesAfter = getLayoutNodes().stream().filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).collect(Collectors.toList());
-			NodeUtilities.nudgeNodes(otherNodes, 0, -prev);
-			NodeUtilities.nudgeNodes(nodesAfter, 0, -nudge);
+			Rectangle nodesAfterArea = NodeUtilities.getArea(nodesAfter);
+			
+			// Check how much can we nudge up...
+			Rectangle nudgeArea = NodeUtilities.getNudgeArea(this, otherNodes, false, true, allNodes);
+			int maxNudgePrev = prev;
+			if (nudgeArea != null && otherArea != null)
+				maxNudgePrev = (otherArea.y - nudgeArea.y) / 20 * 20;
+			
+			nudgeArea = NodeUtilities.getNudgeArea(this, nodesAfter, false, true, allNodes);
+			int maxNudgeAfter = nudge; 
+			if (nudgeArea != null && otherArea != null)
+				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / 20 * 20;
+
+			NodeUtilities.nudgeNodes(otherNodes, 0, -Math.max(0, Math.min(prev, maxNudgePrev)));			
+			NodeUtilities.nudgeNodes(nodesAfter, 0, -Math.max(0, Math.min(nudge, maxNudgeAfter)));
 		} finally {
 			enableLayout();
 			layout();
@@ -1001,7 +1016,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			for (Map.Entry<Cluster,List<Node>> lifelineEntry : nodesByLifelines.entrySet()) {
 				Cluster lifelineCluster = lifelineEntry.getKey();
 				List<Node> ns = lifelineEntry.getValue();
-				List<Node> ans = NodeUtilities.flattenKeepClusters(ns); 
+				List<Node> ans = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(ns)); 
 				Rectangle lifelineNodesArea = NodeUtilities.getArea(ans);
 				Node newPrevNode = lifelineCluster.getAllNodes().stream().filter(d->(d.getBounds().y < yPos)).
 						filter(d->!ans.contains(d)).sorted(Collections.reverseOrder(RowImpl.NODE_VPOSITION_COMPARATOR)).findFirst().orElse(null);
@@ -1028,6 +1043,48 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}	
 	}
 
+	public void reArrangeSelfMessages(List<Link> previousSelfLinks, List<Link> newSelfLinks) {
+		List<Link> selfLinksToStraight = new ArrayList<>(previousSelfLinks);
+		selfLinksToStraight.removeAll(newSelfLinks);
+		
+		List<Link> linksToSelfLinks = new ArrayList<>(newSelfLinks);
+		linksToSelfLinks.removeAll(previousSelfLinks);
+		
+		// Nudge Target Links for new Self messages.
+		List<Node> nodesToNudge = linksToSelfLinks.stream().filter(d -> NodeUtilities.getLinkSlope(d) < 3).map(Link::getTarget).
+			map(d-> d instanceof Cluster ? ((Cluster)d).getNodes().get(0) : d).sorted(RowImpl.NODE_VPOSITION_COMPARATOR).
+			collect(Collectors.toList());
+		if (!nodesToNudge.isEmpty()) {
+			int nudge = 0;
+			Iterator<Node> it = nodesToNudge.iterator();
+			Node nextNode = it.next();
+			for (Node n : getOrderedNodes()) {
+				if (nudge == 0)
+				if (n == nextNode) {
+					nudge += 20;
+					nextNode = !it.hasNext() ? null : it.next();
+				} 
+				NodeUtilities.nudgeNodes(n, 0, nudge);
+			}
+		}
+		
+		List<Node> nodesToUnnudge = selfLinksToStraight.stream().filter(d -> NodeUtilities.getLinkSlope(d) >= 17).map(Link::getTarget).
+				map(d-> d instanceof Cluster ? ((Cluster)d).getNodes().get(0) : d).sorted(RowImpl.NODE_VPOSITION_COMPARATOR).
+				collect(Collectors.toList());
+		if (!nodesToUnnudge.isEmpty()) {
+			int nudge = 0;
+			Iterator<Node> it = nodesToUnnudge.iterator();
+			Node nextNode = it.next();
+			for (Node n : getOrderedNodes()) {
+				if (n == nextNode) {
+					nudge -= 20;
+					nextNode = !it.hasNext() ? null : it.next();
+				} 
+				NodeUtilities.nudgeNodes(n, 0, nudge);
+			}			
+		}
+	}
+	
 	// TODO: @etxacam Check if remove
 	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
 		if (fromCluster == null || toCluster == null || node == null) {

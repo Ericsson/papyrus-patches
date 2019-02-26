@@ -58,7 +58,9 @@ import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
+import org.eclipse.gmf.runtime.notation.RelativeBendpoints;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.gmf.runtime.notation.datatype.RelativeBendpoint;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
 import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
@@ -535,13 +537,17 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			return;
 		}
 
+		int selfMsgSpace = 0;
+		if (NodeUtilities.isSelfLink(link))
+			selfMsgSpace = 20;
+
 		if (isRecvEvent) {
-			if (newMsgEndPos.y < link.getSource().getBounds().y) {
+			if (newMsgEndPos.y < (link.getSource().getBounds().y + selfMsgSpace)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
 			}				
 		} else {
-			if (newMsgEndPos.y > link.getTarget().getBounds().y) {
+			if (newMsgEndPos.y > (link.getTarget().getBounds().y - selfMsgSpace)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
 			}				
@@ -737,24 +743,29 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Link link = interactionGraph.getLinkFor(msg);
 		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
 		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
+		boolean isChangingLifeline = NodeUtilities.getLifelineNode(msgEndNode) != toLifelineNode;
 				
 		Node target = link.getTarget();
 		Node source = link.getSource();
 
+		int selfMsgSpace = 0;
+		if (NodeUtilities.isSelfLink(link) && !isChangingLifeline)
+			selfMsgSpace = 20;
+
 		Point newLoc = location.getCopy();
 		if (isRecvEvent) {
-			if (newLoc.y < source.getBounds().y) {
+			if (newLoc.y < (source.getBounds().y + selfMsgSpace)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
 			}				
 		} else {
-			if (newLoc.y > target.getBounds().y) {
+			if (newLoc.y > (target.getBounds().y - selfMsgSpace)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;
 			}							
 		}
 
-		if (isRecvEvent && NodeUtilities.getLifelineNode(msgEndNode) != toLifelineNode) {
+		if (isRecvEvent && isChangingLifeline) {
 			if (NodeUtilities.isNodeLifelineStartByCreateMessage(toLifelineNode) && NodeUtilities.isCreateOcurrenceSpecification(msgEndNode)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;				
@@ -793,9 +804,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
+		Link otherLink = isRecvEvent ? NodeUtilities.getStartLink(link) : NodeUtilities.getFinishLink(link);		
 		
-		Link otherLink = isRecvEvent ? NodeUtilities.getStartLink(link) : NodeUtilities.getFinishLink(link);
-
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
@@ -813,8 +823,71 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						c.getAllNodes().forEach(d -> moveToLifelines.put(d, toLifelineNode));
 					}
 				}
-
+				
+				List<Link> previousSelfLinks = new ArrayList<>(nodes.stream().map(Node::getConnectedByLink).filter(Predicate.isEqual(null).negate()).
+					filter(NodeUtilities::isSelfLink).collect(Collectors.toSet()));
+				
+				ClusterImpl finishingBlock = null;
+				if (!isRecvEvent && NodeUtilities.isFinishNode(msgEndNode)){
+					finishingBlock = (ClusterImpl)msgEndNode.getParent();
+				}
+				
 				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y, moveToLifelines);
+
+				if (finishingBlock != null) {
+					if (finishingBlock != msgEndNode.getParent() && finishingBlock.getParent() != msgEndNode.getParent()) {
+					// TODO: @etxacam Make a it a constrain when providing command instead...
+					// The finish mark end up in a different parent
+						return false;
+					}
+					
+					if (finishingBlock.getParent() == msgEndNode.getParent()) {
+						// Re-add node to the block
+						ClusterImpl parent = (ClusterImpl)finishingBlock.getParent();
+						int clIndex = parent.getNodes().indexOf(finishingBlock);
+						int index = parent.getNodes().indexOf(msgEndNode);
+						
+						for (int i= index; i> clIndex; i--) {
+							NodeImpl n = parent.removeNode(i);
+							finishingBlock.addNode(n);
+						}
+					}
+					graph.layout();
+				}
+				
+				// Re-target reply msg.
+				if (otherLink != null) {
+					Node otherEndNode = isRecvEvent ? otherLink.getSource() : otherLink.getTarget();
+					List<Node> otherNodes = Arrays.asList(otherEndNode);
+					Rectangle otherTotalArea = NodeUtilities.getArea(otherNodes);
+					Map<Node, Cluster> otherMoveToLifelines = new HashMap<>();
+					otherMoveToLifelines.put(otherEndNode, toLifelineNode);					
+					boolean selfMsg = NodeUtilities.getLifelineNode(isRecvEvent ? otherLink.getTarget() : otherLink.getSource()) == toLifelineNode;
+					((InteractionGraphImpl)graph).moveNodeBlock(otherNodes, otherTotalArea.y + (selfMsg ? 20 : 0), otherMoveToLifelines);		
+					
+					// Check if both ends has the same parent???
+					if (msgEndNode.getParent() != otherEndNode.getParent()) {
+						// TODO: @etxacam Make a it a constrain when providing command instead...
+						// We undo as one of the ends has a different parent.
+						return false;
+					}
+					
+					if (previousSelfLinks.contains(link))
+						previousSelfLinks.add(otherLink);
+					
+				}
+				
+				// Nudge & "unnudge" self messages ends.
+				List<Link> selfLinks = new ArrayList<>(nodes.stream().map(Node::getConnectedByLink).filter(Predicate.isEqual(null).negate()).
+						filter(NodeUtilities::isSelfLink).collect(Collectors.toSet()));
+				((InteractionGraphImpl)graph).disableLayout();
+				try {
+					((InteractionGraphImpl)graph).reArrangeSelfMessages(previousSelfLinks, selfLinks);
+				} finally {
+					((InteractionGraphImpl)graph).enableLayout();					
+					((InteractionGraphImpl)graph).layout();
+				}
+				
 				return true;
 			}
 		});
@@ -1056,13 +1129,16 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, lk.getTarget().getElement())));
 			}
+			
 			Edge edge = lk.getEdge();
 			if (edge != null) {
+				View srcView = null;
+				Point srcAnchorPoint = null;
 				if (lk.getSource() != null) {
-					Point p = lk.getSource().getBounds().getCenter();
-					View endView = lk.getSourceAnchoringNode().getView();
+					srcAnchorPoint = lk.getSource().getBounds().getCenter();
+					srcView = lk.getSourceAnchoringNode().getView();
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.SOURCE, 
-							endView, p, "Set Source Link Anchor", null));
+							srcView, srcAnchorPoint, "Set Source Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, SetCommand.UNSET_VALUE)));					
@@ -1070,16 +1146,37 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
 			
+				View trgView = null;
+				Point trgAnchorPoint = null;
+				boolean isSelfLink = NodeUtilities.isSelfLink(lk);
 				if (lk.getTarget() != null) {
-					Point p = lk.getTarget().getBounds().getCenter();
-					View endView = lk.getTargetAnchoringNode().getView();
+					trgAnchorPoint = lk.getTarget().getBounds().getCenter();
+					trgView = lk.getTargetAnchoringNode().getView();
+					
+					if (isSelfLink && (trgAnchorPoint.y - srcAnchorPoint.y) < 20)
+						trgAnchorPoint.y = srcAnchorPoint.y + 20;
+					
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.TARGET, 
-							endView, p, "Set Target Link Anchor", null));
+							trgView, trgAnchorPoint, "Set Target Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, SetCommand.UNSET_VALUE)));					
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR, SetCommand.UNSET_VALUE)));					
+				}
+				
+				// Handling Bendpoints for self message
+				if (isSelfLink) {
+					RelativeBendpoints bendpoints = (RelativeBendpoints)edge.getBendpoints();
+					List<RelativeBendpoint> l = new ArrayList<>();
+					l.add(new RelativeBendpoint(0, 0, srcAnchorPoint.x - trgAnchorPoint.x, srcAnchorPoint.y - trgAnchorPoint.y));
+					l.add(new RelativeBendpoint(50, 0, srcAnchorPoint.x + 50 - trgAnchorPoint.x, srcAnchorPoint.y - trgAnchorPoint.y));
+					l.add(new RelativeBendpoint(50, trgAnchorPoint.y - srcAnchorPoint.y, srcAnchorPoint.x + 50 - trgAnchorPoint.x, 0));
+					l.add(new RelativeBendpoint(trgAnchorPoint.x - srcAnchorPoint.x, trgAnchorPoint.y - srcAnchorPoint.y, 0, 0));
+					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+							editingDomain, bendpoints, NotationPackage.Literals.RELATIVE_BENDPOINTS__POINTS, l)));
+					/*command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+							editingDomain, edge, NotationPackage.Literals.EDGE__BENDPOINTS, bendpoints)));*/
 				}
 			}
 			

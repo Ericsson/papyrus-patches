@@ -48,12 +48,14 @@ import org.eclipse.gmf.runtime.notation.FontStyle;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
+import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusConnectionEndEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.editparts.UMLConnectionNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.common.figure.edge.UMLEdgeFigure;
 import org.eclipse.papyrus.uml.diagram.common.service.ApplyStereotypeRequest;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionSourceAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionTargetAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers.MessageRouter;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageConnectionEndEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceEditPolicy;
@@ -194,6 +196,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 			getViewer().setCursor(Cursors.ARROW);
 			defaultCursor = null;
 		}
+		/*
 		if (!SelfMessageHelper.isSelfLink(this)) {
 			return;
 		}
@@ -222,7 +225,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 			getPrimaryShape().setCustomCursor(myCursor);
 		} else {
 			getPrimaryShape().setCustomCursor(null);
-		}
+		}*/
 	}
 
 	/**
@@ -293,6 +296,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 		// -- Grilling -- installEditPolicy(ConnectRectangleToGridEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectMessageToGridEditPolicy());
 		installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new MessageGraphicalNodeEditPolicy());
+		installEditPolicy(EditPolicy.CONNECTION_ENDPOINTS_ROLE, new MessageConnectionEndEditPolicy());
 	}
 
 	@Override

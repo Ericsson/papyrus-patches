@@ -34,12 +34,15 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.LayoutConstraint;
 import org.eclipse.gmf.runtime.notation.Location;
+import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
+import org.eclipse.gmf.runtime.notation.Shape;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
 import org.eclipse.papyrus.infra.gmfdiag.common.preferences.PreferencesConstantsHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure.LifelineHeaderFigure;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
@@ -50,6 +53,11 @@ import org.eclipse.uml2.uml.Lifeline;
  *
  */
 public class ViewUtilities {
+	public enum EdgeSide {
+		Source,
+		Target
+	};
+	
 	public static final int ROW_PADDING = 10;
 	public static final int COL_PADDING = 10;
 
@@ -216,14 +224,14 @@ public class ViewUtilities {
 		} else if (view instanceof Edge) {
 			Rectangle r = null;
 			Edge e = (Edge) view;
-			Point p = getAnchorLocationForView(viewer, e, e.getSource());
+			Point p = getAnchorLocationForView(viewer, e, EdgeSide.Source);
 			for (int i = 0; i < 2; i++) {
 				if (r == null) {
 					r = new Rectangle(p.x, p.y, 0, 0);
 				} else {
 					r.union(p);
 				}
-				p = getAnchorLocationForView(viewer, e, e.getTarget());
+				p = getAnchorLocationForView(viewer, e, EdgeSide.Target);
 			}
 			return r;
 		} 
@@ -297,15 +305,40 @@ public class ViewUtilities {
 		return rect;
 	}
 
-	public static Point getAnchorLocationForView(EditPartViewer viewer, Edge edge, View anchoredView) {
+	public static boolean isLifelineView(View view) {
+		if (view == null)
+			return false;
+		return view.getType().equals(LifelineEditPart.VISUAL_ID);
+	}
+	
+	public static boolean isSelfEdge(Edge edge) {
+		View srcLifeline = edge.getSource();
+		if (srcLifeline != null && !isLifelineView(srcLifeline)) {
+			srcLifeline = (View)srcLifeline.eContainer();
+			if (!isLifelineView(srcLifeline))
+				srcLifeline = null;
+		}
+		
+		View trgLifeline = edge.getTarget();
+		if (trgLifeline != null && !isLifelineView(trgLifeline)) {
+			trgLifeline = (View)srcLifeline.eContainer();
+			if (!isLifelineView(trgLifeline))
+				trgLifeline = null;
+		}
+		
+		return srcLifeline == trgLifeline; 
+	}
+	
+	public static Point getAnchorLocationForView(EditPartViewer viewer, Edge edge, EdgeSide side) {
+		View anchoredView = side == EdgeSide.Source ? edge.getSource() : edge.getTarget();
 		if (anchoredView.getElement() instanceof Gate) {
 			return getBounds(viewer, anchoredView).getCenter();
 		}
 
 		Anchor anchor = null;
-		if (edge.getSource() == anchoredView) {
+		if (side == EdgeSide.Source) {
 			anchor = edge.getSourceAnchor();
-		} else if (edge.getTarget() == anchoredView) {
+		} else if (side == EdgeSide.Target) {
 			anchor = edge.getTargetAnchor();
 		}
 
@@ -314,11 +347,12 @@ public class ViewUtilities {
 		return parseAnchorId(viewer, anchoredView, id);
 	}
 
-	public static void setAnchorLocationForView(EditPartViewer viewer, Edge edge, View anchoredView, Point point) {
+	public static void setAnchorLocationForView(EditPartViewer viewer, Edge edge, EdgeSide side, Point point) {
+		View anchoredView = side == EdgeSide.Source ? edge.getSource() : edge.getTarget();
 		Anchor anchor = null;
-		if (edge.getSource() == anchoredView) {
+		if (side == EdgeSide.Source) {
 			anchor = edge.getSourceAnchor();
-		} else if (edge.getTarget() == anchoredView) {
+		} else if (side == EdgeSide.Target) {
 			anchor = edge.getTargetAnchor();
 		}
 

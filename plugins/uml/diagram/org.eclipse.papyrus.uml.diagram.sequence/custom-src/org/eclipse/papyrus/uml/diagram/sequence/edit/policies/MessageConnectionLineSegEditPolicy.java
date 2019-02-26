@@ -18,6 +18,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.draw2d.Bendpoint;
@@ -161,6 +162,11 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 			originalFeedbackLoc = null;
 		}
 		super.eraseConnectionFeedback(request, removeFeedbackFigure);
+	}
+
+	@Override
+	protected List createManualHandles() {
+		return Collections.EMPTY_LIST;
 	}
 
 	private GhostImageFigure feedbackFigure;

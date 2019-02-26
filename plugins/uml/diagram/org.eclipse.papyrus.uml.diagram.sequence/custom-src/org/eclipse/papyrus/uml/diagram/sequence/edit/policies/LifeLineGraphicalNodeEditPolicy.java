@@ -380,8 +380,9 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 			if (!(messageEnd instanceof MessageOccurrenceSpecification))
 				return UnexecutableCommand.INSTANCE;
 			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)messageEnd;
-			if (mos.getCovered() != newLifeline)
+			if (mos.getCovered() != newLifeline) {
 				return UnexecutableCommand.INSTANCE;
+			}
 			cmd.nudgeMessageEnd(messageEnd, p); 
 		}
 		return new ICommandProxy(cmd);

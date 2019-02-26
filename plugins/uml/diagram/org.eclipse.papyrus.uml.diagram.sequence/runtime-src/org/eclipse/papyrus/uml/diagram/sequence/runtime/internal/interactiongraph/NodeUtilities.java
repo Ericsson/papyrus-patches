@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -111,17 +112,17 @@ public class NodeUtilities {
 		return null;
 	}
 	
-	public static List<Node> flattenKeepClusters(List<Node> nodes) {
-		Set<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
+	public static List<Node> flattenKeepClusters(List<Node> nodes) {		
+		List<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
 				flatMap(d -> { 
 					List<Node> l = new ArrayList<Node>();
 					l.add(d);
 					if (d instanceof Cluster)
 						l.addAll(flattenKeepClusters(((Cluster)d).getNodes()));
 					return l.stream();
-				}).collect(Collectors.toSet());
+				}).collect(Collectors.toList());
 		
-		return new ArrayList<>(flatNodes);
+		return flatNodes;
 	}
 
 	public static List<Node> flatten(List<Node> nodes) {
@@ -154,6 +155,10 @@ public class NodeUtilities {
 		}
 	}
 
+	public static final List<Node> removeDuplicated(List<Node> l) {
+		return new ArrayList<>(new LinkedHashSet<>(l));
+	}
+	
 	public static List<List<Node>> getBlocks(List<Node> sources) {
 		Set<Node> flat = new HashSet<>();
 		List<List<Node>> blocks = new ArrayList<>();
@@ -226,6 +231,7 @@ public class NodeUtilities {
 			List<Node> rowNodes = interactionGraph.getRows().get(i).getNodes().stream().
 					filter(d->!NodeUtilities.isLifelineNode(d)).collect(Collectors.toList());
 			otherNodes.addAll(rowNodes);
+			// Check if the nodes in the row are previous the ones in the block. Use the comparator.
 			if (!allNodes.containsAll(rowNodes)) {
 				firstRowWithOtherContent = Math.min(firstRowWithOtherContent, i);
 				lastRowWithOtherContent = Math.max(lastRowWithOtherContent, i);
@@ -236,10 +242,79 @@ public class NodeUtilities {
 		
 		// Remove Nodes that are before or after the nodes.
 		List<Node> orderedNodes = interactionGraph.getOrderedNodes();
-		int min = blockNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).min(Integer::compare).orElse(0);
-		int max = blockNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
+		int min = allNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).min(Integer::compare).orElse(0);
+		int max = allNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
 		otherNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i< min || i > max);});
 		return otherNodes;
+	}
+	
+	public static int getLinkSlope(Link lnk) {
+		return getLinkSlope(lnk.getSource(), lnk.getTarget());
+	}
+	
+	public static int getLinkSlope(Node srcNode, Node trgNode) {
+		Rectangle b1 = srcNode == null ? null : srcNode.getBounds();
+		Rectangle b2 = trgNode == null ? null : trgNode.getBounds();
+		if (b1 == null || b2 == null)
+			return 0;
+		
+		return b2.y - b1.y;
+	}
+	
+	public static boolean isSelfLink(Link lnk) {
+		return NodeUtilities.getLifelineNode(lnk.getSource()) == NodeUtilities.getLifelineNode(lnk.getTarget());		
+	}
+	
+	public static Link getStartLink(Link finishLink) {
+		Node n = finishLink.getSource();
+		if (n != getFinishNode(n.getParent()))
+				return null;
+		
+		return getStartLink(n.getParent()); 
+	}
+	
+	public static Node getStartNode(Cluster cluster) {
+		List<Node> nodes = cluster.getAllNodes();
+		if (nodes.isEmpty())
+			return null;
+		return nodes.get(0);				
+	}
+	
+	public static Link getStartLink(Cluster cluster) {
+		Link lnk = cluster.getConnectedByLink();
+		if (lnk == null || lnk.getSource().getConnectedNode() != cluster)
+			return null;
+		return lnk;
+		
+	}
+	
+	public static Link getFinishLink(Link startLink) {
+		Node n = startLink.getTarget();
+		if (n != getStartNode(n.getParent()))
+			return null;
+		
+		return getFinishLink(n.getParent()); 
+	}
+
+	public static boolean isFinishNode(Node node) {
+		return getFinishNode(node.getParent()) == node && NodeUtilities.getLifelineNode(node) != node.getParent();
+	}
+	
+	public static Node getFinishNode(Cluster cluster) {
+		List<Node> nodes = cluster.getNodes();
+		if (nodes.isEmpty())
+			return null;
+		return nodes.get(nodes.size()-1);				
+	}
+	
+	public static Link getFinishLink(Cluster cluster) {
+		Node n = getFinishNode(cluster);
+		if (n == null)
+			return null;
+		Link lnk = n.getConnectedByLink();
+		if (lnk == null || lnk.getSource() != n)
+			return null;
+		return lnk;
 	}
 	
 	public static void removeNodes(InteractionGraph interactionGraph, List<Node> nodes) {
@@ -304,10 +379,16 @@ public class NodeUtilities {
 		interactionGraph.layout();
 	}
 
+	public static void nudgeNodes(Node n, int xDelta, int yDelta) {
+		n.getBounds().x += xDelta;
+		n.getBounds().y += yDelta;
+	}
+	
 	public static void nudgeNodes(List<Node> nodes, int xDelta, int yDelta) {
 		for (Node n : nodes) {
 			n.getBounds().x += xDelta;
 			n.getBounds().y += yDelta;
+			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
 		}		
 		if (nodes.size() > 0)
 			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
@@ -509,8 +590,15 @@ public class NodeUtilities {
 				Row row = n.getRow();
 				vLimitNodes.addAll(row.getNodes());
 							
-				if (row.getIndex() > 0)
-					vLimitNodes.addAll(graph.getRows().get(row.getIndex()-1).getNodes());
+				while (row.getIndex() > 0) {
+					Row prevRow = graph.getRows().get(row.getIndex()-1);
+					List<Node> rowNodes = prevRow.getNodes();
+					if (excludeNodes == null || !excludeNodes.containsAll(rowNodes)) {
+						vLimitNodes.addAll(rowNodes);
+						break;
+					}
+					row = prevRow;
+				}
 				
 				if (excludeNodes != null)
 					vLimitNodes.removeAll(excludeNodes);
@@ -522,17 +610,24 @@ public class NodeUtilities {
 				Column col = n.getColumn();
 				hLimitNodes.addAll(col.getNodes());
 							
-				if (col.getIndex() > 0)
-					hLimitNodes.addAll(graph.getColumns().get(col.getIndex()-1).getNodes());				
-
+				while (col.getIndex() > 0) {
+					Column prevCol = graph.getColumns().get(col.getIndex()-1);
+					List<Node> colNodes = prevCol.getNodes();
+					if (excludeNodes == null || !excludeNodes.containsAll(colNodes)) {
+						hLimitNodes.addAll(colNodes);
+						break;
+					}
+					col = prevCol;
+				}
+				
 				if (excludeNodes != null)
 					hLimitNodes.removeAll(excludeNodes);
 			}			
 		}
 		
-		if (vertical)
+		if (vertical && vLimitNodes != null)
 			vLimitNodes.removeAll(nodesToNudge);
-		if (horizontal)
+		if (horizontal && hLimitNodes != null)
 			hLimitNodes.removeAll(nodesToNudge);
 		
 		int minY = Integer.MIN_VALUE; 
@@ -552,8 +647,8 @@ public class NodeUtilities {
 			}
 		}
 				
-		Rectangle validArea = getEmptyArea(graph, horizontal ? new ArrayList<>(hLimitNodes) : null, 
-					vertical ? new ArrayList<>(vLimitNodes) : null, null, null);
+		Rectangle validArea = getEmptyArea(graph, horizontal && hLimitNodes != null ? new ArrayList<>(hLimitNodes) : null, 
+					vertical && vLimitNodes != null ? new ArrayList<>(vLimitNodes) : null, null, null);
 			
 		if (vLimitNodes != null) {
 			validArea.y = Math.max(minY, validArea.y);
