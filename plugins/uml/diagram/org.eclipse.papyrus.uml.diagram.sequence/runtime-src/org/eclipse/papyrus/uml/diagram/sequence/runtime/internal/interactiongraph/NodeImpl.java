@@ -53,6 +53,12 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		if (parent instanceof InteractionGraph) {
 			return null;
 		}
+
+		if (parent == this) {			
+			// Avoid infinity loops if something went really wrong.
+			// We crash instead. hopefully transaction is aborted.
+			throw new IllegalStateException("he node it is own parent.");
+		}
 		return parent;
 	}
 
@@ -62,6 +68,11 @@ public class NodeImpl extends GraphItemImpl implements Node {
 			return null;
 		}
 
+		if (oppositeNode == this) {			
+			// Avoid infinity loops if something went really wrong.
+			// We crash instead. hopefully transaction is aborted.
+			throw new IllegalStateException("The node it is linked to itself.");
+		}
 		return (connects ? oppositeNode : null);
 	}
 
@@ -69,6 +80,12 @@ public class NodeImpl extends GraphItemImpl implements Node {
 	public NodeImpl getConnectedByNode() {
 		if (oppositeNode == null) {
 			return null;
+		}
+
+		if (oppositeNode == this) {			
+			// Avoid infinity loops if something went really wrong.
+			// We crash instead. hopefully transaction is aborted.
+			throw new IllegalStateException("The node it is linked to itself.");
 		}
 
 		return (!connects ? oppositeNode : null);

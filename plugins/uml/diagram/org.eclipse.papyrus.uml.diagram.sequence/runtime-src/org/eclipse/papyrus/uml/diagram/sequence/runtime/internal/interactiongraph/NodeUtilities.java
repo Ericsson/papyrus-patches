@@ -569,13 +569,19 @@ public class NodeUtilities {
 		return n;
 	}
 
-	public static final List<Node> getNodesAfter(InteractionGraphImpl graph, List<Node> nodes) {
+	public static final List<Node> getNodesAfter(InteractionGraph graph, List<Node> nodes) {
 		List<Node> orderedNodes = graph.getOrderedNodes();
 		int max = nodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
-		orderedNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i > max);});
+		orderedNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i <= max);});
 		return orderedNodes;
 	}
 	
+	public static final List<Node> getNodesAfterVerticalPos(InteractionGraph graph, int y) {
+		List<Node> orderedNodes = graph.getOrderedNodes();
+		orderedNodes.removeIf(d->d.getBounds().y <= y);
+		return orderedNodes;
+	}
+
 	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical) {
 		return getNudgeArea(graph, nodesToNudge, horizontal, vertical, null); 
 	}

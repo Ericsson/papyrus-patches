@@ -291,11 +291,12 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 		// It won't remove the actual semantic policy as it is override by the message edit part generated class. 
 		// Then We will remove it in the policy provider. 
 		removeEditPolicy(EditPolicyRoles.SEMANTIC_ROLE); 
+		removeEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE);
 		installEditPolicy(IMaskManagedLabelEditPolicy.MASK_MANAGED_LABEL_EDIT_POLICY, new MessageLabelEditPolicy());
 		// Ordering Message Occurrence Specification. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=403233
 		// -- Grilling -- installEditPolicy(ConnectRectangleToGridEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectMessageToGridEditPolicy());
-		installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
-		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new MessageGraphicalNodeEditPolicy());
+		//installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
+		//installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new MessageGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.CONNECTION_ENDPOINTS_ROLE, new MessageConnectionEndEditPolicy());
 	}
 
