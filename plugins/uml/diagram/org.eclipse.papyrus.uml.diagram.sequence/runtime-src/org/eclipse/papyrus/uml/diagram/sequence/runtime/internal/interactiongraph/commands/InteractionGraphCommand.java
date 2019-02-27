@@ -684,44 +684,30 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			@Override
 			public boolean apply(InteractionGraph graph) {							
 				try {
+					// Check for padding overlapping
+					
 					interactionGraph.disableLayout();
+					
+					// Default nudge if required.							
+					List<Node> nodesAfter= NodeUtilities.getNodesAfterVerticalPos(graph, newTrgPt.y-3);
+					nodesAfter.remove(link.getSource());
+					nodesAfter.remove(link.getTarget());
+					Node nextNode = nodesAfter.get(0);
+					if (nextNode.getBounds().y - newTrgPt.y < 3)
+						NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+					
 					// Move nodes [ Parent's next node...insert After node] into the parent.
-
+					// TODO: @etxacam Nudge if link src overlapp and get overlapp in cluster
 					if (moveDelta.y > 0) {
-						Node untilNode = NodeUtilities.getNextVerticalNode(newSrcParent,  newSrcPt.y);
-						while (untilNode != null && untilNode.getParent() != newSrcParent)
-							untilNode = untilNode.getParent();
-
-						int curIndx = newSrcParent.getNodes().indexOf(srcParent);
-						int lastIdx = newSrcParent.getNodes().indexOf(untilNode);
-						List<Node> nodesToMoveIn = newSrcParent.getNodes().subList(curIndx+1, lastIdx == -1 ? newSrcParent.getNodes().size() : lastIdx);
-						if (!nodesToMoveIn.isEmpty()) {
-							NodeUtilities.moveNodes(graph, nodesToMoveIn, srcParent, source, NodeUtilities.getArea(nodesToMoveIn).y);
-						}
+						expandCluster(srcParent,moveDelta.y);
 					} else if (moveDelta.y < 0){
-						Cluster newSrcParent = srcParent.getParent();
-
-						Node fromNode = NodeUtilities.getNextVerticalNode(srcParent, newSrcPt.y);
-						while (fromNode != null && fromNode.getParent() != srcParent)
-							fromNode = fromNode.getParent();
-						List<Node> nodesToMoveIn = srcParent.getNodes().subList(srcParent.getNodes().indexOf(fromNode), srcParent.getNodes().size()-1);														
-						if (!nodesToMoveIn.isEmpty()) {
-							int idx = newSrcParent.getNodes().indexOf(srcParent)+1;
-							Node insertBefore = null; 
-							if (idx < newSrcParent.getNodes().size())
-								insertBefore = newSrcParent.getNodes().get(idx);						
-							NodeUtilities.moveNodes(graph, nodesToMoveIn, newSrcParent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
-						}
+						shrinkCluster(srcParent, -moveDelta.y);
 					}
-					// Move source position
-					source.getBounds().y += moveDelta.y;
 
 					//Move target node
 					Node insertBeforeTrgNode = NodeUtilities.getNextVerticalNode(trgParent,  newTrgPt.y);
 					NodeUtilities.moveNodes(graph, Collections.singletonList(target), trgParent, insertBeforeTrgNode, newTrgPt.y);
-						
-					
-					// TODO: @etxacam Default nudge if required.		
+											
 				} finally {
 					interactionGraph.enableLayout();
 					interactionGraph.layout();
@@ -732,6 +718,50 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return true;
 	}
 	
+	private void shrinkCluster(Cluster cluster, int ammount) {
+		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
+
+		Cluster parent = cluster.getParent();
+		Rectangle bounds = cluster.getBounds();
+		int newPosY = bounds.y + bounds.height - ammount;
+
+		Node fromNode = NodeUtilities.getNextVerticalNode(cluster, newPosY);
+		while (fromNode != null && fromNode.getParent() != cluster)
+			fromNode = fromNode.getParent();
+		List<Node> nodesToMoveIn = cluster.getNodes().subList(cluster.getNodes().indexOf(fromNode), cluster.getNodes().size()-1);														
+		if (!nodesToMoveIn.isEmpty()) {
+			int idx = parent.getNodes().indexOf(cluster)+1;
+			Node insertBefore = null; 
+			if (idx < parent.getNodes().size())
+				insertBefore = parent.getNodes().get(idx);						
+			NodeUtilities.moveNodes(interactionGraph, nodesToMoveIn, parent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
+		}
+		lastNode.getBounds().y -= ammount;
+		cluster.getBounds().height -= ammount;
+
+	}
+
+	private void expandCluster(Cluster cluster, int ammount) {
+		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
+		
+		Cluster parent = cluster.getParent();
+		Rectangle bounds = cluster.getBounds();
+		int newPosY = bounds.y + bounds.height + ammount;
+		Node untilNode = NodeUtilities.getNextVerticalNode(parent,  newPosY);
+		while (untilNode != null && untilNode.getParent() != parent)
+			untilNode = untilNode.getParent();
+
+		int curIndx = parent.getNodes().indexOf(cluster);
+		int lastIdx = parent.getNodes().indexOf(untilNode);
+		List<Node> nodesToMoveIn = parent.getNodes().subList(curIndx+1, lastIdx == -1 ? parent.getNodes().size() : lastIdx);
+		if (!nodesToMoveIn.isEmpty()) {
+			NodeUtilities.moveNodes(interactionGraph, nodesToMoveIn, cluster, lastNode, NodeUtilities.getArea(nodesToMoveIn).y);
+		}		
+		
+		lastNode.getBounds().y += ammount;
+		cluster.getBounds().height += ammount;
+	}
+
 	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
 		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
 			// TODO @etxacam We need to handle Gates
@@ -774,8 +804,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(toLifelineNode) && NodeUtilities.isDestroyOcurrenceSpecification(msgEndNode)) {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;				
-			}
-			
+			}			
 		}
 		
 		
@@ -836,8 +865,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 				if (finishingBlock != null) {
 					if (finishingBlock != msgEndNode.getParent() && finishingBlock.getParent() != msgEndNode.getParent()) {
-					// TODO: @etxacam Make a it a constrain when providing command instead...
-					// The finish mark end up in a different parent
+						// TODO: @etxacam Make a it a constrain when providing command instead...
+						// The finish mark end up in a different parent OR IMPLEMENT IT!				
 						return false;
 					}
 					
@@ -847,8 +876,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						int clIndex = parent.getNodes().indexOf(finishingBlock);
 						int index = parent.getNodes().indexOf(msgEndNode);
 						
-						for (int i= index; i> clIndex; i--) {
-							NodeImpl n = parent.removeNode(i);
+						for (int i= clIndex+1; i<=index; i++) {
+							NodeImpl n = parent.removeNode(clIndex+1);
 							finishingBlock.addNode(n);
 						}
 					}
@@ -1181,7 +1210,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			}
 			
 			// Handling Destroy Ocurrences
-			if (NodeUtilities.isDestroyOcurrenceSpecification(lk.getTarget())) {
+			if (NodeUtilities.isDestroyOcurrenceSpecification(lk.getTarget()) && edge != null) {
 				View lifelineView = (View)edge.getTarget().eContainer(); 
 				Node lifelineNode = NodeUtilities.getLifelineNode(lk.getTarget());
 				if (lifelineView != null && lifelineView.getElement() != lifelineNode.getElement()) {
