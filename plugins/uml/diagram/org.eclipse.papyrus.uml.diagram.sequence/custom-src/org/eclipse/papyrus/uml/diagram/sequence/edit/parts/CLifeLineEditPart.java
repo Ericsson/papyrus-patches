@@ -36,6 +36,7 @@ import org.eclipse.gef.Request;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.editpolicies.DragDropEditPolicy;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
@@ -47,6 +48,7 @@ import org.eclipse.papyrus.uml.diagram.common.draw2d.anchors.FixedAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineRestorePositionEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineDragDropEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineSelectionEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.ILifelineInternalFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifeLineLayoutManager;
@@ -154,6 +156,7 @@ public class CLifeLineEditPart extends LifelineEditPart {
 	@Override
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
+		installEditPolicy(EditPolicyRoles.DRAG_DROP_ROLE+"Ex", new LifelineDragDropEditPolicy());
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new LifeLineGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new LifelineSelectionEditPolicy());
 		installEditPolicy(LifeLineRestorePositionEditPolicy.KEY, new LifeLineRestorePositionEditPolicy());

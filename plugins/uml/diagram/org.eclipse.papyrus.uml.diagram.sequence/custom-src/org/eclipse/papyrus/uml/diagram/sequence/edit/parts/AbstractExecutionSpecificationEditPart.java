@@ -25,21 +25,22 @@ import org.eclipse.draw2d.Locator;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
-import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.transaction.RunnableWithResult;
 import org.eclipse.gef.ConnectionEditPart;
+import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
-import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.Request;
+import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.common.core.util.Log;
 import org.eclipse.gmf.runtime.common.core.util.Trace;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IBorderItemEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editpolicies.ResizableShapeEditPolicy;
+import org.eclipse.gmf.runtime.diagram.ui.editpolicies.DragDropEditPolicy;
+import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIDebugOptions;
 import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIPlugin;
@@ -47,21 +48,19 @@ import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIStatusCodes;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest.ConnectionViewDescriptor;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeConnectionRequest;
-import org.eclipse.gmf.runtime.draw2d.ui.mapmode.IMapMode;
-import org.eclipse.gmf.runtime.draw2d.ui.mapmode.MapModeUtil;
+import org.eclipse.gmf.runtime.diagram.ui.requests.RequestConstants;
 import org.eclipse.gmf.runtime.emf.type.core.IHintedType;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.Anchor;
-import org.eclipse.gmf.runtime.notation.Bounds;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.FillStyle;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
-import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.gmf.runtime.notation.datatype.GradientData;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.IPapyrusNodeFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.SelectableBorderedNodeFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.editparts.RoundedCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeBottomAnchor;
@@ -69,15 +68,11 @@ import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeTopAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.AppliedStereotypeCommentCreationEditPolicyEx;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.ExecutionSpecificationAffixedChildAlignmentPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateConnectionReferenceEditPolicy;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateWeakReferenceForExecSpecEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.ExecutionSpecificationResizableEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.ExecutionSpecificationNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.CenterLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
-import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.BoundForEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.util.CoordinateReferentialUtils;
 import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.OccurrenceSpecificationUtil;
@@ -123,50 +118,21 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		//installEditPolicy(UpdateConnectionReferenceEditPolicy.UDPATE_CONNECTION_REFERENCE, new UpdateConnectionReferenceEditPolicy());
 		//installEditPolicy(UpdateWeakReferenceForExecSpecEditPolicy.UDPATE_WEAK_REFERENCE_FOR_EXECSPEC, new UpdateWeakReferenceForExecSpecEditPolicy());
 
-		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new ResizableShapeEditPolicy() {
-
-			@Override
-			protected void showChangeBoundsFeedback(ChangeBoundsRequest request) {
-				request.getMoveDelta().x = 0; // reset offset
-				IFigure feedback = getDragSourceFeedbackFigure();
-				PrecisionRectangle rect = new PrecisionRectangle(getInitialFeedbackBounds().getCopy());
-				getHostFigure().translateToAbsolute(rect);
-				IFigure f = getHostFigure();
-				Dimension min = f.getMinimumSize().getCopy();
-				Dimension max = f.getMaximumSize().getCopy();
-				IMapMode mmode = MapModeUtil.getMapMode(f);
-				min.height = mmode.LPtoDP(min.height);
-				min.width = mmode.LPtoDP(min.width);
-				max.height = mmode.LPtoDP(max.height);
-				max.width = mmode.LPtoDP(max.width);
-				Rectangle originalBounds = rect.getCopy();
-				rect.translate(request.getMoveDelta());
-				rect.resize(request.getSizeDelta());
-				if (min.width > rect.width) {
-					rect.width = min.width;
-				} else if (max.width < rect.width) {
-					rect.width = max.width;
+		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new ExecutionSpecificationResizableEditPolicy());
+		installEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE, new ExecutionSpecificationAffixedChildAlignmentPolicy());
+		installEditPolicy(EditPolicyRoles.DRAG_DROP_ROLE+"Ex", new DragDropEditPolicy() {
+			public Command getCommand(Request request) {
+				if (RequestConstants.REQ_DRAG.equals(request.getType()) || 
+					RequestConstants.REQ_DROP.equals(request.getType()) ||
+					RequestConstants.REQ_DROP_OBJECTS.equals(request.getType())) {
+					Command cmd = super.getCommand(request);
+					if (cmd == null) {
+						return getHost().getParent().getCommand(request);
+					}
 				}
-				if (min.height > rect.height) {
-					rect.height = min.height;
-				} else if (max.height < rect.height) {
-					rect.height = max.height;
-				}
-				if (rect.height == min.height && request.getSizeDelta().height < 0 && request.getMoveDelta().y > 0) { // shrink at north
-					Point loc = rect.getLocation();
-					loc.y = originalBounds.getBottom().y - min.height;
-					rect.setLocation(loc);
-					request.getSizeDelta().height = min.height - originalBounds.height;
-					request.getMoveDelta().y = loc.y - originalBounds.y;
-				}
-				if (request.getSizeDelta().height == 0) { // moving
-					moveExecutionSpecificationFeedback(request, AbstractExecutionSpecificationEditPart.this, rect, originalBounds);
-				}
-				feedback.translateToRelative(rect);
-				feedback.setBounds(rect);
+				return super.getCommand(request);
 			}
 		});
-		installEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE, new ExecutionSpecificationAffixedChildAlignmentPolicy());
 	}
 
 	@Override
@@ -299,30 +265,6 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 
 	@Override
 	public abstract ExecutionSpecificationRectangleFigure getPrimaryShape();
-
-	/**
-	 * @since 5.0
-	 */
-	protected void moveExecutionSpecificationFeedback(ChangeBoundsRequest request, AbstractExecutionSpecificationEditPart movedPart, PrecisionRectangle rect, Rectangle originalBounds) {
-
-		// If this is a move to the top, the execution specification cannot be moved upper than the life line y position
-		if (request.getMoveDelta().y < 0) {
-			EditPart parent = getParent();
-			if (parent instanceof CLifeLineEditPart) {
-
-				Point locationOnDiagram = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(originalBounds.getCopy().getLocation(), (GraphicalViewer) movedPart.getViewer());
-				Bounds parentBounds = BoundForEditPart.getBounds((Node) ((CLifeLineEditPart) parent).getModel());
-
-				// This magic delta is needed to be at the bottom of the life line name
-				if ((locationOnDiagram.y + request.getMoveDelta().y) < (parentBounds.getY() + 50)) {
-					Point loc = locationOnDiagram.getCopy();
-					loc.y = parentBounds.getY() + 50;
-					rect.setLocation(loc);
-					request.getMoveDelta().y = parentBounds.getY() + 50 - locationOnDiagram.y;
-				}
-			}
-		}
-	}
 
 	// /**
 	// * Override for add elements on ExecutionSpecification
@@ -614,4 +556,13 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		super.showTargetFeedback(request);
 	}
 
+	@Override
+	public DragTracker getDragTracker(Request req) {
+		return new PapyrusDragEditPartsTrackerEx(this, true, false, false) {
+			@Override
+			protected void setCloneActive(boolean cloneActive) {
+				super.setCloneActive(false); // Disable cloning
+			}			
+		};
+	}
 }

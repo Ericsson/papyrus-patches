@@ -626,6 +626,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 			@Override
 			public boolean apply(InteractionGraph graph) {
+				Point p = moveDelta;
 				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y);
 				return true;
 			}
@@ -718,6 +719,68 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		return true;
 	}
 	
+	public void nudgeExecutionSpecification(ExecutionSpecification execSpec, int delta) {
+		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
+		Node occurrenceNode = execSpecNode.getNodes().get(0);
+		Element occSpec = occurrenceNode.getElement();
+		if (occSpec instanceof MessageEnd) {
+			nudgeMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta));
+		} else {
+			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
+		}		
+	}
+	
+	public void resizeExecutionSpecification(ExecutionSpecification execSpec, boolean topSide, int delta) {
+		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
+		Node occurrenceNode = topSide ? execSpecNode.getNodes().get(0) : execSpecNode.getNodes().get(execSpecNode.getNodes().size()-1);
+		Element occSpec = occurrenceNode.getElement();
+		if (occSpec instanceof MessageEnd) {
+			nudgeMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta));
+		} else {
+			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
+		}					
+
+		if (topSide) {
+			// Nudge allt efter
+			Node after = NodeUtilities.getNodesAfter(interactionGraph,Collections.singletonList(occurrenceNode)).
+					stream().filter(d->d.getElement() != execSpec).findFirst().orElse(null);
+			if (after == null || occurrenceNode.getBounds().y+delta >= after.getBounds().y) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return;
+			}
+			
+			actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+				@Override
+				public void handleResult(CommandResult result) {
+				}
+
+				@Override
+				public boolean apply(InteractionGraph graph) {
+					graph.getRows().stream().filter(d -> (d.getIndex() > occurrenceNode.getRow().getIndex()))
+							.map(RowImpl.class::cast).forEach(d -> d.nudge(-delta));
+					graph.layout();
+					return true;
+				}
+			});
+		}
+	}
+
+	public void moveExecutionSpecification(ExecutionSpecification execSpec, Lifeline lifeline, Point point) {
+		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
+		Node occurrenceNode = execSpecNode.getNodes().get(0);
+		Element occSpec = occurrenceNode.getElement();
+		if (occSpec instanceof MessageEnd) {
+			if (lifeline == NodeUtilities.getLifelineNode(execSpecNode).getElement()) {
+				Dimension delta = point.getDifference(occurrenceNode.getBounds().getTopLeft());
+				moveMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta.height));
+			} else {
+				moveMessageEnd((MessageEnd)occSpec, lifeline, point);
+			}
+		} else {
+			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
+		}					
+	}
+
 	private void shrinkCluster(Cluster cluster, int ammount) {
 		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
 
