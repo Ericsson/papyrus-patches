@@ -781,6 +781,17 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}					
 	}
 
+	public void deleteExecutionSpecification(ExecutionSpecification execSpec) {
+		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
+		Node occurrenceNode = execSpecNode.getNodes().get(0);
+		Element occSpec = occurrenceNode.getElement();
+		if (occSpec instanceof MessageEnd) {
+			deleteMessage(((MessageEnd) occSpec).getMessage());
+		} else {
+			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
+		}			
+	}
+	
 	private void shrinkCluster(Cluster cluster, int ammount) {
 		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
 

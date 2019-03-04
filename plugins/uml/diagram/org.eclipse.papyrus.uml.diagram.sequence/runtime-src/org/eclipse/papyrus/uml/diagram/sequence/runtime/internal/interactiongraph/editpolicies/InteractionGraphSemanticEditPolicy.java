@@ -37,6 +37,7 @@ import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultSemanticEdit
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 
@@ -103,6 +104,11 @@ public class InteractionGraphSemanticEditPolicy extends DefaultSemanticEditPolic
 			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
 			InteractionGraphCommand cmd = new InteractionGraphCommand(getEditingDomain(), "Delete Lifeline", graph, null);
 			cmd.deleteMessage((Message)obj);
+			return new ICommandProxy(cmd);			
+		} else if (obj instanceof ExecutionSpecification) {
+			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
+			InteractionGraphCommand cmd = new InteractionGraphCommand(getEditingDomain(), "Delete Lifeline", graph, null);
+			cmd.deleteExecutionSpecification((ExecutionSpecification)obj);
 			return new ICommandProxy(cmd);			
 		}
 		return null;

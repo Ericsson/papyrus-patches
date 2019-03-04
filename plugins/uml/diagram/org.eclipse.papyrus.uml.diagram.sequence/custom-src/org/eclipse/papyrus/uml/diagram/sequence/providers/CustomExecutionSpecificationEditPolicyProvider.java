@@ -56,7 +56,7 @@ public class CustomExecutionSpecificationEditPolicyProvider extends AbstractProv
 	public void createEditPolicies(final EditPart editPart) {
 		// -- Grilling -- editPart.installEditPolicy(EditPolicyRoles.CREATION_ROLE, new CustomExecutionSpecificationCreationEditPolicy());
 		// -- Grilling -- editPart.installEditPolicy(EditPolicy.LAYOUT_ROLE, new CustomExecutionSpecificationXYLayoutEditPolicy());
-		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new CustomExecutionSpecificationSemanticEditPolicy());
+		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE+"_Old", new CustomExecutionSpecificationSemanticEditPolicy());
 
 		TimeElementCreationFeedbackEditPolicy tecfep = new TimeElementCreationFeedbackEditPolicy(
 				parentFigure -> new TimeElementLocator(parentFigure,
