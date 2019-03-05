@@ -30,6 +30,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.ConnectionEditPart;
+import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
@@ -44,6 +45,7 @@ import org.eclipse.gmf.runtime.diagram.ui.util.EditPartUtil;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.draw2d.anchors.FixedAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineGraphicalNodeEditPolicy;
@@ -388,4 +390,15 @@ public class CLifeLineEditPart extends LifelineEditPart {
 				// Center it on the lifeline
 				: PositionConstants.CENTER;
 	}
+
+	@Override
+	public DragTracker getDragTracker(Request req) {
+		return new PapyrusDragEditPartsTrackerEx(this, true, false, false) {
+			@Override
+			protected void setCloneActive(boolean cloneActive) {
+				super.setCloneActive(false); // Disable cloning
+			}			
+		};
+	}
+
 }

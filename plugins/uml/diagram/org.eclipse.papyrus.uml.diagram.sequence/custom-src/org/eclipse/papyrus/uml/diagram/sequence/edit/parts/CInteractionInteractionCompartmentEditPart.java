@@ -18,6 +18,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.List;
 
+import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
@@ -27,6 +28,7 @@ import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionContainerLayoutEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionFragmentContainerCreationEditPolicy;
 
