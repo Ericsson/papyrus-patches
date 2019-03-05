@@ -466,7 +466,13 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	public void deleteMessage(Message msg) {
-		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message. 
+		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message.
+		
+		if (msg.getMessageSort() == MessageSort.REPLY_LITERAL) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}			
+		
 		Link link = interactionGraph.getLinkFor(msg);		
 		Node source = link.getSource();
 		
@@ -868,7 +874,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		if (occSpec instanceof MessageEnd) {
 			deleteMessage(((MessageEnd) occSpec).getMessage());
 		} else {
-			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
+			throw new UnsupportedOperationException("Need to implement delete of ExecSpec when is not attached to a message");
 		}			
 	}
 	
@@ -1288,8 +1294,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		for (ExecutionSpecification execSpec : graphExecutionSpecifications) {
 			Cluster execSpecCluster = interactionGraph.getClusterFor(execSpec);
 			List<Node> nodes= execSpecCluster.getNodes();
-			Node startNode = nodes.get(0);
-			Node finishNode = nodes.get(nodes.size()-1);
+			Node startNode = NodeUtilities.getStartNode(execSpecCluster);
+			Node finishNode = NodeUtilities.getFinishNode(execSpecCluster);
 			
 			if (startNode.getElement() != execSpec.getStart()) {
 				OccurrenceSpecification ocurr = (OccurrenceSpecification)startNode.getElement(); 

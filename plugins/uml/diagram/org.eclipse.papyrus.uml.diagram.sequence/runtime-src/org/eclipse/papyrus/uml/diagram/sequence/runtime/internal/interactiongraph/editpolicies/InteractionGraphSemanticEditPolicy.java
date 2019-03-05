@@ -103,7 +103,8 @@ public class InteractionGraphSemanticEditPolicy extends DefaultSemanticEditPolic
 		} else if (obj instanceof Message) {
 			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
 			InteractionGraphCommand cmd = new InteractionGraphCommand(getEditingDomain(), "Delete Lifeline", graph, null);
-			cmd.deleteMessage((Message)obj);
+			Message msg = (Message)obj;
+			cmd.deleteMessage(msg);
 			return new ICommandProxy(cmd);			
 		} else if (obj instanceof ExecutionSpecification) {
 			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
