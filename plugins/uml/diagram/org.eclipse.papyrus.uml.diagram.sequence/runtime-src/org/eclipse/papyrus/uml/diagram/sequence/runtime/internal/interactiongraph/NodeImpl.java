@@ -227,7 +227,8 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		if (element instanceof MessageOccurrenceSpecification) {
 			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)element;
 			Message msg = mos.getMessage();
-			return String.format("%s - %s", msg.getSendEvent() == mos ? "Send" : "Recieve", msg.getName());
+			if (msg != null)
+				return String.format("%s - %s", msg.getSendEvent() == mos ? "Send" : "Recieve", msg.getName());
 		} else if (element instanceof ExecutionOccurrenceSpecification) {
 			ExecutionOccurrenceSpecification eos = (ExecutionOccurrenceSpecification)element;			
 			ExecutionSpecification exSpec = eos.getExecution();			

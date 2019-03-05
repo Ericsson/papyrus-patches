@@ -15,7 +15,10 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
+import java.util.List;
+
 import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionRectangle;
@@ -25,6 +28,7 @@ import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
+import org.eclipse.gef.tools.ResizeTracker;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
@@ -50,6 +54,8 @@ import org.eclipse.uml2.uml.ExecutionSpecification;
  *
  */
 public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEditPolicy {
+	private static final Dimension MAX_DIMENSION = new Dimension(20, IFigure.MAX_DIMENSION.height);
+	private static final Dimension MIN_DIMENSION = new Dimension(20, 20);
 	
 	public void activate() {
 		super.activate();
@@ -80,16 +86,23 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 		GraphicalEditPart ep = (GraphicalEditPart)request.getEditParts().get(0);
 		View view = (View)ep.getModel();
 		ExecutionSpecification exec = (ExecutionSpecification)view.getElement();
-		boolean detaching = KeyboardHandler.getKeyboardHandler().isAnyPressed();
+		Cluster execCluster = graph.getClusterFor(exec); 
 		boolean resizingTop = request.getSizeDelta().height != 0 && request.getMoveDelta().y != 0;
-		if (!detaching) {
-			int nudging = resizingTop ? request.getMoveDelta().y : request.getSizeDelta().height;  
+		int nudging = resizingTop ? request.getMoveDelta().y : request.getSizeDelta().height;  
+		if (!KeyboardHandler.getKeyboardHandler().isAnyPressed()) {
 			InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
-					"Resize Execution Specification", graph, null);
+						"Resize Execution Specification", graph, null);
 			cmd.resizeExecutionSpecification(exec, resizingTop, nudging);
 			return new ICommandProxy(cmd);
+		} else {
+			InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
+					"Resize Execution Specification", graph, null);
+			Point point = resizingTop ? execCluster.getBounds().getTop().getCopy() : execCluster.getBounds().getBottom(); 
+			point.y += nudging;
+			cmd.moveExecutionSpecificationOccurrence(exec, resizingTop ? exec.getStart() : exec.getFinish(), point);
+			return new ICommandProxy(cmd);
+			
 		}
-		return null;
 	}
 
 	@Override
@@ -181,6 +194,43 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 			}
 		}
 	}
+	
+	protected void createResizeHandle(List handles, int direction) {
+		if (direction != PositionConstants.NORTH && direction != PositionConstants.SOUTH)
+			return;
+		super.createResizeHandle(handles, direction);
+	}
+	
+	@Override
+	protected ResizeTracker getResizeTracker(int direction) {
+		return new ResizeTracker((GraphicalEditPart) getHost(), direction) {
+			
+			@Override
+			protected Dimension getMaximumSizeFor(ChangeBoundsRequest request) {
+				return MAX_DIMENSION;
+			}
 
+			@Override
+			protected Dimension getMinimumSizeFor(ChangeBoundsRequest request) {
+				return MIN_DIMENSION;
+			}
+
+			@Override
+			protected Request createSourceRequest() {
+				ChangeBoundsRequest request;
+				request = new ChangeBoundsRequest(REQ_RESIZE) {
+
+					@Override
+					public void setCenteredResize(boolean value) {
+						super.setCenteredResize(false);
+					}
+					
+				};
+				request.setResizeDirection(getResizeDirection());
+				return request;
+			}
+			
+		};
+	}
 
 }

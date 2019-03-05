@@ -86,6 +86,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Lifeline;
@@ -647,8 +648,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			return true;
 		}
 
-		// Resize the exec Spec to include or remove nodes.
-		
+		// Resize the exec Spec to include or remove nodes.		
 		// Check new pos is inside the same parent's parent => Before a node inside parent's parent.
 		Point newSrcPt = source.getBounds().getCenter().getCopy();
 		newSrcPt.translate(moveDelta);
@@ -693,9 +693,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					List<Node> nodesAfter= NodeUtilities.getNodesAfterVerticalPos(graph, newTrgPt.y-3);
 					nodesAfter.remove(link.getSource());
 					nodesAfter.remove(link.getTarget());
-					Node nextNode = nodesAfter.get(0);
-					if (nextNode.getBounds().y - newTrgPt.y < 3)
-						NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+					if (!nodesAfter.isEmpty()) {
+						Node nextNode = nodesAfter.get(0);
+						if (nextNode.getBounds().y - newTrgPt.y < 3)
+							NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+					}
 					
 					// Move nodes [ Parent's next node...insert After node] into the parent.
 					// TODO: @etxacam Nudge if link src overlapp and get overlapp in cluster
@@ -741,7 +743,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}					
 
 		if (topSide) {
-			// Nudge allt efter
+			// Nudge all efter
 			Node after = NodeUtilities.getNodesAfter(interactionGraph,Collections.singletonList(occurrenceNode)).
 					stream().filter(d->d.getElement() != execSpec).findFirst().orElse(null);
 			if (after == null || occurrenceNode.getBounds().y+delta >= after.getBounds().y) {
@@ -781,6 +783,84 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}					
 	}
 
+	public void moveExecutionSpecificationOccurrence(ExecutionSpecification execSpec, OccurrenceSpecification occurrenceSpec, Point point) {
+		if (execSpec.getStart() != occurrenceSpec && execSpec.getFinish() != occurrenceSpec) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;		
+		}	
+		
+		// Check limit to move to the parent / lifeline bounds 
+		Node occurSpecNode = interactionGraph.getNodeFor(occurrenceSpec);
+		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
+		Node execSpecParentNode = execSpecNode.getParent();
+		Rectangle parentLimits = execSpecParentNode.getBounds();
+		if (point.y <= parentLimits.y || point.y >= parentLimits.y + parentLimits.height) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;		
+		}			
+		
+		boolean startOccur = execSpec.getStart() == occurrenceSpec;
+		OccurrenceSpecification other = startOccur ? execSpec.getFinish() : execSpec.getStart();
+		Node otherNode = interactionGraph.getNodeFor(other);
+		Rectangle otherBounds = otherNode.getBounds();
+		if ((startOccur && point.y >= otherBounds.y) || (!startOccur && point.y <= otherBounds.y)) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;		
+		}			
+		// Start & End will have same parent
+		Cluster lifelineNode = NodeUtilities.getLifelineNode(occurSpecNode);
+		Cluster newParent = NodeUtilities.getClusterAtVerticalPos(lifelineNode, point.y);
+		if (newParent != execSpecNode.getParent() && newParent != execSpecNode) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;		
+		}
+
+		
+		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+				NodeUtilities.getLifelineNode(lifelineNode).getView());
+		if (!lifelineArea.contains(point)) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;		
+		}
+
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				NodeImpl node = (NodeImpl)occurSpecNode; 
+				List<Node> nodesAfter= NodeUtilities.getNodesAfterVerticalPos(graph, point.y-3);
+				if (!nodesAfter.isEmpty()) {
+					Node nextNode = nodesAfter.get(0);
+					if (nextNode.getBounds().y - point.y < 3)
+						NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+				}
+				
+				Rectangle r = node.getBounds();
+				if (startOccur) {
+					resizeCluster((ClusterImpl)execSpecNode, r.y - point.y, 0);
+				} else {
+					resizeCluster((ClusterImpl)execSpecNode, 0, point.y - (r.y + r.height));
+				}
+				return true;
+			}
+		});
+		
+		if (occurrenceSpec instanceof MessageEnd) {
+			Node sendMessageNode = startOccur ? occurSpecNode.getParent().getConnectedByLink().getSource() : occurSpecNode.getConnectedByLink().getTarget();
+			MessageEnd msgEnd = (MessageEnd)sendMessageNode.getElement();
+			Lifeline lifeline = msgEnd instanceof MessageOccurrenceSpecification ? 
+					((MessageOccurrenceSpecification)msgEnd).getCovered() : null;
+			Point newPos = sendMessageNode.getLocation().getCopy();
+			newPos.y = point.y;
+			// TODO: @ etxacam Needs to nudge on overlap
+			moveMessageEndImpl(msgEnd, lifeline, newPos);
+		}
+
+	}
+
 	public void deleteExecutionSpecification(ExecutionSpecification execSpec) {
 		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
 		Node occurrenceNode = execSpecNode.getNodes().get(0);
@@ -790,6 +870,61 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		} else {
 			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
 		}			
+	}
+	
+	private void resizeCluster(ClusterImpl cluster, int topAmmount, int bottomAmmount) {
+		Rectangle clusterBounds = cluster.getBounds(); 
+		ClusterImpl parent = (ClusterImpl)cluster.getParent();
+		Node startNode = cluster.getNodes().get(0);
+		Node endNode = cluster.getNodes().get(cluster.getNodes().size()-1);
+		
+		int startPos = clusterBounds.y - topAmmount;
+		int endPos = clusterBounds.y + clusterBounds.height + bottomAmmount;
+		
+		// TODO: @etxacam nudge if overlapp
+
+		
+		// Add nodes in parent between [top.y + topAmmount ... top.y)		
+		// Add nodes in parent between (bottomAmmount ... bottom.y + bottomAmmount]
+		int off = 0;
+		if (cluster.getNodes().size() > 1 && cluster.getNodes().get(1).getElement() == cluster.getElement())
+			off = 1;
+		for (Node n : new ArrayList<>(parent.getNodes())) {
+			Rectangle b = n.getBounds();
+			if (b.y >= startPos && b.y < clusterBounds.y) {
+				parent.removeNode((NodeImpl)n);
+				cluster.addNode(1+off, (NodeImpl)n);
+				off++;
+			} else if (b.y > clusterBounds.y && b.y <= endPos) {
+				parent.removeNode((NodeImpl)n);
+				cluster.addNode(cluster.getNodes().size()-1, (NodeImpl)n);				
+			}
+		}
+		
+		// Remove nodes in cluster between [top.y ... top.y + topAmmount]
+		// Remove nodes in cluster between [bottom.y + bottomAmmount ... bottom.y]
+		for (Node n : new ArrayList<>(cluster.getNodes().subList(1, cluster.getNodes().size()-1))) {
+			if (n.getElement() == cluster.getElement())
+				continue;
+			Rectangle b = n.getBounds();
+			if (b.y < startPos) {
+				cluster.removeNode((NodeImpl)n);
+				parent.addNode((NodeImpl)n,cluster);
+			} else if (b.y > endPos) {
+				cluster.removeNode((NodeImpl)n);
+				parent.addNode(parent.getNodes().indexOf(cluster)+1,(NodeImpl)n);
+			}
+		}
+		
+		startNode.getBounds().y-=topAmmount;
+		endNode.getBounds().y+=bottomAmmount;		
+		
+		cluster.getBounds().y = startNode.getBounds().y;
+		cluster.getBounds().height = endNode.getBounds().y - startNode.getBounds().y;
+		
+		if (cluster.getNodes().get(1).getElement() == cluster.getElement()) {
+			cluster.getNodes().get(1).getBounds().y = cluster.getBounds().y; 
+		}
 	}
 	
 	private void shrinkCluster(Cluster cluster, int ammount) {
@@ -879,8 +1014,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 				return;				
 			}			
-		}
-		
+		}		
 		
 		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
 				NodeUtilities.getLifelineNode(toLifelineNode).getView());
@@ -907,8 +1041,36 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
+		
+		moveMessageEndImpl(msgEnd, toLifeline, location);
+	}
+	
+	private void moveMessageEndImpl(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
+		Message msg = msgEnd.getMessage();
+		boolean isRecvEvent = msg.getReceiveEvent() == msgEnd; 
+		Link link = interactionGraph.getLinkFor(msg);
+		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
+		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
+		boolean isChangingLifeline = NodeUtilities.getLifelineNode(msgEndNode) != toLifelineNode;
+				
+		Node target = link.getTarget();
+		Node source = link.getSource();
+
+		int selfMsgSpace = 0;
+		if (NodeUtilities.isSelfLink(link) && !isChangingLifeline)
+			selfMsgSpace = 20;
+
+		Point newLoc = location.getCopy();
+		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
+		if (isRecvEvent) {
+			nodes.remove(source);
+		} 
+		
+		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
+		totalArea.setLocation(newLoc);
 		Link otherLink = isRecvEvent ? NodeUtilities.getStartLink(link) : NodeUtilities.getFinishLink(link);		
 		
+
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
@@ -1122,6 +1284,37 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				UMLPackage.Literals.INTERACTION__FRAGMENT, executionSpecifications, graphExecutionSpecifications, addCommandFunction,
 				removeCommandFunction, false, false);
 		
+		// Update and / or create Star and Finish occurrences
+		for (ExecutionSpecification execSpec : graphExecutionSpecifications) {
+			Cluster execSpecCluster = interactionGraph.getClusterFor(execSpec);
+			List<Node> nodes= execSpecCluster.getNodes();
+			Node startNode = nodes.get(0);
+			Node finishNode = nodes.get(nodes.size()-1);
+			
+			if (startNode.getElement() != execSpec.getStart()) {
+				OccurrenceSpecification ocurr = (OccurrenceSpecification)startNode.getElement(); 
+				if (startNode.getElement().eResource() == null && ocurr instanceof ExecutionOccurrenceSpecification) {
+					command.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+							org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.EXECUTION_OCCURRENCE_SPECIFICATION), 
+							ocurr));
+				}
+				
+				command.add(new EMFCommandOperation(getEditingDomain(), new SetCommand(
+						getEditingDomain(), execSpec, UMLPackage.Literals.EXECUTION_SPECIFICATION__START, ocurr)));
+			}
+			
+			if (finishNode.getElement() != execSpec.getFinish()) {
+				OccurrenceSpecification ocurr = (OccurrenceSpecification)finishNode.getElement(); 
+				if (finishNode.getElement().eResource() == null && ocurr instanceof ExecutionOccurrenceSpecification) {
+					command.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+							org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.EXECUTION_OCCURRENCE_SPECIFICATION), 
+							ocurr));
+				}
+
+				command.add(new EMFCommandOperation(getEditingDomain(), new SetCommand(
+						getEditingDomain(), execSpec, UMLPackage.Literals.EXECUTION_SPECIFICATION__FINISH, ocurr)));				
+			}
+		}
 		
 		// Update Parents
 		interactionGraph.getLifelineClusters().stream().flatMap(d->d.getAllNodes().stream()).
