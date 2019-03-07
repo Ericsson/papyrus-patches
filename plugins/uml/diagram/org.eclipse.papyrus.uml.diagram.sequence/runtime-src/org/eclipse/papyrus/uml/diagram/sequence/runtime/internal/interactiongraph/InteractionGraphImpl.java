@@ -35,6 +35,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Fragmen
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
@@ -43,6 +44,7 @@ import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
+import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -861,6 +863,37 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		throw new UnsupportedOperationException();
 	}
 
+	public FragmentClusterImpl addInteractionUse(InteractionUse interactionUse, List<Lifeline> lifelines, InteractionFragment beforeFragment) {
+		NodeImpl beforeFragmentNode = getNodeFor(beforeFragment);
+		List<Node> orderedNodes = getOrderedNodes();
+		int index = orderedNodes.indexOf(beforeFragmentNode);
+		orderedNodes = orderedNodes.subList(index, orderedNodes.size());
+		FragmentClusterImpl fragmentCluster = new FragmentClusterImpl(interactionUse); 
+		for (Lifeline lf : lifelines) {
+			ClusterImpl lifelineCluster = getClusterFor(lf);
+			NodeImpl insertBeforeNode = (NodeImpl)orderedNodes.stream().filter(d -> NodeUtilities.getLifelineNode(d) == lifelineCluster).
+					findFirst().orElse(null);
+			ClusterImpl insertBeforeNodeParent = insertBeforeNode == null ? lifelineCluster : insertBeforeNode.getParent();
+			while (insertBeforeNodeParent != lifelineCluster && NodeUtilities.getStartNode(insertBeforeNodeParent) == insertBeforeNode) {
+				insertBeforeNode = insertBeforeNodeParent; 
+				insertBeforeNodeParent = insertBeforeNodeParent.getParent();
+			}
+			ClusterImpl intUseLfCluster = new ClusterImpl(interactionUse);
+			intUseLfCluster.addNode(new MarkNodeImpl(Kind.start, interactionUse));
+			intUseLfCluster.addNode(new MarkNodeImpl(Kind.end, interactionUse));
+			
+			insertBeforeNodeParent.addNode(intUseLfCluster,insertBeforeNode);
+			fragmentCluster.addCluster(intUseLfCluster);
+		}
+		builder.nodeCache.put(interactionUse, fragmentCluster);
+		addFragmentCluster(fragmentCluster);
+		return fragmentCluster;
+	}
+	
+	//////////////////////
+	// END CHECK USE OF //
+	//////////////////////	
+	
 	public void moveNodeBlock(List<Node> nodes, int yPos) {
 		moveNodeBlock(nodes, yPos, Collections.emptyMap());
 	}

@@ -49,18 +49,11 @@ public class InteractionGraphSemanticEditPolicy extends DefaultSemanticEditPolic
 
 	public Command getCommand(Request request) {
 		if (RequestConstants.REQ_SEMANTIC_WRAPPER.equals(request.getType())) {
-			InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
-			if (graph == null) {
-				return null;
-			}			
-			EditCommandRequestWrapper wrapper = (EditCommandRequestWrapper)request;
-			InteractionGraphRequestHelper.bound(wrapper.getEditCommandRequest(), graph);			
-		} else if (REQ_RECONNECT_SOURCE.equals(request.getType()) ||
-				   REQ_RECONNECT_TARGET.equals(request.getType())) {
-			InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
-			if (graph == null) {
-				return null;
-			}			
+			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(request);
+			if (graph != null) {
+				EditCommandRequestWrapper wrapper = (EditCommandRequestWrapper)request;
+				InteractionGraphRequestHelper.bound(wrapper.getEditCommandRequest(), graph);
+			}
 		}
 		return super.getCommand(request);
 	}

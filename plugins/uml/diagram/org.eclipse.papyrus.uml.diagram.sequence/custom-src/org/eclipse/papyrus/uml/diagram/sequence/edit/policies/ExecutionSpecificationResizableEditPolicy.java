@@ -127,6 +127,7 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 			pt.translate(request.getMoveDelta());
 			cmd.moveExecutionSpecification(exec, exec.getCovereds().get(0), pt);
 		}
+
 		return new ICommandProxy(cmd);		
 	}
 

@@ -24,6 +24,7 @@ import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.BehaviorExecutionSpecification;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 
 /**
@@ -40,6 +41,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 
 	public void layout() {
 		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));		
+		interactionGraph.getFragmentClusters().stream().forEach(d -> layout((NodeImpl) d));
 	}
 	
 	@Override
@@ -107,6 +109,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 		map.put(Lifeline.class, new LifelineNodeLayout());
 		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
+		map.put(InteractionUse.class, new InteractionUseNodeLayout());
 		return map;
 	}
 

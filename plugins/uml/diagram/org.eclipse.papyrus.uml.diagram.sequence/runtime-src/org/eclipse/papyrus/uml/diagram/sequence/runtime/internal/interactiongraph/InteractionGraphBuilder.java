@@ -210,20 +210,27 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		cache(element, intUseCluster);
 		graph.addFragmentCluster(intUseCluster);
 		intUseCluster.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
-
+		Rectangle intUseRect = intUseCluster.getBounds();
+		
 		for (Lifeline lifeline : element.getCovereds()) {
 			ClusterImpl activeCluster = activeLifelineGroups.get(lifeline);
 			ClusterImpl cluster = new ClusterImpl(element);
 			activeCluster.addNode(cluster);
-			cluster.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
+			//cluster.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
 			intUseCluster.addCluster(cluster);
-
+			
+			Rectangle activeRectangle = activeCluster.getBounds().getCopy();
+			activeRectangle = activeRectangle.intersect(intUseRect);
+			cluster.setBounds(activeRectangle);
+			
 			// Create start
-			MarkNodeImpl start = new MarkNodeImpl(Kind.start);
+			MarkNodeImpl start = new MarkNodeImpl(Kind.start,element);
+			start.setBounds(new Rectangle(activeRectangle.getTop(), new Dimension(0, 0)));
 			cluster.addNode(start);
 
 			// Create End mark
-			MarkNodeImpl end = new MarkNodeImpl(Kind.end);
+			MarkNodeImpl end = new MarkNodeImpl(Kind.end,element);
+			end.setBounds(new Rectangle(activeRectangle.getBottom(), new Dimension(0, 0)));
 			cluster.addNode(end);
 		}
 

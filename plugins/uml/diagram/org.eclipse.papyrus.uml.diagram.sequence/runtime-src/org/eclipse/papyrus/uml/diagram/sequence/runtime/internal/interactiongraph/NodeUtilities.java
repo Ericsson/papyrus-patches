@@ -582,6 +582,13 @@ public class NodeUtilities {
 		return orderedNodes;
 	}
 
+	public static final Node getNodeAfterVerticalPos(InteractionGraph graph, int y) {
+		List<Node> afters = getNodesAfterVerticalPos(graph, y);
+		if (afters.isEmpty())
+			return null;
+		return afters.get(0);
+	}
+
 	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical) {
 		return getNudgeArea(graph, nodesToNudge, horizontal, vertical, null); 
 	}
