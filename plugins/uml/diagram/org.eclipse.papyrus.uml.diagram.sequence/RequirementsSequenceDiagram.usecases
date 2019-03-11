@@ -1,0 +1,161 @@
+# Requirements defined for the sequence diagram
+# This file must be filled by developer when a task is done in the sequence diagram
+
+# General technical requirements
+Requirement: ReqTechnical_Strong_Weak_Refs_SequenceDiagram_001: Delete and Move must be managed by Strong References
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateConnectionReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateNodeReferenceEditPolicy.java
+
+Requirement: ReqTechnical_Strong_Weak_Refs_SequenceDiagram_002: The strong and weak references must be moved when an element is moved if necessary
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateConnectionReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateNodeReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceForMessageSpecEditPolicy.java
+
+Requirement: ReqTechnical_Strong_Weak_Refs_SequenceDiagram_003: The encase execution specifications must be defined as strong references
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/SequenceReferenceEditPolicy.java
+
+# Messages requirements
+Requirement: ReqTechnical_Messages_SequenceDiagram_001: When a move of a message is done, the 2 anchors must be moved.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CustomGraphicalNodeEditPolicy.java
+
+Requirement: ReqTechnical_Messages_SequenceDiagram_002: When a move of a Lost message is done, the 2 anchors must be moved.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+
+Requirement: ReqTechnical_Messages_SequenceDiagram_003: When a move of a Found message is done, the 2 anchors must be moved.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+
+Requirement: ReqTechnical_Messages_SequenceDiagram_004: Message anchors must be only on life line or gates, but not on the ExcutionSpecification
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/figures/LifelineFigure.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/LifelineChildGraphicalNodeEditPolicy.java
+
+Requirement: ReqTechnical_Messages_SequenceDiagram_005: Replace the 'SetBoundsCommand' with 3 different commands used in sequence diagram.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/command/SetLocationCommand.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/command/SetResizeCommand.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/command/SetResizeAndLocationCommand.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_002: Messages can be re-ordered with 'SHIFT' key. In this case, the move of other messages does not work.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/AbstractMessageEditPart.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/SelectMessagesEditPartTracker.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceForMessageSpecEditPolicy.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_003: When a move of a message is done (with the preference to keep gaps between messages), all the messages and elements in the life lines must be moved down.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceForMessageSpecEditPolicy.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_004: When a move of a message is done (with the preference to keep gaps between messages) and if the life lines need to be enlarge, this will be done for all life lines needed. No shrinkage allowed.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_005: When a move down of a MessageDelete is done, the life line must be enlarge to the bottom. When a move up of a MessageDelete is done, the life line must be shrinked to the top. When a move of a MessageDelete is done, the other elements of the life lines must not be moved. The 'SHIFT' case does not work for MessageDelete.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/referencialgrilling/ConnectRectangleToGridEditPolicy.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_006: When a move down of a MessageCreate is done, the life line must be shrinked to the bottom. When a move up of a MessageCreate is done, the life line must be enlarge to the top. When a move of a MessageCreate is done, the other elements of the life lines must not be moved. The 'SHIFT' case does not work for MessageCreate.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/referencialgrilling/ConnectRectangleToGridEditPolicy.java
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_008: When a move of a message is done, all previous messages and elements in the life lines must not be moved.
+Code instruction: None
+
+Requirement: ReqFunctional_Messages_SequenceDiagram_009: It will be possible to move a message over life lines and those ones will be resized as needed.
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/MessageConnectionLineSegEditPolicy.java
+
+
+# ExecutionSpecifications requirements
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_001: The ExecutionSpecifications can be created only on lifelines
+Code instruction: - org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/ExecutionSpecificationHelperAdvice.java
+
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_002: The ExecutionSpecifications created on another one will be moved to the right of the first one
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/referencialgrilling/LifeLineXYLayoutEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/ExecutionSpecificationUtil.java
+
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_003: The ExecutionSpecifications moved onto another one will be moved to the right of the first one
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/referencialgrilling/LifeLineXYLayoutEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/ExecutionSpecificationUtil.java
+
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_004: The ExecutionSpecifications musn't be moved over the lifeline at the top
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/AbstractExecutionSpecificationEditPart.java
+
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_005: The ExecutionSpecifications can be moved over the lifeline at the bottom and resize the life line if needed
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/AbstractExecutionSpecificationEditPart.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateNodeReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceForExecSpecEditPolicy.java
+
+Requirement: ReqFunctional_ExecutionSpecifications_SequenceDiagram_006: The ExecutionSpecifications moved will move strong and weak references
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateNodeReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/UpdateWeakReferenceForExecSpecEditPolicy.java
+
+
+# CombinedFragments and InteractionOperands requirements
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_001: CombinedFragment should be created on Lifeline and Interaction
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/CLifeLineEditPart.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_002: InteractionOperand should be created on Lifeline and Interaction
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/InteractionFragmentsCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/CLifeLineEditPart.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_003: CombinedFragment should be created with one InteractionOperand
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/helpers/advice/DefaultInteractionOperandAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_004: CombinedFragment can be created in any case in the diagram
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedCreationEditPolicy.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_006: Creation of a new InteractionOperand in a CombinedFragment must be done at any position
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/InteractionOperandLayoutEditPolicy.java
+- org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/CombinedFragmentEditHelperAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_007: Creation of a CombinedFragment and InteractionOperand should not move graphically existing elements
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/InteractionFragmentsCreationEditPolicy.java
+- org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/CombinedFragmentMoveHelper.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_008: Suppression of the CombinedFragment must delete containing InteractionOperands
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/CombinedFragmentDeleteHelper.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_009: Deletion of the InteractionOperand should not delete underlying elements
+Code instruction: - org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/CombinedFragmentEditHelperAdvice.java
+- org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/InteractionContainerDeletionContext.java
+- org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/InteractionFragmentContainerEditHelperAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_010: Deletion of the last InteractionOperand should delete containing CombinedFragment
+Code instruction: - org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/InteractionContainerDeletionContext.java
+- org.eclipse.papyrus.uml.service.types/src/org/eclipse/papyrus/uml/service/types/helper/advice/InteractionOperandEditHelperAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_011: Deletion of an InteractionOperand should resize other InteractionOperand
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/helpers/advice/InteractionOperandViewAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_012: Deletion of the first InteractionOperand should resize the next one
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/helpers/advice/InteractionOperandViewAdvice.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_013: Resizing a CombinedFragment should resize first or last InteractionOperand
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedFragmentResizeEditPolicy.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_014: Resizing an InteractionOperand should not resize the CombinedFragment
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedFragmentResizeEditPolicy.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_015: Resizing an InteractionOperand should not move or resize elements inside it
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedFragmentResizeEditPolicy.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_016: Resizing an InteractionOperand should not leave empty space nor provoque any overlapping
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/CombinedFragmentResizeEditPolicy.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_020: When a CombinedFragment moves, contained InteractionOperands should move with it
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/CombinedFragmentMoveHelper.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_021: Moving an InteractionOperand in a CombinedFragment is not possible
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/CombinedFragmentMoveHelper.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_023: Moving a CombinedFragment should not move elements on the lifeline
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/util/CombinedFragmentMoveHelper.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_024: InteractionOperand Guard should not be moved
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence/custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/parts/InteractionOperandGuardEditPart.java
+
+Requirement: ReqFunctional_CombinedFragments_InteractionOperands_SequenceDiagram_025: Stereotype or Shape Compartments should not be displayed in CombinedFragments
+Code instruction: - org.eclipse.papyrus.uml.diagram.sequence.restrictions/src/org/eclipse/papyrus/uml/diagram/sequence/restrictions/SequenceEditPolicyProviderTester.java
+- org.eclipse.papyrus.uml.diagram.sequence.restrictions/src/org/eclipse/papyrus/uml/diagram/sequence/restrictions/SequenceViewProviderTester.java

@@ -1,0 +1,3 @@
+# Tracing options for the org.eclipse.uml2.diagram.clazz plug-in
+org.eclipse.papyrus.infra.gmfdiag.common/debug=true
+org.eclipse.papyrus.infra.gmfdiag.common/debug/expansion=true

@@ -1,0 +1,12 @@
+# Requirements defined for gmfdiag common
+# This file must be filled by developer when a task is added into the gmf diag common
+
+# 
+Requirement: ReqFunctional_Paste_Requirement001: A element can be paste (CTRL-V) after being copied
+Code instruction: org.eclipse.papyrus.infra.gmfdiag.common.strategy.paste.PasteStrategyManager
+
+Requirement: ReqTechnical_SequenceDiagram_0011: A paste policy can be added by referencing it by an extension point.
+Code instruction: /org.eclipse.papyrus.infra.gmfdiag.common/schema/pasteStrategy.exsd
+
+Requirement: ReqFunctiona_SequenceDiagram_0011: the list of active paste policy can be modified by using the papyrus preferences .
+Code instruction: org.eclipse.papyrus.infra.gmfdiag.common.preferences.PastePreferencesPage

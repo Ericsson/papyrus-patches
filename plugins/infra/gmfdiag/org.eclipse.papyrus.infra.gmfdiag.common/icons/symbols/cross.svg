@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="20" height="20" id="svg2" version="1.1" inkscape:version="0.48.5 r10040" sodipodi:docname="cross.svg">
+  <defs id="defs4">
+    <linearGradient id="linearGradient3789">
+      <stop style="stop-color:#000005;stop-opacity:1;" offset="0" id="stop3791" />
+      <stop style="stop-color:white;stop-opacity:0;" offset="1" id="stop3793" />
+    </linearGradient>
+    <inkscape:perspective sodipodi:type="inkscape:persp3d" inkscape:vp_x="0 : 20 : 1" inkscape:vp_y="0 : 1000 : 0" inkscape:vp_z="85 : 20 : 1" inkscape:persp3d-origin="42.5 : 13.333333 : 1" id="perspective3063" />
+    <linearGradient id="linearGradient3786">
+      <stop style="stop-color:#000000;stop-opacity:0;" offset="0" id="stop3788" />
+      <stop id="stop3794" offset="1" style="stop-color:#919cd7;stop-opacity:1;" />
+    </linearGradient>
+  </defs>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="5.6" inkscape:cx="38.184429" inkscape:cy="-13.962009" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1005" inkscape:window-x="1591" inkscape:window-y="-9" inkscape:window-maximized="1" />
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g inkscape:groupmode="layer" id="layer2" inkscape:label="Calque" />
+  <g inkscape:label="Calque 1" inkscape:groupmode="layer" id="layer1" transform="translate(0,-1032.3617)" style="display:inline">
+    <path sodipodi:type="star" style="fill:white;fill-opacity:1;stroke:black;stroke-width:3.49399996;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" id="path2995" sodipodi:sides="4" sodipodi:cx="10.178571" sodipodi:cy="10.357143" sodipodi:r1="13.763908" sodipodi:r2="0.13763908" sodipodi:arg1="0.79457222" sodipodi:arg2="1.5799704" inkscape:flatsided="false" inkscape:rounded="0" inkscape:randomized="0" d="M 19.821428,20.178573 L 10.177308,10.494777 L 0.35714161,20.000001 L 10.040937,10.355881 L 0.53571309,0.53571427 L 10.179833,10.21951 L 20,0.71428574 L 10.316204,10.358406 z" transform="translate(0,1032.3617)" />
+  </g>
+</svg>

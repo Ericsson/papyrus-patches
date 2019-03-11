@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<plugin>
+   <extension-point id="nestedEditor" name="NestedEditor" schema="schema/nestedEditor.exsd"/>
+   <extension-point id="initializeView" name="initializeView" schema="schema/initializeView.exsd"/>
+   <extension-point id="shapeProvider" name="ShapeProvider" schema="schema/shapeProvider.exsd"/>
+   <extension-point id="notationTypesMapping" name="notationTypesMapping" schema="schema/notationTypesMapping.exsd"/>
+   <extension-point id="svgPostProcessors" name="svgPostProcessors" schema="schema/svgPostProcessors.exsd"/>
+   <extension-point id="pasteCommandProvider" name="pasteCommandProvider" schema="schema/pasteCommandProvider.exsd"/>
+   <extension-point id="pasteStrategy" name="pasteStrategy" schema="schema/pasteStrategy.exsd"/>
+   <extension-point id="copyStrategy" name="copyStrategy" schema="schema/copyStrategy.exsd"/>
+   <extension-point id="diagramReconciler" name="diagramReconciler" schema="schema/diagramReconciler.exsd"/>
+   <extension-point id="diagramExpansion" name="diagramExpansion" schema="schema/DiagramExpansion.exsd"/>
+   <extension-point id="visualTypeProviders" name="Visual Type Providers" schema="schema/visualTypeProviders.exsd"/>
+   <extension-point id="paletteCustomization" name="palette Customization" schema="schema/paletteCustomization.exsd"/>
+   <extension-point id="paletteDefinition" name="paletteDefinition" schema="schema/paletteDefinition.exsd"/>
+   <extension-point id="connectionDecoration" name="connection Decoration" schema="schema/connectionDecoration.exsd"/>
+
+<extension
+      point="org.eclipse.ui.handlers">
+   <handler
+         class="org.eclipse.papyrus.infra.gmfdiag.common.handler.RefreshHandler"
+         commandId="org.eclipse.ui.file.refresh">
+      <activeWhen>
+         <with
+               variable="activePartId">
+            <equals
+                  value="org.eclipse.papyrus.infra.core.papyrusEditor">
+            </equals>
+         </with>
+      </activeWhen>
+   </handler>
+</extension>
+<extension
+      point="org.eclipse.ui.menus">
+   <menuContribution
+         allPopups="false"
+         locationURI="toolbar:org.eclipes.papyrus.menu.toolbar">
+      <command
+            commandId="org.eclipse.ui.file.refresh"
+            icon="icons/refresh.gif"
+            label="Refresh"
+            style="push"
+            tooltip="Refresh the current diagram">
+         <visibleWhen
+               checkEnabled="false">
+            <with
+                  variable="activeEditorId">
+               <equals
+                     value="org.eclipse.papyrus.infra.core.papyrusEditor">
+               </equals>
+            </with>
+         </visibleWhen>
+      </command>
+   </menuContribution>
+</extension>
+<extension
+      point="org.eclipse.ui.preferencePages">
+   <page
+         category="org.eclipse.papyrus.infra.core.sasheditor.preferences.generalcategory"
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.ConnectionToolPreferencePage"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.connectionTools"
+         name="Connection Tools">
+   </page>
+   <page
+         category="org.eclipse.papyrus.infra.core.sasheditor.preferences.generalcategory"
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.PastePreferencesPage"
+         id="org.eclipse.papyrus.infra.gmfdiag.paste.preferences"
+         name="Paste">
+   </page>
+   <page
+         category="org.eclipse.papyrus.infra.core.sasheditor.preferences.generalcategory"
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.ResizeBindingPreferencePage"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.resizeBindingPreferencePage"
+         name="Resize Binding">
+   </page> 
+</extension>
+<extension
+      point="org.eclipse.core.runtime.preferences">
+   <initializer
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.ConnectionToolPreferenceInitializer">
+   </initializer>
+</extension>
+   <extension
+         point="org.eclipse.papyrus.infra.core.model">
+      <model
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.model.NotationModel"
+            description="Model for notation"
+            fileExtension="notation"
+            required="true">
+         <modelSnippet
+               classname="org.eclipse.papyrus.infra.core.resource.AdjunctResourceModelSnippet"
+               description="Snippet for notation resource of referenced model resources">
+         </modelSnippet>
+         <modelSnippet
+               classname="org.eclipse.papyrus.infra.gmfdiag.internal.common.model.NotationPageSnippet"
+               description="Snippet that cleans up editor pages for deleted notation views">
+         </modelSnippet>
+      </model>
+  </extension>
+
+
+   <extension
+         point="org.eclipse.emf.ecore.extension_parser">
+      <parser
+            class="org.eclipse.gmf.runtime.emf.core.resources.GMFResourceFactory"
+            type="notation">
+      </parser>
+   </extension>
+<extension
+         point="org.eclipse.papyrus.infra.core.service">
+      <serviceFactory
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.undocontext.UndoContextServiceFactory"
+            description="The shared IUndoContext used to tag command in the CommandStack"
+            id="org.eclipse.core.commands.operations.IUndoContext"
+            priority="1"
+            startKind="lazy">
+         <dependsOn
+               serviceKeyRef="org.eclipse.emf.transaction.TransactionalEditingDomain">
+         </dependsOn>
+      </serviceFactory>
+      <service
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.DefaultGraphicalEditorSupport"
+            description="The default diagram editor support implementation."
+            id="org.eclipse.papyrus.infra.gmfdiag.common.IGraphicalEditorSupport"
+            priority="1"
+            startKind="lazy">
+      </service>
+      <serviceFactory
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.service.ViewProviderService$Factory"
+            id="org.eclipse.papyrus.infra.gmfdiag.common.service.ViewProviderService"
+            priority="1"
+            startKind="lazy">
+      </serviceFactory>
+      <serviceFactory
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.service.EditPolicyProviderService$Factory"
+            id="org.eclipse.papyrus.infra.gmfdiag.common.service.EditPolicyProviderService"
+            priority="1"
+            startKind="lazy">
+      </serviceFactory>
+   </extension>
+<extension
+      point="org.eclipse.papyrus.infra.services.labelprovider.labelProvider">
+   <labelProvider
+         priority="40"
+         provider="org.eclipse.papyrus.infra.gmfdiag.common.providers.NotationFilteredLabelProvider">
+   </labelProvider>
+</extension>
+<extension
+      point="org.eclipse.gmf.runtime.diagram.ui.decoratorProviders">
+   <decoratorProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.ShapeDecoratorProvider">
+      <Priority
+            name="Lowest">
+      </Priority>
+   </decoratorProvider>
+</extension>
+<extension
+      point="org.eclipse.core.runtime.adapters">
+   <factory
+         adaptableType="org.eclipse.gmf.runtime.notation.Diagram"
+         class="org.eclipse.papyrus.infra.gmfdiag.common.adapter.DiagramAdapterFactory">
+      <adapter
+            type="org.eclipse.papyrus.infra.core.sasheditor.di.contentprovider.IOpenable">
+      </adapter>
+   </factory>
+   <factory
+         adaptableType="org.eclipse.gmf.runtime.diagram.ui.parts.DiagramEditor$DiagramOutlinePage"
+         class="org.eclipse.papyrus.infra.gmfdiag.common.adapter.DiagramOutlineAdapterFactory">
+      <adapter
+            type="org.eclipse.papyrus.infra.ui.editor.reload.IReloadContextProvider">
+      </adapter>
+   </factory>
+</extension>
+
+<!-- ElementType bindings for diagram duplication with paste command -->
+   
+<extension
+      point="org.eclipse.core.expressions.propertyTesters">
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.diagram.tester"
+         namespace="org.eclipse.papyrus.infra.gmfdiag.common.diagram.tester"
+         properties="isDiagramEditor"
+         type="org.eclipse.jface.viewers.IStructuredSelection">
+   </propertyTester>
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.diagram.context.tester"
+         namespace="org.eclipse.papyrus.infra.gmfdiag.common.diagram.context.tester"
+         properties="isGmfDiagramContextActive"
+         type="java.util.Collection">
+   </propertyTester>
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.diagram.text.tester"
+         namespace="org.eclipse.papyrus.infra.gmfdiag.common.diagram.text.tester"
+         properties="isTextZone"
+         type="org.eclipse.swt.widgets.Shell">
+   </propertyTester>   
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.common.utils.EditPartPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.editPartProperties"
+         namespace="org.eclipse.papyrus.infra.gmfdiag"
+         properties="hasEditPolicy"
+         type="org.eclipse.gef.EditPart">
+   </propertyTester>   
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.diagramProperties"
+         namespace="org.eclipse.papyrus.infra.gmfdiag.common"
+         properties="diagramType"
+         type="org.eclipse.gmf.runtime.notation.View">
+   </propertyTester>   
+   <propertyTester
+         class="org.eclipse.papyrus.infra.gmfdiag.internal.common.expressions.GraphicalEditPartPropertyTester"
+         id="org.eclipse.papyrus.infra.gmfdiag.common.GraphicalEditPartProperties"
+         namespace="org.eclipse.papyrus.infra.gmfdiag.common"
+         properties="canDelete,isSemanticDeletion"
+         type="org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart">
+   </propertyTester>
+</extension>
+<extension
+      point="org.eclipse.ui.menus">
+   <menuContribution
+         locationURI="popup:org.eclipse.papyrus.views.modelexplorer.popupmenu.creatediagram">
+      <dynamic
+            class="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution"
+            id="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution">
+      </dynamic>
+   </menuContribution>
+   <menuContribution
+         allPopups="false"
+         locationURI="menu:org.eclipse.papyrus.ui.menu">
+      <menu
+            icon="platform:/plugin/org.eclipse.papyrus.infra.viewpoints.policy/icons/NewDiagram.gif"
+            id="org.eclipse.papyrus.uml.diagram.ui.menu.diagrams"
+            label="New Diagram">
+         <dynamic
+               class="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution"
+               id="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution">
+         </dynamic>
+      </menu>
+   </menuContribution>
+   <menuContribution
+         allPopups="false"
+         locationURI="toolbar:org.eclipse.ui.main.toolbar">
+      <toolbar
+            id="org.eclipse.papyrus.infra.viewpoints.policy.toolbar">
+         <command
+               commandId="org.eclipse.papyrus.infra.viewpoints.policy.toolbar.diagrams.command"
+               icon="platform:/plugin/org.eclipse.papyrus.infra.viewpoints.policy/icons/NewDiagram.gif"
+               id="org.eclipse.papyrus.infra.viewpoints.policy.toolbar.diagrams"
+               label="Create a new diagram ..."
+               style="pulldown"
+               tooltip="Create a new diagram ...">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeEditorId">
+                  <equals
+                        value="org.eclipse.papyrus.infra.core.papyrusEditor">
+                  </equals>
+               </with>
+            </visibleWhen>
+         </command>
+      </toolbar>
+   </menuContribution>
+   <menuContribution
+         allPopups="false"
+         locationURI="menu:org.eclipse.papyrus.infra.viewpoints.policy.toolbar.diagrams">
+      <dynamic
+            class="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution"
+            id="org.eclipse.papyrus.infra.gmfdiag.common.handler.DynamicDiagramsMenuContribution">
+      </dynamic>
+   </menuContribution>
+</extension>
+<extension
+      point="org.eclipse.ui.commands">
+   <command
+         categoryId="org.eclipse.papyrus.infra.viewpoints.policy.commands"
+         defaultHandler="org.eclipse.papyrus.infra.viewpoints.policy.DynamicCommandHandler"
+         id="org.eclipse.papyrus.infra.viewpoints.policy.toolbar.diagrams.command"
+         name="Create Dynamic Diagram Command">
+   </command>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.viewpoints.policy.viewType">
+   <helper
+         class="org.eclipse.papyrus.infra.gmfdiag.common.helper.GMFDiagramViewTypeHelper">
+   </helper>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.gmfdiag.common.shapeProvider">
+   <shapeProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.StyleBasedShapeProvider"
+         description="Provides shapes based on the applied styles."
+         id="org.eclipse.papyrus.infra.gmfdiag.common.providers.StyleBasedShapeProvider"
+         name="StyleBasedShapeProvider">
+      <Priority
+            name="Low"></Priority>
+   </shapeProvider>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.gmfdiag.common.notationTypesMapping">
+   <mapping
+         humanReadableType="symbol"
+         type="compartment_shape_display">
+   </mapping>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.services.decoration.decorationSpecificFunctions">
+   <client
+         class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.ExternalReferenceDecoration"
+         decorationType="org.eclipse.papyrus.infra.gmfdiag.common.externalref">
+   </client>
+</extension>
+<extension
+      point="org.eclipse.gmf.runtime.diagram.ui.editpolicyProviders">
+   <editpolicyProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.ExternalReferenceEditPolicyProvider">
+      <Priority
+            name="Lowest">
+      </Priority>
+   </editpolicyProvider>
+   <editpolicyProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.CustomEditPolicyProvider">
+      <Priority
+            name="Lowest">
+      </Priority>
+   </editpolicyProvider>
+   <editpolicyProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.PopupBarEditPolicyProvider">
+      <Priority
+            name="Lowest">
+      </Priority>
+   </editpolicyProvider>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.gmfdiag.commands.historyListeners">
+   <historyListener
+         class="org.eclipse.papyrus.infra.gmfdiag.common.listener.RollbackNotificationHistoryListener">
+   </historyListener>
+</extension>
+<extension
+      point="org.eclipse.papyrus.infra.gmfdiag.common.pasteStrategy">
+   <strategy
+         strategy="org.eclipse.papyrus.infra.gmfdiag.common.strategy.paste.DefaultPasteStrategy">
+   </strategy>
+   <strategy
+         strategy="org.eclipse.papyrus.infra.gmfdiag.common.strategy.paste.DiagramPasteStrategy">
+   </strategy>
+</extension>
+<extension
+      point="org.eclipse.core.runtime.preferences">
+   <initializer
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.PastePreferenceInitializer">
+   </initializer>
+   <initializer
+         class="org.eclipse.papyrus.infra.gmfdiag.common.preferences.ResizeBindingPreferenceInitializer">
+   </initializer>
+</extension>
+<extension
+      name="Default GMF Diagram Palette"
+      point="org.eclipse.gmf.runtime.diagram.ui.paletteProviders">
+   <paletteProvider
+         class="org.eclipse.gmf.runtime.diagram.ui.providers.DefaultPaletteProvider">
+      <Priority
+            name="Lowest">
+      </Priority>
+      <contribution
+            factoryClass="org.eclipse.papyrus.infra.gmfdiag.common.selection.SelectionToolPaletteFactory">
+         <entry
+               description="All Selection Tool of type Included"
+               id="includedStack"
+               kind="stack"
+               label="Included Selection Stack"
+               large_icon="platform:/plugin/org.eclipse.gmf.runtime.diagram.ui/icons/group.gif"
+               path="/standardGroup"
+               small_icon="platform:/plugin/org.eclipse.gmf.runtime.diagram.ui/icons/group.gif">
+         </entry>
+         <entry
+               description="Rubberband Stack "
+               id="rubberbandStack"
+               kind="stack"
+               label="Rubberband Selection Stack"
+               large_icon="platform:/plugin/org.eclipse.gmf.runtime.diagram.ui/icons/group.gif"
+               path="/standardGroup"
+               small_icon="platform:/plugin/org.eclipse.gmf.runtime.diagram.ui/icons/group.gif">
+         </entry>
+         <entry
+               description="Select the elements intersecting and including the marquee rectangle"
+               id="selectionRubberband"
+               kind="tool"
+               label="Intersection Selection"
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedAll24.gif"
+               path="/standardGroup/rubberbandStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedAll16.gif">
+         </entry>
+         <entry
+               description="Select Nodes intersected by the Marquee rectangle"
+               id="selectionRubberbandNodeOnly"
+               kind="tool"
+               label="Nodes only (intersection)"
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedNode24.gif"
+               path="/standardGroup/rubberbandStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedNode16.gif">
+         </entry>
+         <entry
+               description="Select Labels intersected by the Marquee rectangle"
+               id="selectionRubberbandLabelOnly"
+               kind="tool"
+               label="Labels only (intersection)"
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedLabelT24.gif"
+               path="/standardGroup/rubberbandStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedLabelT16.gif">
+         </entry>
+         <entry
+               description="Select Connections intersected by the Marquee rectangle"
+               id="selectionRubberbandConnectionOnly"
+               kind="tool"
+               label="Connections only (intersection)"
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedConnection24.gif"
+               path="/standardGroup/rubberbandStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/TouchedConnection16.gif">
+         </entry>
+         <entry
+               description="This tool select the items completely included into the rectangle area"
+               id="selectionInside"
+               kind="tool"
+               label="Standard Marquee Selection"
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeAll24.gif"
+               path="/standardGroup/includedStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeAll16.gif">
+         </entry>
+         <entry
+               description="Select Nodes included in the Marquee rectangle"
+               id="selectionInsideNodeOnly"
+               kind="tool"
+               label="Nodes only "
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeNode24.gif"
+               path="/standardGroup/includedStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeNode16.gif">
+         </entry>
+         <entry
+               description="Select Labels included in the Marquee rectangle"
+               id="selectionInsideLabelOnly"
+               kind="tool"
+               label="Labels only "
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeLabelT24.gif"
+               path="/standardGroup/includedStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeLabelT16.gif">
+         </entry>
+         <entry
+               description="Select Connections included in the Marquee rectangle"
+               id="selectionInsideConnectionOnly"
+               kind="tool"
+               label="Connections only "
+               large_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeConnection24.gif"
+               path="/standardGroup/includedStack"
+               small_icon="platform:/plugin/org.eclipse.papyrus.infra.gmfdiag.common/icons/IncludeConnection16.gif">
+         </entry>
+      </contribution>
+   </paletteProvider>
+</extension>
+<extension
+      point="org.eclipse.gmf.runtime.common.ui.services.iconProviders">
+   <IconProvider
+         class="org.eclipse.papyrus.infra.gmfdiag.common.providers.ElementTypeIconProvider">
+      <Priority
+            name="Medium">
+      </Priority>
+   </IconProvider>
+</extension>
+   
+   <extension
+         point="org.eclipse.papyrus.infra.sync.triggers">
+      <syncTrigger
+            class="org.eclipse.papyrus.infra.gmfdiag.common.sync.DiagramSyncTrigger">
+         <enablement>
+            <instanceof
+                  value="org.eclipse.gef.EditPartViewer">
+            </instanceof>
+         </enablement>
+      </syncTrigger>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.core.service">
+      <service
+            classname="org.eclipse.papyrus.infra.gmfdiag.common.internal.sync.UISyncServiceInitializer"
+            description="UI-specific initializer of the synchronization service"
+            id="org.eclipse.papyrus.infra.gmfdiag.common.internal.sync.UISyncServiceInitializer"
+            priority="10"
+            startKind="startup">
+         <dependsOn
+               serviceKeyRef="org.eclipse.papyrus.infra.sync.service.ISyncService">
+         </dependsOn>
+      </service>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.architecture.listeners">
+      <listener
+            class="org.eclipse.papyrus.infra.gmfdiag.common.service.palette.ArchitectureForPaletteServiceListener">
+      </listener>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.gmfdiag.common.connectionDecoration">
+      <decorationDeclaration
+            class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.OpenArrowConnectionDecoration"
+            label="Open Arrow"
+            name="open_arrow">
+      </decorationDeclaration>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.gmfdiag.common.connectionDecoration">
+      <decorationDeclaration
+            class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.SolidDiamondFilledConnectionDecoration"
+            label="Solid Diamond Filled"
+            name="solid_diamond_filled">
+      </decorationDeclaration>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.gmfdiag.common.connectionDecoration">
+      <decorationDeclaration
+            class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.SolidDiamondEmptyConnectionDecoration"
+            label="Solid Diamond Empty"
+            name="solid_diamond_empty">
+      </decorationDeclaration>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.gmfdiag.common.connectionDecoration">
+         <decorationDeclaration
+               class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.SolidArrowFilledConnectionDecoration"
+               label="Solid Arrow Filled"
+               name="solid_arrow_filled">
+      </decorationDeclaration>
+   </extension>
+   <extension
+         point="org.eclipse.papyrus.infra.gmfdiag.common.connectionDecoration">
+         <decorationDeclaration
+               class="org.eclipse.papyrus.infra.gmfdiag.common.decoration.SolidArrowEmptyConnectionDecoration"
+               label="Solid Arrow Empty"
+               name="solid_arrow_empty">
+      </decorationDeclaration>
+   </extension>
+
+</plugin>

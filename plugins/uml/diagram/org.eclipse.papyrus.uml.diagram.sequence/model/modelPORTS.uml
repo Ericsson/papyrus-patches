@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xmi:id="_YvSxoKsiEear0ZssjsCjIQ" name="RootElement">
+  <packagedElement xmi:type="uml:Class" xmi:id="_LET_YLMlEeaW-7aLJkImGQ" name="Class1">
+    <ownedAttribute xmi:type="uml:Property" xmi:id="_MZ-x0LMlEeaW-7aLJkImGQ" name="Attribute1" type="_Oc4dsLMlEeaW-7aLJkImGQ"/>
+    <ownedAttribute xmi:type="uml:Property" xmi:id="_Mv8awLMlEeaW-7aLJkImGQ" name="Attribute2" type="_PQ8X4LMlEeaW-7aLJkImGQ"/>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Class" xmi:id="_Oc4dsLMlEeaW-7aLJkImGQ" name="Class2"/>
+  <packagedElement xmi:type="uml:Class" xmi:id="_PQ8X4LMlEeaW-7aLJkImGQ" name="Class3">
+    <ownedAttribute xmi:type="uml:Port" xmi:id="_Qu7_4LMlEeaW-7aLJkImGQ" name="Port1" aggregation="composite"/>
+    <ownedAttribute xmi:type="uml:Port" xmi:id="_RIzRYLMlEeaW-7aLJkImGQ" name="Port2" aggregation="composite"/>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Interaction" xmi:id="_TKcZALMlEeaW-7aLJkImGQ" name="Interaction1">
+    <lifeline xmi:type="uml:Lifeline" xmi:id="_UgXqILMlEeaW-7aLJkImGQ" name="Lifeline" represents="_Qu7_4LMlEeaW-7aLJkImGQ"/>
+    <lifeline xmi:type="uml:Lifeline" xmi:id="_U_SawLMlEeaW-7aLJkImGQ" name="Lifeline0" decomposedAs="_XrrvkLMlEeaW-7aLJkImGQ" represents="_Mv8awLMlEeaW-7aLJkImGQ"/>
+    <lifeline xmi:type="uml:Lifeline" xmi:id="_XrsWoLMlEeaW-7aLJkImGQ" name="Lifeline1" represents="_RIzRYLMlEeaW-7aLJkImGQ" coveredBy="_XrrvkLMlEeaW-7aLJkImGQ"/>
+    <lifeline xmi:type="uml:Lifeline" xmi:id="_ZfQmALMlEeaW-7aLJkImGQ" name="Lifeline2" represents="_Qu7_4LMlEeaW-7aLJkImGQ" coveredBy="_XrrvkLMlEeaW-7aLJkImGQ"/>
+    <fragment xmi:type="uml:PartDecomposition" xmi:id="_XrrvkLMlEeaW-7aLJkImGQ" name="PartDecomposition" covered="_XrsWoLMlEeaW-7aLJkImGQ _ZfQmALMlEeaW-7aLJkImGQ"/>
+  </packagedElement>
+</uml:Model>

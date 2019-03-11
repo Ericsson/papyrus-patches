@@ -1,0 +1,10 @@
+=Lifeline and ExecutionSpeficiation=
+==Bug 531520==
+We decided that the Message connected to ExecutionSpefication must now be connected to the Lifeline itself.
+This new behavior allows to manage easily the automatic move of the Messages (move to up/down in case of Message's insertion).
+To fix this bug we did: 
+**The request concerning a message creation or a message retargeting are now delegated from the '''ExecutionSpecification''' to the '''Lifeline'''. We modified the '''org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineChildGraphicalNodeEditPolicy.getCommand(Request)''' to ensure this delegation.
+**A DiagramReconcilier has been created: '''org.eclipse.papyrus.uml.diagram.sequence.migration.RetargetMessageEndFromExecutionSpecificationToLifelineDiagramReconciler_1_4_0'''.
+**The Message are always connected to the Lifeline (in the notation file), but graphically, the message must continue to be displayed as connected to the ExecutionSpecification. In order to get this behavior, we change the method org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure.getPolygonPoints() which is in charge to provide the polygon used to calculate the anchors. So the ExecutionSpecification are included into the Lifeline Polygon.
+
+[[File:images/Sequence_contourFail.png|frame|none|In red, the Lifeline Polygon, with a fail of the current algorithm!]]

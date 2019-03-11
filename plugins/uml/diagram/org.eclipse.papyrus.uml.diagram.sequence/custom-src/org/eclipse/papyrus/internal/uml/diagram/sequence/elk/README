@@ -1,0 +1,3 @@
+These classes have been duplicated from the ELK plugins (under EPL licence).
+We use them to be able to found the points of the global shape of a set of superposed ExecutionSpecification 
+on the Lifelines, using the RectilinearConvexHull algorithm. 

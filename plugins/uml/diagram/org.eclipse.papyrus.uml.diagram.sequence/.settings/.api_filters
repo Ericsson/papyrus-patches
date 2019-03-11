@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<component id="org.eclipse.papyrus.uml.diagram.sequence" version="2">
+    <resource path="custom-src/org/eclipse/papyrus/uml/diagram/sequence/edit/policies/InteractionOperandDragDropEditPolicy.java" type="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy">
+        <filter comment="API moved to InteractionOperandResizePolicy" id="337682486">
+            <message_arguments>
+                <message_argument value="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy"/>
+            </message_arguments>
+        </filter>
+        <filter comment="API moved to InteractionOperandResizePolicy" id="338755678">
+            <message_arguments>
+                <message_argument value="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy"/>
+                <message_argument value="MIN_HEIGHT"/>
+            </message_arguments>
+        </filter>
+        <filter comment="API moved to InteractionOperandResizePolicy" id="338755678">
+            <message_arguments>
+                <message_argument value="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy"/>
+                <message_argument value="MIN_WIDTH"/>
+            </message_arguments>
+        </filter>
+        <filter comment="API moved to InteractionOperandResizePolicy" id="338792546">
+            <message_arguments>
+                <message_argument value="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy"/>
+                <message_argument value="getResizeCommand(ChangeBoundsRequest)"/>
+            </message_arguments>
+        </filter>
+        <filter comment="API moved to InteractionOperandResizePolicy" id="338849923">
+            <message_arguments>
+                <message_argument value="org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionOperandDragDropEditPolicy"/>
+            </message_arguments>
+        </filter>
+    </resource>
+</component>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<elementtypesconfigurations:ElementTypeSetConfiguration xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:elementtypesconfigurations="http://www.eclipse.org/papyrus/infra/elementtypesconfigurations/1.2" xmi:id="_ScP1oFYCEeS0WsAAtVmToA" identifier="org.eclipse.papyrus.infra.gmfdiag.common.NotationElementTypeSet" name="NotationElementTypeSet" metamodelNsURI="http://www.eclipse.org/gmf/runtime/1.0.2/notation">
+  <elementTypeConfigurations xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" xmi:id="org.eclipse.papyrus.gmfdiag.common.Diagram" identifier="org.eclipse.papyrus.gmfdiag.common.Diagram" name="GMF::Diagram" hint="" kind="org.eclipse.gmf.runtime.emf.type.core.IHintedType" editHelperClassName="org.eclipse.papyrus.infra.gmfdiag.common.helper.DefaultEditHelper">
+    <eClass xmi:type="ecore:EClass" href="platform:/plugin/org.eclipse.gmf.runtime.notation/model/notation.ecore#//Diagram"/>
+  </elementTypeConfigurations>
+</elementtypesconfigurations:ElementTypeSetConfiguration>
