@@ -1,0 +1,8 @@
+* Create a patch:
+-----------------
+ git format-patch --find-renames --stdout <commit_sha1> > papyrus.patch
+
+* Apply a patch taking only the changes on the forked plugins:
+-------------------------------------------------------------
+git am --interactive --ignore-whitespace papyrus.patch --exclude=plugins/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence/.settings/.api_filters --exclude=plugins/uml/properties/org.eclipse.papyrus.uml.properties/.settings/.api_filters --include=plugins/infra/gmfdiag/org.eclipse.papyrus.infra.gmfdiag.common/* --include=plugins/uml/diagram/org.eclipse.papyrus.uml.diagram.css/* --include=plugins/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence/* --include=plugins/uml/properties/org.eclipse.papyrus.uml.properties/*
+

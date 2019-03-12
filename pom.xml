@@ -1,0 +1,116 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.ericsson.papyrus</groupId>
+  <artifactId>com.ericsson.papyrus.patches</artifactId>
+  <version>3.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <properties>
+		<tycho-version>1.3.0</tycho-version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+	<build>
+	    <plugins>
+	      <plugin>
+	        <groupId>org.eclipse.tycho</groupId>
+	        <artifactId>tycho-maven-plugin</artifactId>
+	        <version>${tycho-version}</version>
+	        <extensions>true</extensions>
+	      </plugin>
+	      
+		    <plugin>
+		        <groupId>org.eclipse.tycho</groupId>
+		        <artifactId>target-platform-configuration</artifactId>
+		        <version>${tycho-version}</version>
+		        <configuration>
+					<environments>
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<!-- environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86</arch>
+						</environment-->
+						<environment>
+							<os>macosx</os>
+							<ws>cocoa</ws>
+							<arch>x86_64</arch>
+						</environment>
+					</environments>
+					<target>
+						<artifact>
+							<groupId>com.ericsson.papyrus</groupId>
+							<artifactId>com.ericsson.papyrus.patches.targets.${papyrus-patches.targetPlatform}</artifactId>
+							<version>3.0.0-SNAPSHOT</version>
+						</artifact>
+					</target>
+		        </configuration>
+	        </plugin>
+		</plugins>
+	</build>
+	
+	<profiles>
+		<profile>
+			<id>photon</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<papyrus-patches.targetPlatform>photon</papyrus-patches.targetPlatform>
+			</properties>
+		</profile>
+		<profile>
+			<id>2018-09</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<papyrus-patches.targetPlatform>2018-09</papyrus-patches.targetPlatform>
+			</properties>
+		</profile>
+		<profile>
+			<id>2018-12</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<papyrus-patches.targetPlatform>2018-12</papyrus-patches.targetPlatform>
+			</properties>
+		</profile>
+		<profile>
+			<id>nightly</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<papyrus-patches.targetPlatform>nightly</papyrus-patches.targetPlatform>
+			</properties>
+		</profile>		
+	</profiles>
+	
+  <modules>			
+	  <module>plugins/uml/diagram/org.eclipse.papyrus.uml.diagram.css</module>
+	  <module>patches/org.eclipse.papyrus.uml.diagram.patch</module>
+
+	  <module>plugins/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence</module>
+	  <module>patches/org.eclipse.papyrus.uml.diagram.css.patch</module>
+
+	  <module>plugins/uml/properties/org.eclipse.papyrus.uml.properties</module>
+	  <module>patches/org.eclipse.papyrus.uml.properties.patch</module>
+
+	  <module>plugins/infra/gmfdiag/org.eclipse.papyrus.infra.gmfdiag.common</module>
+	  <module>patches/org.eclipse.papyrus.infra.gmfdiag.feature.patch</module>
+
+	  <module>patches/com.ericsson.papyrus.patches.feature</module>
+	  <module>releng/com.ericsson.papyrus.patches.update-site</module>
+	  <module>releng/com.ericsson.papyrus.patches.targets</module>
+  </modules>
+</project>

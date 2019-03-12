@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.ericsson.papyrus.patches.feature"
+      label="Ericsson Papyrus Patches Feature"
+      version="3.0.0.qualifier">
+
+   <description url="https://tea-models.rnd.ki.sw.ericsson.se/tea/tools/nwadsl/index.html">
+      Papyrus patches.
+   </description>
+
+   <copyright url="https://www.ericsson.com/en/legal">
+      Copyright (C) 2017 by Ericsson AB
+S - 126 25 STOCKHOLM
+SWEDEN, tel int + 46 8 719 0000
+This program may be used and/or copied only with the written
+permission
+from Ericsson AB, or in accordance with the terms and
+conditions stipulated in the agreement/contract under which the
+program
+has been supplied.
+All rights reserved.
+   </copyright>
+
+   <license url="https://www.ericsson.com/en/legal">
+      Copyright (c) 2015-2017, Ericsson AB. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of the source code or in binary form is only allowed for Ericsson AB
+internal use, or with the terms and conditions stipulated in the agreement/contract
+under which the program(s) have been supplied.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE.
+   </license>
+
+   <includes
+         id="org.eclipse.papyrus.uml.textedit.patch"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.papyrus.uml.diagram.css.patch"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.papyrus.uml.diagram.patch"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.papyrus.uml.properties.patch"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.papyrus.infra.gmfdiag.feature.patch"
+         version="0.0.0"/>
+
+</feature>

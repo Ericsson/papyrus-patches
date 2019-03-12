@@ -3,10 +3,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-	    <groupId>com.ericsson.papyrus.nwa</groupId>
-	    <artifactId>papyrus-patches</artifactId>
-	    <version>3.0.0-SNAPSHOT</version>
-	    <relativePath>../../../../../tea-nwa-papyrus-ext/papyrus-patches</relativePath>
+	  <groupId>com.ericsson.papyrus</groupId>
+  	  <artifactId>com.ericsson.papyrus.patches</artifactId>
+	  <version>3.0.0-SNAPSHOT</version>
+	  <relativePath>../../../../pom.xml</relativePath>
 	</parent>
 	<artifactId>org.eclipse.papyrus.infra.gmfdiag.common</artifactId>
 	<version>3.201.0-SNAPSHOT</version>

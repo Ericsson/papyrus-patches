@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+ 	    <groupId>com.ericsson.papyrus</groupId>
+		<artifactId>com.ericsson.papyrus.patches</artifactId>
+		<version>3.0.0-SNAPSHOT</version>
+		<relativePath>../../</relativePath>		
+	</parent>
+	<artifactId>com.ericsson.papyrus.patches.feature</artifactId>
+	<packaging>eclipse-feature</packaging>
+	<build>
+		<plugins>
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-antrun-plugin</artifactId>
+			  <version>1.6</version>
+			  <executions>
+			    <execution>
+			      <phase>validate</phase>
+			      <goals>
+			        <goal>run</goal>
+			      </goals>
+			      <configuration>			        
+			        <target>
+				        <taskdef resource="net/sf/antcontrib/antlib.xml"
+	             				 classpathref="maven.dependency.classpath" />
+				        <echo message="The value is now: &quot;${project.baseUri}&quot;"/> 		 
+	             		<propertyregex 
+				            property="nwadsl.patches.updatesite_dir" 
+				            input="${project.baseUri}" 
+				            regexp="^file:/(.*)/patches/com.ericsson.papyrus.patches.feature/.*$" 
+				            replace="\1/releng/com.ericsson.papyrus.patches.update-site//target/site"/> 
+				        <echo message="The value is now &quot;${nwadsl.patches.updatesite_dir}&quot;"/> 		 
+	             		<propertyregex 
+				            property="nwadsl.patches.updatesite_dir" 
+				            input="${nwadsl.patches.updatesite_dir}" 
+				            regexp="\:" 
+				            replace="${#58}"
+				            global="true"
+				            override="true"/> 
+					        <echo message="The value is now &quot;${nwadsl.patches.updatesite_dir}&quot;"/>
+							<copy todir="./" overwrite="true">
+						      <fileset dir="./metadata">
+						        <include name="p2.inf"/>
+						      </fileset>
+						    </copy>
+							<replace dir="./" value="${nwadsl.patches.updatesite_dir}" token="@@nwadsl.patches.updatesite_dir@@">
+								<include name="p2.inf" />								
+							</replace> 
+				        </target>
+			      </configuration>
+			    </execution>
+			  </executions>
+			  <dependencies>
+			    <dependency>
+			      <groupId>ant-contrib</groupId>
+			      <artifactId>ant-contrib</artifactId>
+			      <version>1.0b3</version>
+			      <exclusions>
+			        <exclusion>
+			          <groupId>ant</groupId>
+			          <artifactId>ant</artifactId>
+			        </exclusion>
+			      </exclusions>
+			    </dependency>
+			  </dependencies>
+			  </plugin>
+		</plugins>
+	</build>
+</project>
