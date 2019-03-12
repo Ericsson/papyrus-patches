@@ -87,6 +87,8 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 	}
 	
 	InteractionNodeLayout getNodeLayoutFor(NodeImpl node) {
+		if (node.getElement() == null)
+			return null;
 		Class key = node.getElement().eClass().getInstanceClass();
 		return nodeLayouts.get(key);
 	}

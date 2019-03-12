@@ -915,6 +915,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
 			otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;
 		}
+		int height = blockEndPoint - blockStartPoint;
 		int prev = otherStartPoint - blockStartPoint;
 		int after = blockEndPoint - otherEndPoint; 
 		
@@ -922,16 +923,20 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int newYPos = yPos;
 		if (yPos > blockEndPoint) {
 			// Insertion point after block
-			newYPos -= (otherStartPoint - blockStartPoint);
-			newYPos -= (blockEndPoint - otherEndPoint);
-		} else if (yPos > otherEndPoint) {
+			if (otherArea != null) {
+				newYPos -= prev;
+				newYPos -= after;
+			} else {
+				newYPos -= height;
+			}
+		} else if (otherArea != null && yPos > otherEndPoint) {
 			// Insertion point inside block after the other content
 			newYPos = otherEndPoint - prev;
 			postInsertionNudge = yPos - otherEndPoint;
-		} else if (yPos > otherEndPoint) {
+		} else if (otherArea != null && yPos > otherStartPoint) {
 			// Insertion point inside block inside the other content
 			newYPos -= prev;
-		} else if (yPos > otherEndPoint) {
+		} else if (yPos > blockStartPoint) {
 			// Insertion point inside block before the other content
 			newYPos = yPos;
 			postInsertionNudge = yPos - blockStartPoint;
@@ -1021,7 +1026,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		if (row != null) {
 			boolean nudgeOverlap = true;
 			for (Node n : firstNodes) {
-				if (NodeUtilities.getBlock(firstNodes.get(0)).stream().anyMatch(row.getNodes()::contains)) {
+				if (NodeUtilities.flatten(NodeUtilities.getBlock(n)).stream().anyMatch(row.getNodes()::contains)) {
 					nudgeOverlap = false;
 					break;
 				}
