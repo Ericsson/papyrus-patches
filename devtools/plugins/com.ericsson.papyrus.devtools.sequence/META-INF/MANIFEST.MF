@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Development tools for Sequence Diagram patch
+Bundle-SymbolicName: com.ericsson.papyrus.devtools.sequence;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: ERICSSON
+Automatic-Module-Name: com.ericsson.papyrus.devtools.sequence
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.eclipse.draw2d,
+ org.eclipse.gef,
+ org.eclipse.gmf.runtime.diagram.core,
+ org.eclipse.gmf.runtime.diagram.ui,
+ org.eclipse.uml2.uml,
+ org.eclipse.papyrus.uml.diagram.sequence;bundle-version="5.1.500",
+ com.ericsson.papyrus.devtools;bundle-version="1.0.0"

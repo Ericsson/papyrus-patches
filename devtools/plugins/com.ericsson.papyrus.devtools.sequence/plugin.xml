@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.gmf.runtime.diagram.ui.editpartProviders">
+      <editpartProvider
+            class="org.eclipse.papyrus.uml.diagram.sequence.runtime.test.debug.DebugEditPartProvider">
+         <Priority
+               name="Highest">
+         </Priority>
+      </editpartProvider>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="com.ericsson.papyrus.nwa.devtools"
+            class="org.eclipse.papyrus.uml.diagram.sequence.runtime.test.views.InteractionGraphView"
+            id="org.eclipse.papyrus.uml.diagram.sequence.runtime.test.views.graph"
+            name="Interaction Graph Explorer"
+            restorable="true">
+      </view>
+   </extension>
+</plugin>

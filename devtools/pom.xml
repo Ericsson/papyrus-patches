@@ -1,0 +1,26 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0     http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.ericsson.papyrus</groupId>
+	<artifactId>com.ericsson.papyrus.devtools.parent</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<parent>
+	  <groupId>com.ericsson.papyrus</groupId>
+  	  <artifactId>com.ericsson.papyrus.patches</artifactId>
+	  <relativePath>..</relativePath>
+	  <version>3.0.0-SNAPSHOT</version>
+	</parent>
+	
+	<modules>
+	  <module>plugins/com.ericsson.papyrus.devtools</module>
+	  <module>features/com.ericsson.papyrus.devtools.feature</module>
+	  <module>plugins/com.ericsson.papyrus.devtools.sequence</module>
+	  <module>features/com.ericsson.papyrus.devtools.sequence.feature</module>
+	  <module>../releng/com.ericsson.papyrus.patches.devtools.update-site</module>
+	  <module>../releng/com.ericsson.papyrus.patches.targets</module>
+	</modules>
+</project>

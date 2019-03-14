@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="com.ericsson.papyrus.nwa.devtools"
+            name="NWADSL Development Tools">
+      </category>
+      <view
+            category="com.ericsson.papyrus.nwa.devtools"
+            class="com.ericsson.papyrus.devtools.views.FiguresView"
+            id="com.ericsson.papyrus.nwa.devtools.views.figures"
+            name="Figures Explorer"
+            restorable="true">
+      </view>
+      <view
+            category="com.ericsson.papyrus.nwa.devtools"
+            class="com.ericsson.papyrus.devtools.views.EditPartsView"
+            id="com.ericsson.papyrus.nwa.devtools.views.editParts"
+            name="EditParts Explorer"
+            restorable="true">
+      </view>
+      <view
+            category="com.ericsson.papyrus.nwa.devtools"
+            class="com.ericsson.papyrus.devtools.views.NotationModelView"
+            id="com.ericsson.papyrus.nwa.devtools.views.notationViews"
+            name="Notation View Explorer"
+            restorable="true">
+      </view>
+      <view
+            category="com.ericsson.papyrus.nwa.devtools"
+            class="com.ericsson.papyrus.devtools.views.RequestsView"
+            id="com.ericsson.papyrus.nwa.devtools.views.requests"
+            name="Request View"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.gmf.runtime.diagram.ui.editpolicyProviders">
+      <editpolicyProvider
+            class="com.ericsson.papyrus.nwa.devtools.EditPolicyProvider">
+         <Priority
+               name="Highest">
+         </Priority>
+      </editpolicyProvider>
+   </extension>
+
+</plugin>
