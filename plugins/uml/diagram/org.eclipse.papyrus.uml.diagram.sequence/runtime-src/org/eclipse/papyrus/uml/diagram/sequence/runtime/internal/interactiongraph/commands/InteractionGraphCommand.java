@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -71,14 +70,17 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.FragmentClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.MarkNodeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeOrderResolver;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
@@ -723,6 +725,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 					//Move target node
 					Node insertBeforeTrgNode = NodeUtilities.getNextVerticalNode(trgParent,  newTrgPt.y);
+					while (insertBeforeTrgNode != null && NodeUtilities.isStartNode(insertBeforeTrgNode)) {						
+						insertBeforeTrgNode = insertBeforeTrgNode.getParent();
+					}
 					NodeUtilities.moveNodes(graph, Collections.singletonList(target), trgParent, insertBeforeTrgNode, newTrgPt.y);
 											
 				} finally {
@@ -924,7 +929,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				Node nodeInsertBefore = NodeUtilities.getNodeAfterVerticalPos(graph, posY-3);
 				
 				FragmentClusterImpl interactionUseCluster = interactionGraph.addInteractionUse(
-						interactionUse, lifelines, (InteractionFragment)nodeInsertBefore.getElement());
+						interactionUse, lifelines, nodeInsertBefore == null ? null : (InteractionFragment)nodeInsertBefore.getElement());
 				interactionUseCluster.setBounds(newRect);
 				for (Cluster subCluster : interactionUseCluster.getClusters()) {
 					ClusterImpl c = (ClusterImpl)subCluster; 
@@ -942,8 +947,156 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
+	public void nudgeInteractionUse(InteractionUse intUse, Point delta) {
+		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
+		List<Node> startNodes = fragmentCluster.getClusters().stream().map(d->d.getNodes().get(0)).collect(Collectors.toList());
+		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, startNodes, false, true);		
+		Rectangle newMsgArea = fragmentCluster.getBounds().getCopy().translate(delta);
+		if (!validArea.contains(newMsgArea)) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+		
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
 
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				Row r = startNodes.get(0).getRow();
+				graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
+						.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+				graph.layout();
+				return true;
+			}
+		});
+	}
+
+	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
+		List<Node> allNodes = NodeUtilities.flatten(fragmentCluster.getClusters()); 
+		Rectangle validArea = NodeUtilities.getEmptyAreaAround(interactionGraph, allNodes).shrink(2, 2);		
+		if (!validArea.contains(rect)) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+		
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(graph,rect);
+				List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
+						collect(Collectors.toList());
+				// TODO: @etxacam Move to the graph highlevel API
+				// Remove old marks
+				List<Cluster> clusterToDelete = fragmentCluster.getClusters().stream().
+						filter(d->!lifelines.contains(NodeUtilities.getLifelineNode(d))).collect(Collectors.toList());
+				NodeUtilities.removeNodes((InteractionGraphImpl)graph, clusterToDelete);
+				clusterToDelete.forEach(fragmentCluster::removeCluster);
+				lifelines.removeAll(curLifelines);
+				int posY = fragmentCluster.getBounds().y;
+				int height = fragmentCluster.getBounds().height;
+				for (Cluster lifeline : lifelines) {
+					Cluster parent = NodeUtilities.getClusterAtVerticalPos(lifeline, posY); 
+					Rectangle parentRect = parent.getBounds(); 
+					Node insertBefore = NodeUtilities.getNextVerticalNode(lifeline,posY);
+					while (insertBefore != null && NodeUtilities.isStartNode(insertBefore)) {
+						insertBefore = insertBefore.getParent();
+					}
+					ClusterImpl intUseLfCluster = new ClusterImpl(intUse);
+					intUseLfCluster.addNode(new MarkNodeImpl(Kind.start, intUse));
+					intUseLfCluster.addNode(new MarkNodeImpl(Kind.end, intUse));
+
+					((NodeImpl)intUseLfCluster.getNodes().get(0)).setBounds(new Rectangle(parentRect.getCenter().x , posY, 0, 0));
+					((NodeImpl)intUseLfCluster.getNodes().get(1)).setBounds(new Rectangle(parentRect.getCenter().x , posY + height, 0, 0));
+
+					((ClusterImpl)parent).addNode(intUseLfCluster, insertBefore);
+					((FragmentClusterImpl)fragmentCluster).addCluster(intUseLfCluster); // TODO: @etxacam reorder them...
+				}
+				graph.layout();
+				return true;
+			}
+		});
+
+	}
 	
+	public void moveInteractionUse(InteractionUse intUse, Rectangle rect) {
+		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
+		Rectangle currRect = fragmentCluster.getBounds();
+		Dimension moveDelta = rect.getTopLeft().getDifference(currRect.getTopLeft());
+		
+		int minY = Integer.MAX_VALUE;
+		int maxY = Integer.MIN_VALUE;
+		for (Cluster n : fragmentCluster.getClusters()) {
+			Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+					NodeUtilities.getLifelineNode(n).getView());
+			minY = Math.min(minY,lifelineArea.y);
+			maxY = Math.max(maxY,lifelineArea.y+lifelineArea.height);
+		}
+		
+		List<Node> nodes = NodeUtilities.getBlock(fragmentCluster);
+		Rectangle totalArea = NodeUtilities.getArea(nodes);
+		totalArea.translate(moveDelta.width, moveDelta.height);
+		if (totalArea.y <= minY || totalArea.y >= maxY) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;
+		}
+				
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+			
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y);
+				return true;
+			}
+		});
+		
+	}
+
+	public void deleteInteractionUse(InteractionUse intUse) {
+		FragmentCluster intUseNode = (FragmentCluster)interactionGraph.getClusterFor(intUse);
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				// TODO: It needs to handle gates.
+				List<Node> blockToDelete = NodeUtilities.getBlock(intUseNode);
+				List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(blockToDelete).stream().map(Node::getConnectedByLink).
+						filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
+				try {
+					// Remove nodes & Messages
+					interactionGraph.disableLayout();
+					NodeUtilities.removeMessageLinks(graph, linksToDelete);
+				} finally {
+					interactionGraph.enableLayout();
+				}
+				
+				try {
+					((InteractionGraphImpl)graph).removeNodeBlock(blockToDelete);		
+					((InteractionGraphImpl)graph).removeFragmentCluster(intUseNode);
+					interactionGraph.disableLayout();
+					NodeUtilities.removeNodes(graph, intUseNode.getClusters());
+				} finally {
+					interactionGraph.enableLayout();
+					interactionGraph.layout();					
+				}
+				return true;
+				
+			}
+		});
+	}
+		
 	private void resizeCluster(ClusterImpl cluster, int topAmmount, int bottomAmmount) {
 		Rectangle clusterBounds = cluster.getBounds(); 
 		ClusterImpl parent = (ClusterImpl)cluster.getParent();
@@ -1279,14 +1432,22 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		
 		// Reorder views inside Lifelines
 		for (Cluster c : interactionGraph.getLifelineClusters()) {
-			List<View> newValues = NodeUtilities.flattenKeepClusters(c.getNodes()).stream().filter(Cluster.class::isInstance).map(d->d.getView()).
-					filter(Objects::nonNull).collect(Collectors.toList());
+			List<Node> newValues = NodeUtilities.flattenKeepClusters(c.getNodes()).stream().filter(Cluster.class::isInstance).
+					filter(d->d.getView()!=null).collect(Collectors.toList());
 			if (c.getView() != null) {
 				List<View> oldValues = c.getView().getChildren();			
 				updateZOrder(command, c.getView(), oldValues, newValues);
 			}
 		}
 
+		// Reorder InteractionUse, Combined Fragments and Lifelines
+		View containerView = ViewUtilities.getViewWithType(interactionGraph.getInteractionView(), InteractionInteractionCompartmentEditPart.VISUAL_ID); 
+		List<View> oldValues = containerView.getChildren();
+		List<Node> newValues = new ArrayList<>();
+		newValues.addAll(interactionGraph.getLifelineClusters().stream().collect(Collectors.toList()));
+		newValues.addAll(interactionGraph.getFragmentClusters().stream().collect(Collectors.toList()));
+		updateZOrder(command, containerView, oldValues, newValues);
+		
 		return command;
 	}
 
@@ -1746,9 +1907,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 	}
 
-	private void updateZOrder(ICompositeCommand cmd, View container, List<View> oldList, List<View> newList) {
+	private void updateZOrder(ICompositeCommand cmd, View container, List<View> oldList, List<? extends Node> newList) {
 		final List<View> oldValues = new ArrayList<>(oldList);
-		final List<View> newValues = new ArrayList<>(newList);
+		final List<Node> newValues = new ArrayList<>(newList);
 		int index = 0;
 		for (View v: oldValues) {
 			if (v.getElement() == container.getElement())
@@ -1757,8 +1918,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				break;
 		}
 			
-		for (View obj : newValues) {
-			cmd.add(new SetNodeViewZOrderCommand(getEditingDomain(), interactionGraph, obj, index));
+		for (Node n : newValues) {
+			cmd.add(new SetNodeViewZOrderCommand(getEditingDomain(), interactionGraph, n, index));
 			index++;
 		}
 	}
@@ -1769,54 +1930,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 	}
 	
-	/*
-	private void calculateFragmentsChanges(List<InteractionGraphDiff> diffs) {
-		List<InteractionFragment> fragments = interactionGraph.getInteraction().getFragments();
-		List<InteractionFragment> newFragments = interactionGraph.getRows().stream().flatMap(d -> d.getNodes().stream())
-				.map(Node::getElement).filter(InteractionFragment.class::isInstance)
-				.map(InteractionFragment.class::cast).collect(Collectors.toList());
-
-		calculateChangesContainmentCollection(diffs, interactionGraph.getInteraction(),
-				UMLPackage.Literals.INTERACTION__FRAGMENT, fragments, newFragments);
-	}
-
-	private void calculateMessagesChanges(List<InteractionGraphDiff> diffs) {
-		List<Message> messages = interactionGraph.getInteraction().getMessages();
-		List<Message> newMessages = interactionGraph.getRows().stream().flatMap(d -> d.getNodes().stream())
-				.map(Node::getElement).filter(MessageOccurrenceSpecification.class::isInstance)
-				.map(d -> ((MessageOccurrenceSpecification) d).getMessage()).distinct().collect(Collectors.toList());
-
-		calculateChangesContainmentCollection(diffs, interactionGraph.getInteraction(),
-				UMLPackage.Literals.INTERACTION__MESSAGE, messages, newMessages);
-	}
-
-	private <T extends EObject> void calculateChangesContainmentCollection(List<InteractionGraphDiff> diffs,
-			EObject owner, EStructuralFeature feature, List<T> oldVal, List<T> newVal) {
-		if (!calculateChangesForCollection(diffs, owner, feature, oldVal, newVal)) {
-			List<T> objToRemove = oldVal.stream().filter(d -> !newVal.contains(d)).collect(Collectors.toList());
-			List<T> objToAdd = newVal.stream().filter(d -> !oldVal.contains(d)).collect(Collectors.toList());
-
-			for (T lf : objToAdd) {
-				diffs.add(InteractionGraphDiffImpl.create(lf, feature, owner));
-			}
-
-			for (T lf : objToRemove) {
-				diffs.add(InteractionGraphDiffImpl.delete(lf, feature, owner));
-			}
-		}
-	}
-
-	private <T extends EObject> boolean calculateChangesForCollection(List<InteractionGraphDiff> diffs, EObject owner,
-			EStructuralFeature feature, List<T> oldVal, List<T> newVal) {
-		int gcount = oldVal.size();
-		int icount = newVal.size();
-		if (gcount != icount || !oldVal.equals(newVal)) {
-			diffs.add(InteractionGraphDiffImpl.change(owner, feature, oldVal, newVal));
-			return false;
-		}
-		return true;
-	}
-*/
 	private InteractionGraphImpl interactionGraph;
 	private List<InteractionGraphEditAction> actions = new ArrayList<>();
 }

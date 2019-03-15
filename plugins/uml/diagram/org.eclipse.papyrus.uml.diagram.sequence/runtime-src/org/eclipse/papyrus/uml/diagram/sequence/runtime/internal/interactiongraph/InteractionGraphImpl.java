@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -40,14 +41,12 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
-import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
-import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
@@ -107,9 +106,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return Collections.unmodifiableList(lifelineClusters);
 	}
 
-	public void removeLifelineCluster(ClusterImpl lifeline) {
+	public void removeLifelineCluster(Cluster lifeline) {
 		lifelineClusters.remove(lifeline);
-		lifeline.setParent(null);		
+		((ClusterImpl)lifeline).setParent(null);		
 	}
 	
 	public void addLifelineCluster(ClusterImpl lifeline, ClusterImpl insertBeforeCluster) {
@@ -360,7 +359,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			if (cluster == this) {
 				continue;
 			}
-			List<Node> coveredLifelines = cluster.getClusters().stream().map(NodeImpl.class::cast).map(NodeUtilities::getLifelineNode).collect(Collectors.toList());
+			List<Node> coveredLifelines = cluster.getClusters().stream().map(NodeImpl.class::cast).map(NodeUtilities::getLifelineNode).
+					filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
 			Rectangle fragmentBounds = ViewUtilities.getBounds(viewer, cluster.getView());
 			int min = coveredLifelines.stream().map(d -> columns.indexOf(d.getColumn())).min(Comparator.comparing(Integer::valueOf)).orElse(-1);
 			int max = coveredLifelines.stream().map(d -> columns.indexOf(d.getColumn())).max(Comparator.comparing(Integer::valueOf)).orElse(-1);
@@ -500,18 +500,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
-	public Cluster removeLifeline(Lifeline lifeline) {
-		ClusterImpl cluster = getLifeline(lifeline);
-		if (cluster != null) {
-			lifelineClusters.remove(cluster);
-			builder.nodeCache.remove(lifeline);
-			layoutGrid();
-		}
-
-		return cluster;
-	}
-
-	@Override
 	public void moveLifeline(Lifeline lifelineToMove, Lifeline beforeLifeline) {
 		ClusterImpl lfToMove = getLifeline(lifelineToMove);
 		ClusterImpl beforeLf = getLifeline(beforeLifeline);
@@ -547,33 +535,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return link;
 	}
 	
-	public LinkImpl removeMessage(Message message) {
-		LinkImpl msgLink = getMessage(message);
-		if (msgLink != null) {
-			disableLayout();
-			removeMessage(msgLink);
-			removeNodeImpl(msgLink.getSource());
-			removeNodeImpl(msgLink.getTarget());
-			enableLayout();
-			layout();
-		}
-		return msgLink;
-	}
-
-	// TODO: @etxacam Check if remove
-	@Override
-	public void moveMessage(Message message, Message insertBefore) {
-		LinkImpl msgToMove = getMessage(message);
-		LinkImpl beforeMsg = getMessage(insertBefore);
-		if (msgToMove == beforeMsg) {
-			return;
-		}
-		moveMessage(msgToMove, beforeMsg);
-		layoutGrid();
-	}
-
-	
-	// TODO: @etxacam Review what can be done by message API
 	@Override
 	public NodeImpl getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos) {
 		ClusterImpl lifelineCluster = getLifeline(lifeline);
@@ -612,54 +573,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		builder.nodeCache.put(mos, node);
 		layoutGrid();
 		return node;
-	}
-
-	@Override
-	public Node removeMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos) {
-		NodeImpl mosNode = getMessageOccurrenceSpecification(lifeline, mos);
-		if (mosNode == null || mosNode.getParent() == null) {
-			return null;
-		}
-
-		if (!removeNodeImpl(mosNode)) {
-			return null;
-		}
-		layoutGrid();
-		return mosNode;
-	}
-
-	@Override
-	public boolean moveMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mosToMove,
-			Lifeline toLifeline, InteractionFragment fragmentBefore) {
-		NodeImpl n = builder.getCacheNode(lifeline);
-		if (n == null || !(n instanceof Cluster)) {
-			return false;
-		}
-		ClusterImpl fromLifelineNode = (ClusterImpl) n;
-
-		n = builder.getCacheNode(toLifeline);
-		if (n == null || !(n instanceof Cluster)) {
-			return false;
-		}
-		ClusterImpl toLifelineNode = (ClusterImpl) n;
-
-		NodeImpl mosNode = builder.getCacheNode(mosToMove);
-		if (mosNode == null) {
-			return false;
-		}
-		n = builder.getCacheNode(fragmentBefore);
-
-		// TODO: @etxacam Check if it is allowed to move the mos:
-		// 1) SendEvent before receiveEvent
-		// 2) Ends inside the same fragment.
-		// 3) Special case may trigger change of gate kind (Inner <--> Outer).
-
-		if (!moveNodeImpl(fromLifelineNode, mosNode, toLifelineNode, n)) {
-			return false;
-		}
-
-		layoutGrid();
-		return true;
 	}
 
 	@Override
@@ -796,78 +709,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return execNode;
 	}
 
-	@Override
-	public ClusterImpl removeExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec) {
-		ClusterImpl lifelineNode = getLifeline(lifeline);
-		if (lifelineNode == null) {
-			return null;
-		}
-
-		ClusterImpl execNode = getExecutionSpecification(lifeline, exec);
-		if (execNode == null) {
-			return null;
-		}
-
-		if (!removeNodeImpl(execNode)) {
-			return null;
-		}
-		layoutGrid();
-		return execNode;
-	}
-
-	@Override
-	public boolean moveExecutionSpecification(Lifeline lifeline, ExecutionSpecification execToMove,
-			Lifeline toLifeline, InteractionFragment fragmentBefore) {
-		ClusterImpl lifelineNode = getLifeline(lifeline);
-		ClusterImpl execNode = getExecutionSpecification(lifeline, execToMove);
-		ClusterImpl toLifelineNode = getLifeline(toLifeline);
-		if (lifelineNode == null || toLifelineNode == null || execNode == null) {
-			return false;
-		}
-
-		NodeImpl beforeNode = builder.getCacheNode(fragmentBefore);
-
-		if (execNode.getConnectedByNode() != null) {
-			// TODO: Check it is not going to a previous position of the triggering point
-		}
-
-		// TODO: check that it is not going between two nodes in the connected groups...
-		// Can we use the grid???
-		// Should we calculate connected nodes???
-
-		if (!moveNodeImpl(lifelineNode, execNode, toLifelineNode, beforeNode)) {
-			return false;
-		}
-
-		layoutGrid();
-		return true;
-	}
-
-	@Override
-	public boolean replaceExecutionSpecificationStart(ExecutionSpecification exec, OccurrenceSpecification ocurrSpec) {
-		throw new UnsupportedOperationException();
-	};
-
-	@Override
-	public boolean moveExecutionSpecificationStart(ExecutionSpecification ocurrSpec, InteractionFragment beforeFragment) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean replaceExecutionSpecificationFinish(ExecutionSpecification exec, OccurrenceSpecification ocurrSpec) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean moveExecutionSpecificationFinish(ExecutionSpecification exec, InteractionFragment beforeFragment) {
-		throw new UnsupportedOperationException();
-	}
 
 	public FragmentClusterImpl addInteractionUse(InteractionUse interactionUse, List<Lifeline> lifelines, InteractionFragment beforeFragment) {
-		NodeImpl beforeFragmentNode = getNodeFor(beforeFragment);
 		List<Node> orderedNodes = getOrderedNodes();
-		int index = orderedNodes.indexOf(beforeFragmentNode);
-		orderedNodes = orderedNodes.subList(index, orderedNodes.size());
+		if (beforeFragment != null) {
+			NodeImpl beforeFragmentNode = getNodeFor(beforeFragment);
+			int index = orderedNodes.indexOf(beforeFragmentNode);
+			orderedNodes = orderedNodes.subList(index, orderedNodes.size());
+		} else {
+			orderedNodes = Collections.emptyList();
+		}
 		FragmentClusterImpl fragmentCluster = new FragmentClusterImpl(interactionUse); 
 		for (Lifeline lf : lifelines) {
 			ClusterImpl lifelineCluster = getClusterFor(lf);
@@ -889,11 +740,49 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		addFragmentCluster(fragmentCluster);
 		return fragmentCluster;
 	}
+
 	
+	@Override
+	public FragmentCluster addInteractionUseToLifeline(InteractionUse interactionUse, Lifeline lifeline) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public FragmentCluster removeInteractionUseFromLifeline(InteractionUse interactionUse, Lifeline lifeline) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	//////////////////////
 	// END CHECK USE OF //
 	//////////////////////	
-	
+	// TODO: @etxacam: It can be used to preserve cluster fragments to be moved with a block by removing the returned list from the block and 
+	// adding it to the other nodes list 
+	public List<Node> preserveFragmentClusterBlocksFromRemoval(List<Cluster> fragments, List<Node> allNodesBeingRemoved) {
+		List<Node> nodesToRemove = new ArrayList<>();
+		List<FragmentCluster> frgClusters = NodeUtilities.removeDuplicated(fragments.stream().map(Cluster::getFragmentCluster).collect(Collectors.toList()));
+		for (FragmentCluster fc : frgClusters) {
+			for (Cluster c : fc.getClusters()) {
+				if (!fragments.contains(c))
+					continue;
+				Cluster newParent = c.getParent();
+				Node insertPoint = null;
+				while (newParent != null && allNodesBeingRemoved.contains(newParent)) {
+					insertPoint = newParent; 
+					newParent = newParent.getParent();
+				}
+				
+				if (insertPoint != null && newParent != null) {
+					((ClusterImpl)c.getParent()).removeNode(c);
+					((ClusterImpl)newParent).addNode((ClusterImpl)c, insertPoint);
+					nodesToRemove.addAll(NodeUtilities.flattenKeepClusters(c));
+				}
+			}
+		}		
+		return nodesToRemove;
+	}
+
 	public void moveNodeBlock(List<Node> nodes, int yPos) {
 		moveNodeBlock(nodes, yPos, Collections.emptyMap());
 	}
@@ -944,6 +833,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
 				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getLifelineNode(d))));
+
+		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
+				collect(Collectors.toList());
 		removeNodeBlockImpl(nodes,otherNodes,0);		
 		addNodeBlock(nodesByLifeline, newYPos, postInsertionNudge);
 	}
@@ -959,10 +851,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		Row row = NodeUtilities.getRowAt(this, r.y);
 		Row prevRow = (row == null || row.getIndex() == 0) ? null : getRows().get(row.getIndex()-1);
 		int nudge = prevRow == null ? 0 : row.getYPosition() - prevRow.getYPosition();
-		List<Node> others = NodeUtilities.getBlockOtherNodes(nodes);
-		removeNodeBlockImpl(nodes, others, (others != null && !others.isEmpty()) ? 0 : nudge);
 		
-		// TODO: @etxacam Remove all references from: Links, lifelines, clusters, etc... 
+		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
+		List<Node> others = NodeUtilities.getBlockOtherNodes(nodes);
+
+		// Preserve Fragment clusters blocks
+		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
+				collect(Collectors.toList());
+		removeNodeBlockImpl(nodes, others, (others != null && !others.isEmpty()) ? 0 : nudge);
+		allNodes.removeAll(NodeUtilities.flattenKeepClusters(fragments));
+		NodeUtilities.deleteNodes(this, allNodes); // Delete all references
 	}
 	
 	private void removeNodeBlockImpl(List<Node> nodes, List<Node> otherNodes, int extraNudge) {
@@ -1123,68 +1021,6 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 	}
 	
-	// TODO: @etxacam Check if remove
-	private boolean moveNodeImpl(ClusterImpl fromCluster, NodeImpl node, ClusterImpl toCluster, NodeImpl before) {
-		if (fromCluster == null || toCluster == null || node == null) {
-			return false;
-		}
-
-		int index = fromCluster.getNodes().indexOf(node);
-		if (index == -1) {
-			return false;
-		}
-
-		if (before != null && toCluster.getNodes().indexOf(before) == -1) {
-			return false;
-		}
-
-		// TODO: Handle before start of exec spec / fragment start mark
-		if (node == before)
-			return true;
-		
-		fromCluster.removeNode(index);
-
-		index = before == null ? -1 : toCluster.getNodes().indexOf(before);
-		if (index == -1) {
-			toCluster.addNode(node);
-		} else {
-			toCluster.addNode(node, before);
-		}
-
-		return true;
-
-	}
-
-
-	private boolean removeNodeImpl(NodeImpl nodeImpl) {
-		if (nodeImpl == null || nodeImpl.getParent() == null) {
-			return true;
-		}
-
-		ClusterImpl parent = nodeImpl.getParent();
-		parent.removeNode(nodeImpl);
-		builder.nodeCache.remove(nodeImpl.getElement());
-
-		if (nodeImpl instanceof Cluster) {
-			new ArrayList<>(((Cluster) nodeImpl).getNodes()).stream().forEach(d -> removeNodeImpl((NodeImpl) d));
-		}
-
-		if (nodeImpl.getConnectedNode() != null) {
-			removeNodeImpl(nodeImpl.getConnectedNode());
-		}
-
-		if (nodeImpl.getElement() instanceof MessageEnd && nodeImpl.getConnectedByNode() != null) {
-			removeNodeImpl(nodeImpl.getConnectedByNode());
-		}
-
-		if (nodeImpl.getElement() instanceof ExecutionOccurrenceSpecification ||
-				nodeImpl.getElement() instanceof ExecutionSpecification) {
-			removeNodeImpl(parent);
-		}
-
-		return true;
-	}
-
 	private int disabledLayout = 0; 
 	private InteractionGraphBuilder builder;
 	private EditPartViewer viewer;

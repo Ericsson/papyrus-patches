@@ -24,6 +24,7 @@ import org.eclipse.gmf.runtime.diagram.ui.services.editpolicy.IEditPolicyProvide
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionUseEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.OccurenceSemanticEditPolicy;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -53,7 +54,8 @@ public class InteractionGraphSemanticEditPolicyProvider extends AbstractProvider
 
 		return editPart instanceof AbstractMessageEditPart || 
 			   editPart instanceof CLifeLineEditPart || 
-			   editPart instanceof AbstractExecutionSpecificationEditPart;
+			   editPart instanceof AbstractExecutionSpecificationEditPart ||
+			   editPart instanceof InteractionUseEditPart;
 	}
 
 	@Override

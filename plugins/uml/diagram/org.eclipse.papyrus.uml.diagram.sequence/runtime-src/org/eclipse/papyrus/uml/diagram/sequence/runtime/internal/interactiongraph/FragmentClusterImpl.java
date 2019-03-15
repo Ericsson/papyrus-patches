@@ -33,9 +33,14 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 		return Collections.unmodifiableList(clusters);
 	}
 
-	void addCluster(ClusterImpl cluster) {
+	public void addCluster(ClusterImpl cluster) {
 		clusters.add(cluster);
 		cluster.setFragmentCluster(this);
+	}
+
+	public void removeCluster(Cluster cluster) {
+		clusters.remove(cluster);
+		((ClusterImpl)cluster).setFragmentCluster(null);
 	}
 
 	@Override
@@ -43,11 +48,16 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 		return Collections.unmodifiableList(fragmentClusters);
 	}
 
-	void addFragmentCluster(FragmentClusterImpl cluster) {
+	public void addFragmentCluster(FragmentClusterImpl cluster) {
 		fragmentClusters.add(cluster);
 		cluster.setParent(this);
 	}
 	
+	public void removeFragmentCluster(FragmentCluster cluster) {
+		fragmentClusters.remove(cluster);
+		((FragmentClusterImpl)cluster).setParent(null);
+	}
+
 	@Override
 	public List<Node> getAllGates() {
 		List<Node> gates = new ArrayList<Node>(innerGates);

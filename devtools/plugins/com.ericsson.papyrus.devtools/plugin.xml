@@ -39,7 +39,7 @@
    <extension
          point="org.eclipse.gmf.runtime.diagram.ui.editpolicyProviders">
       <editpolicyProvider
-            class="com.ericsson.papyrus.nwa.devtools.EditPolicyProvider">
+            class="com.ericsson.papyrus.devtools.EditPolicyProvider">
          <Priority
                name="Highest">
          </Priority>

@@ -19,6 +19,7 @@ import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
@@ -34,6 +35,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 
 /**
@@ -121,6 +123,39 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 				}
 				return new ICommandProxy(cmd);
 			}
+		} else if (element instanceof InteractionUse) {
+			InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
+			if (graph == null) {
+				return null;
+			}
+			
+			Rectangle rect = ViewUtilities.getBounds(graph.getEditPartViewer(), (View)((GraphicalEditPart)request.getEditParts().get(0)).getModel());
+			rect = request.getTransformedRectangle(rect);
+			Point orig = ViewUtilities.controlToViewer(graph.getEditPartViewer(), new Point(0,0));
+			Point moveDelta = ViewUtilities.controlToViewer(graph.getEditPartViewer(), request.getMoveDelta().getCopy());
+			moveDelta.x -= orig.x;
+			moveDelta.y -= orig.y;
+			
+			Dimension sizeDelta = request.getSizeDelta();
+			if (!KeyboardHandler.getKeyboardHandler().isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+				// No reordering. Resizing is never reordering
+				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
+				if (sizeDelta.width != 0 || sizeDelta.height != 0) {
+					cmd.resizeInteractionUse((InteractionUse) element, rect);
+				} else if (moveDelta.x != 0 || moveDelta.y != 0) {					
+					cmd.nudgeInteractionUse((InteractionUse) element, moveDelta);
+				}
+
+				return new ICommandProxy(cmd);
+			} else {
+				// Reordering case.
+				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
+				if (moveDelta.x != 0 || moveDelta.y != 0) {
+					cmd.moveInteractionUse((InteractionUse) element, rect);
+				}
+				return new ICommandProxy(cmd);
+			}
+
 		}
 		return null;
 	}

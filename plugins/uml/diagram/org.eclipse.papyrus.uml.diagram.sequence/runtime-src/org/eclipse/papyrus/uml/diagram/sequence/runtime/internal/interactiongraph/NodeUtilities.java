@@ -14,6 +14,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -112,7 +113,11 @@ public class NodeUtilities {
 		return null;
 	}
 	
-	public static List<Node> flattenKeepClusters(List<Node> nodes) {		
+	public static List<Node> flattenKeepClusters(Node node) {
+		return flattenKeepClusters(Arrays.asList(node));
+	}
+	
+	public static List<Node> flattenKeepClusters(List<? extends Node> nodes) {		
 		List<Node> flatNodes = nodes.stream().map(NodeImpl.class::cast).
 				flatMap(d -> { 
 					List<Node> l = new ArrayList<Node>();
@@ -125,7 +130,7 @@ public class NodeUtilities {
 		return flatNodes;
 	}
 
-	public static List<Node> flatten(List<Node> nodes) {
+	public static List<Node> flatten(List<? extends Node> nodes) {
 		return nodes.stream().map(NodeImpl.class::cast).flatMap(NodeUtilities::flattenImpl).collect(Collectors.toList());
 	}
 	
@@ -155,7 +160,7 @@ public class NodeUtilities {
 		}
 	}
 
-	public static final List<Node> removeDuplicated(List<Node> l) {
+	public static final <N extends Node> List<N> removeDuplicated(List<N> l) {
 		return new ArrayList<>(new LinkedHashSet<>(l));
 	}
 	
@@ -194,11 +199,22 @@ public class NodeUtilities {
 		Node cn = source.getConnectedNode();
 		if (cn != null)
 			getBlock(cn,nodes);
-		
+							
 		if (source instanceof Cluster) {
 			Cluster c = (Cluster) source;
-			for (Node nn : c.getNodes()) {
-				getBlock(nn, nodes);
+			if (c instanceof FragmentCluster) {
+				FragmentCluster fc = (FragmentCluster)c;
+				nodes.remove(fc);				
+				for (Cluster nn : fc.getClusters()) {
+					getBlock(nn, nodes);
+				}				
+			} else {
+				if (c.getFragmentCluster() != null)
+					getBlock(c.getFragmentCluster(), nodes);
+				for (Node nn : c.getNodes()) {
+					getBlock(nn, nodes);
+				}
+				
 			}
 			
 			if (!c.getNodes().isEmpty()) {
@@ -273,6 +289,10 @@ public class NodeUtilities {
 		return getStartLink(n.getParent()); 
 	}
 	
+	public static boolean isStartNode(Node node) {
+		return getStartNode(node.getParent()) == node && NodeUtilities.getLifelineNode(node) != node.getParent();
+	}
+	
 	public static Node getStartNode(Cluster cluster) {
 		List<Node> nodes = cluster.getAllNodes();
 		if (nodes.isEmpty())
@@ -317,15 +337,45 @@ public class NodeUtilities {
 		return lnk;
 	}
 	
-	public static void removeNodes(InteractionGraph interactionGraph, List<Node> nodes) {
-		for (Node n : nodes) {
-			if (n.getParent() != null)
-				((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
-			else if (interactionGraph.getLifelineClusters().contains(n)) {
-				((InteractionGraphImpl)interactionGraph).removeLifelineCluster((ClusterImpl)n);
-			}
-		}		
+	public static void deleteNodes(InteractionGraph interactionGraph, List<? extends Node> nodes) {
+		((InteractionGraphImpl)interactionGraph).disableLayout();
+		nodes.forEach(d -> deleteNode(interactionGraph,d));
+		((InteractionGraphImpl)interactionGraph).enableLayout();
 		interactionGraph.layout();
+	}
+
+	public static void deleteNode(InteractionGraph interactionGraph, Node node) {
+		// Remove additional references.
+		NodeImpl n = (NodeImpl)node;
+		removeNode(interactionGraph, n);
+		n.disconnectNode();
+		
+		if (n instanceof Cluster) {
+			ClusterImpl c = (ClusterImpl)n;
+			FragmentClusterImpl frgCluster = c.getFragmentCluster(); 
+			if (frgCluster != null) {
+				frgCluster.removeCluster(c);
+				if (frgCluster.getClusters().isEmpty()) {
+					((InteractionGraphImpl)interactionGraph).removeFragmentCluster(frgCluster);
+				}
+			}
+		}
+	}
+	
+	public static void removeNodes(InteractionGraph interactionGraph, List<? extends Node> nodes) {
+		((InteractionGraphImpl)interactionGraph).disableLayout();
+		nodes.forEach(d -> removeNode(interactionGraph,d));
+		((InteractionGraphImpl)interactionGraph).enableLayout();
+		interactionGraph.layout();
+	}
+	
+	public static void removeNode(InteractionGraph  interactionGraph, Node n) {
+		if (n.getParent() != null)
+			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
+		else if (interactionGraph.getLifelineClusters().contains(n))
+			((InteractionGraphImpl)interactionGraph).removeLifelineCluster((Cluster)n);
+		else if (interactionGraph.getFragmentClusters().contains(n))
+			((InteractionGraphImpl)interactionGraph).removeFragmentCluster((FragmentCluster)n);			
 	}
 	
 	public static void removeMessageLinks(InteractionGraph interactionGraph, List<Link> links) {
@@ -394,6 +444,66 @@ public class NodeUtilities {
 			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
 	}
 
+	public static Rectangle getEmptyAreaAround(InteractionGraphImpl interactionGraph, List<Node> nodes) {
+		List<Node> allNodes = NodeUtilities.flatten(nodes);
+		int minRow = Integer.MAX_VALUE;
+		int maxRow = Integer.MIN_VALUE;
+		int minCol = Integer.MAX_VALUE;
+		int maxCol = Integer.MIN_VALUE;		
+		
+		for (Node n : allNodes) {
+			Row row = n.getRow();
+			if (row != null) {
+				minRow = Math.min(minRow, row.getIndex());
+				maxRow = Math.max(maxRow, row.getIndex());
+			}			
+		}
+		
+		Column leftColumn = null;
+		Column rightColumn = null;
+		for (int r=minRow; r<=maxRow; r++) {
+			Row row = interactionGraph.getRows().get(r);
+			List<Node> otherNodes = row.getNodes().stream().filter(d->!allNodes.contains(d)).collect(Collectors.toList());
+			for (Node n : otherNodes) {
+				Column col = n.getColumn();
+				if (col != null) {
+					if (minCol < col.getIndex()) {
+						minCol = col.getIndex();
+						leftColumn = col;
+					}
+					if (maxCol > col.getIndex()) {
+						minCol = col.getIndex();
+						rightColumn = col;
+					}
+				}
+			}
+		}
+		
+		View interactionView = interactionGraph.getInteractionView();
+		Rectangle interactionRect =  ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), interactionView);
+		Row topRow = interactionGraph.getRows().get(minRow);
+		if (allNodes.containsAll(topRow.getNodes())) {
+			if (topRow.getIndex() == 0)
+				topRow = null;
+			else
+				topRow = interactionGraph.getRows().get(minRow -1);
+		}
+		int minY = topRow != null ? topRow.getYPosition() : interactionRect.y;
+		
+		int nRows = interactionGraph.getRows().size();
+		Row bottomRow = interactionGraph.getRows().get(maxRow);
+		if (allNodes.containsAll(bottomRow.getNodes())) {
+			if (bottomRow.getIndex() == nRows-1)
+				bottomRow = null;
+			bottomRow = interactionGraph.getRows().get(maxRow +1);
+		}
+		int maxY = bottomRow != null ? bottomRow.getYPosition() : (interactionRect.y + interactionRect.height);
+		
+		int minX = leftColumn != null ? leftColumn.getXPosition() : interactionRect.x;
+		int maxX = rightColumn != null ? rightColumn.getXPosition() : (interactionRect.x + interactionRect.width);
+		return new Rectangle(minX,minY,maxX-minX,maxY-minY);
+	}
+	
 	public static Rectangle getEmptyArea(InteractionGraphImpl interactionGraph, List<Node> leftNodes, List<Node> topNodes, List<Node> rightNodes, List<Node> bottomNodes) {
 		View interactionView = interactionGraph.getInteractionView();
 		Rectangle rect =  ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), interactionView);
@@ -438,7 +548,7 @@ public class NodeUtilities {
 		return new Rectangle(left,top, Math.max(0,right-left), Math.max(0,bottom-top));
 	}
 	
-	public static Rectangle getArea(List<Node> nodes) {
+	public static Rectangle getArea(List<? extends Node> nodes) {
 		Rectangle r = null;
 		for (Node n : nodes) {
 			Rectangle b = n.getBounds();
@@ -668,6 +778,19 @@ public class NodeUtilities {
 		}
 		validArea.shrink(3, 3);
 		return validArea;
+	}
+	
+	public static List<Cluster> getIntersectingLifelineLines(InteractionGraph graph, Rectangle rect) {
+		List<Cluster> intersectingLifelines = new ArrayList<Cluster>();
+		for (Cluster lifelineCluster : graph.getLifelineClusters()) {
+			Rectangle lifelineLineRect = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(), lifelineCluster.getView()).getCopy();
+			lifelineLineRect.x = lifelineLineRect.getCenter().x - 1;
+			lifelineLineRect.width = 1;
+			if (rect.intersects(lifelineLineRect)) {
+				intersectingLifelines.add(lifelineCluster);
+			}
+		}
+		return intersectingLifelines;
 	}
 	
 	public static boolean isLifelineNode(Node node) {

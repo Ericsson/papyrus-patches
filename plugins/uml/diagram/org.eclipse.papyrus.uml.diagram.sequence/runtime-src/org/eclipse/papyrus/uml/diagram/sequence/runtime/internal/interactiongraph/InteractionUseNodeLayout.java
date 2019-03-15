@@ -16,12 +16,13 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
-import org.eclipse.uml2.uml.ExecutionSpecification;
 
 
 /**
@@ -34,13 +35,21 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 	public void layout(NodeImpl node) {
 		if (node instanceof FragmentCluster) {
 			Rectangle r = node.getBounds();
-			Rectangle childRect = NodeUtilities.getArea((List)((FragmentCluster)node).getClusters());
-			r.y = childRect.y;
-			r.height = 40;
-			r.x = Math.min(childRect.x, r.x);
-			int right = Math.max(childRect.getRight().x, r.getRight().x);
-			r.width = right - r.x;
-			node.setBounds(r);
+			List<Cluster> clusters = ((FragmentCluster)node).getClusters();
+			if (!clusters.isEmpty()) {				
+				Rectangle childRect = NodeUtilities.getArea(clusters);
+				r = childRect.getCopy();
+				r.height = 40;
+				List<Cluster> lifelines = clusters.stream().map(NodeUtilities::getLifelineNode).filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
+				if (!lifelines.isEmpty()) {
+					int leftSide = lifelines.stream().map(Node::getBounds).map(Rectangle::x).collect(Collectors.minBy(Integer::compare)).get();
+					int rightSide = lifelines.stream().map(Node::getBounds).map(Rectangle::right).collect(Collectors.maxBy(Integer::compare)).get();
+					r.x = Math.min(r.x, leftSide);
+					int right = Math.max(r.getRight().x, rightSide);
+					r.width = right - r.x;
+				}
+				node.setBounds(r);
+			}
 		} else if (node instanceof Cluster) {
 			Cluster cluster = (Cluster) node;
 			FragmentCluster fragCluster = cluster.getFragmentCluster();

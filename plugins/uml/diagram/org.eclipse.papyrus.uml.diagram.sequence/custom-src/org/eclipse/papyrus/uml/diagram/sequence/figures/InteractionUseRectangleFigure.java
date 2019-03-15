@@ -15,7 +15,12 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.figures;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.draw2d.AbstractLayout;
+import org.eclipse.draw2d.Figure;
+import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -101,6 +106,33 @@ public class InteractionUseRectangleFigure extends RoundedCompartmentFigure {
 
 		return centerLabel;
 	}
+	
+	/**
+	 * @see org.eclipse.papyrus.uml.diagram.common.figure.node.RoundedCompartmentFigure#paintFigure(org.eclipse.draw2d.Graphics)
+	 *
+	 * @param graphics
+	 */
+	@Override
+	public void paint(Graphics graphics) {
+		super.paint(graphics);
+		if (!noCoveredLifelinesFigures.isEmpty()) {
+			graphics.pushState();
+			graphics.clipRect(getClientArea());
+			for (IFigure noCovLifeline: noCoveredLifelinesFigures) {	
+				if (noCovLifeline.intersects(getBounds()))
+					noCovLifeline.paint(graphics);
+			}
+			graphics.popState();
+		}
+	}
 
+	public List<IFigure> getNonCoveredLifelinesFigures() {
+		return noCoveredLifelinesFigures;
+	}
 
+	public void setNonCoveredLifelinesFigures(List<IFigure> coveredLifelinesFigures) {
+		this.noCoveredLifelinesFigures = coveredLifelinesFigures;
+	}
+
+	private List<IFigure> noCoveredLifelinesFigures = new ArrayList<IFigure>();
 }

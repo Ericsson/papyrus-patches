@@ -67,9 +67,9 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		node.setParent(this);
 	}
 
-	public boolean removeNode(NodeImpl node) {
+	public boolean removeNode(Node node) {
 		boolean res = nodes.remove(node);
-		node.setParent(null);
+		((NodeImpl)node).setParent(null);
 		return res;
 	}
 	

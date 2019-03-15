@@ -16,6 +16,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.editpolicies;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
@@ -38,6 +39,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 
@@ -49,11 +51,16 @@ public class InteractionGraphSemanticEditPolicy extends DefaultSemanticEditPolic
 
 	public Command getCommand(Request request) {
 		if (RequestConstants.REQ_SEMANTIC_WRAPPER.equals(request.getType())) {
-			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(request);
-			if (graph != null) {
-				EditCommandRequestWrapper wrapper = (EditCommandRequestWrapper)request;
-				InteractionGraphRequestHelper.bound(wrapper.getEditCommandRequest(), graph);
+			EditCommandRequestWrapper wrapper = (EditCommandRequestWrapper)request;
+			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(wrapper);
+			if (graph == null) {
+				graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(wrapper, (GraphicalEditPart)getHost());
+				InteractionGraphRequestHelper.bound(wrapper, graph);				
 			}
+
+			if (graph != null) {
+				InteractionGraphRequestHelper.bound(wrapper.getEditCommandRequest(), graph);
+			}  
 		}
 		return super.getCommand(request);
 	}
@@ -103,6 +110,11 @@ public class InteractionGraphSemanticEditPolicy extends DefaultSemanticEditPolic
 			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
 			InteractionGraphCommand cmd = new InteractionGraphCommand(getEditingDomain(), "Delete Lifeline", graph, null);
 			cmd.deleteExecutionSpecification((ExecutionSpecification)obj);
+			return new ICommandProxy(cmd);			
+		} else if (obj instanceof InteractionUse) {
+			InteractionGraph graph = InteractionGraphRequestHelper.getInteractionGraph(req);
+			InteractionGraphCommand cmd = new InteractionGraphCommand(getEditingDomain(), "Delete Lifeline", graph, null);
+			cmd.deleteInteractionUse((InteractionUse)obj);
 			return new ICommandProxy(cmd);			
 		}
 		return null;
