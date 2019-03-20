@@ -82,7 +82,7 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 		pt = ViewUtilities.viewerToControl(interactionGraphNode.getInteractionGraph().getEditPartViewer(), pt.getCopy()); 
 		loc.setLocation(pt);
 		loc.setSnapToEnabled(true);
-
+		
 		INodeEditPart editPart = isSource ? (INodeEditPart)source.getEditPart() : (INodeEditPart)target.getEditPart();			
 		ConnectionAnchor anchor = isSource ? editPart.getSourceConnectionAnchor(loc) : editPart.getTargetConnectionAnchor(loc);
 		String terminal = editPart.mapConnectionAnchorToTerminal(anchor);

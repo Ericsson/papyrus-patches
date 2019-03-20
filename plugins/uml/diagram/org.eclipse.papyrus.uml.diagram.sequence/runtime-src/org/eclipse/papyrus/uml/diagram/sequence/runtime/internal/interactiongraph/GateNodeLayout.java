@@ -16,7 +16,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomGateEditPart;
 
 
 /**
@@ -40,8 +40,8 @@ public class GateNodeLayout implements InteractionNodeLayout {
 	@Override
 	public Rectangle getConstraints(NodeImpl node) {
 		Rectangle r = node.getBounds().getCopy();
-		r.translate(-GateEditPart.GATE_SIZE/2,-GateEditPart.GATE_SIZE/2);
-		r.setSize(GateEditPart.GATE_SIZE, GateEditPart.GATE_SIZE);
+		r.translate(-CustomGateEditPart.GATE_SIZE/2,-CustomGateEditPart.GATE_SIZE/2);
+		r.setSize(CustomGateEditPart.GATE_SIZE, CustomGateEditPart.GATE_SIZE);
 		return r;
 	}
 

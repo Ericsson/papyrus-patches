@@ -15,15 +15,20 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.BehaviorExecutionSpecification;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 
@@ -42,6 +47,10 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 	public void layout() {
 		interactionGraph.getLifelineClusters().stream().forEach(d -> layout((NodeImpl) d));		
 		interactionGraph.getFragmentClusters().stream().forEach(d -> layout((NodeImpl) d));
+		List<Node> gates = NodeUtilities.flatten(interactionGraph).stream().
+				map(FragmentCluster::getAllGates).flatMap(Collection::stream).
+			collect(Collectors.toList());
+		gates.stream().forEach(d -> layout((NodeImpl) d));
 	}
 	
 	@Override
@@ -100,6 +109,7 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 
 	private static Map<Class<? extends Element>, InteractionNodeLayout> initializeNodeLayouts() {
 		Map<Class<? extends Element>, InteractionNodeLayout> map = new HashMap<>();
+		map.put(Gate.class, new GateNodeLayout());
 		map.put(DestructionOccurrenceSpecification.class, new DestructionOcurrenceSpecificationNodeLayout());
 		map.put(ActionExecutionSpecification.class, new ExecutionSpecificationNodeLayout());
 		map.put(BehaviorExecutionSpecification.class, new ExecutionSpecificationNodeLayout());

@@ -58,8 +58,6 @@ public class GateEditPart extends RoundedBorderNamedElementEditPart {
 	 * @generated
 	 */
 	public static final String VISUAL_ID = "Gate_Shape";
-
-	public static final int GATE_SIZE = 12;
 	
 	/**
 	 * @generated
@@ -197,7 +195,7 @@ public class GateEditPart extends RoundedBorderNamedElementEditPart {
 	 * @generated
 	 */
 	protected NodeFigure createNodePlate() {
-		RoundedRectangleNodePlateFigure result = new RoundedRectangleNodePlateFigure(GATE_SIZE, GATE_SIZE);
+		RoundedRectangleNodePlateFigure result = new RoundedRectangleNodePlateFigure(16, 16);
 		return result;
 	}
 

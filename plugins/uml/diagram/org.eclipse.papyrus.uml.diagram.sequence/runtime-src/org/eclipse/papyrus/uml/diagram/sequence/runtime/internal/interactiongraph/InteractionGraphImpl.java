@@ -14,6 +14,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
@@ -42,22 +44,25 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 public class InteractionGraphImpl extends FragmentClusterImpl implements InteractionGraph {
-	public InteractionGraphImpl(Interaction interaction, Diagram diagram, GraphicalEditPart editPart) {
+	public InteractionGraphImpl(Interaction interaction, Diagram diagram, DiagramEditPart editPart) {
 		super(interaction);
-		super.setView(diagram);
-		super.setEditPart(editPart);
-
+		this.diagram = diagram; 
+		this.diagramEditPart = editPart;
 		viewer = editPart == null ? null : editPart.getViewer();
+		
+		setView(ViewUtilities.getViewForElement(diagram, interaction));		
 	}
 
 	@Override
@@ -75,21 +80,22 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	@Override
 	public Diagram getDiagram() {
-		return (Diagram) getView();
+		return diagram;
 	}
 	
+	@Override
+	public DiagramEditPart getDiagramEditPart() {
+		return diagramEditPart;
+	}
+
 	@Override
 	public EditPartViewer getEditPartViewer() {
 		return viewer;
 	}
 
 	@Override
-	public void setView(View vw) {
-	}
-
-	@Override
 	Rectangle extractBounds() {
-		return ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();
+		return super.extractBounds();
 	}
 
 	@Override
@@ -98,9 +104,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	public View getInteractionView() {
-		return ViewUtilities.getViewForElement(getView(), super.getElement());
+		return getView();
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<NodeImpl> getAllGraphNodes() {
+		List<NodeImpl> l = new ArrayList<>();
+		l .addAll((List)NodeUtilities.flatten(getLifelineClusters()));
+		// Gates
+		l .addAll((List)NodeUtilities.flatten(this).stream().map(FragmentCluster::getAllGates).
+				flatMap(Collection::stream).collect(Collectors.toList()));
+		return l;
+	}
+	
 	@Override
 	public List<Cluster> getLifelineClusters() {
 		return Collections.unmodifiableList(lifelineClusters);
@@ -133,6 +149,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 	public void addFormalGate(NodeImpl formalGate) {
 		super.addInnerGate(formalGate);
+	}
+
+	public void addFormalGate(NodeImpl formalGate, NodeImpl beforeNode) {
+		super.addInnerGate(formalGate,beforeNode);
 	}
 
 	@Override
@@ -254,9 +274,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int y = compRect.y + ViewUtilities.ROW_PADDING + (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
 		row.setYPosition(y);
 
-		List<NodeImpl> orderedNodes = getLifelineClusters().stream().flatMap(d -> NodeUtilities.flatten((ClusterImpl)d).stream()).
-				map(NodeImpl.class::cast).sorted(RowImpl.NODE_FRAGMENT_COMPARATOR).collect(Collectors.toList());
-		//NodeOrderResolver orderResolver = new NodeOrderResolver(this);
+		List<NodeImpl> allNodes = getAllGraphNodes();
+		List<NodeImpl> orderedNodes = allNodes.stream().sorted(RowImpl.NODE_FRAGMENT_COMPARATOR).collect(Collectors.toList());
 		
 		RowImpl prevRow = null;
 		NodeImpl prevNode = null;
@@ -270,8 +289,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				} else {
 					isNewRow = !NodeUtilities.areNodesHorizontallyConnected(prevNode, node) ||
 							   !isNodeConnectedTo(node, prevRow.getNodes());
-					if (prevNode.getConnectedNode() == node &&
-							NodeUtilities.getLifelineNode(prevNode) == NodeUtilities.getLifelineNode(node)) {
+					Cluster lfPrev = NodeUtilities.getLifelineNode(prevNode);
+					Cluster lf = NodeUtilities.getLifelineNode(node);
+					if (prevNode.getConnectedNode() == node && lfPrev == lf && lf != null) {
 						// Self Message
 						isNewRow = true;
 					}
@@ -327,9 +347,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			}
 
 			int colIndex = opposite == null ? -1 : columns.indexOf(opposite.getColumn());
-			View gateView = formalGate.getView();
-			if (gateView != null && ViewUtilities.hasLayoutConstraints(formalGate.getView())) {
-				Rectangle r = ViewUtilities.getBounds(viewer, gateView);
+			Rectangle r = formalGate.getBounds();
+			if (r != null) {
 				if (Math.abs(r.getCenter().x - interactionBounds.getLeft().x) <= Math.abs(r.getCenter().x - interactionBounds.getRight().x)) {
 					// left side
 					colIndex = 0;
@@ -461,10 +480,21 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 		lastX = Math.max(lastX,300);
 		
-		Rectangle r = ViewUtilities.getBounds(getViewer(), ViewUtilities.getViewWithType(getView(), InteractionEditPart.VISUAL_ID)).getCopy();		
+		Rectangle r = ViewUtilities.getBounds(getViewer(), getView()).getCopy();		
 		r.height = lastY - r.y + 60;
 		r.width = lastX - r.x + 60;		
 		setBounds(r);
+		
+		if (rightGatesColumn != null) {
+			rightGatesColumn.setXPosition(r.right());
+			rightGatesColumn.getNodes().stream().map(NodeImpl.class::cast).forEach(layoutManager::layout);
+		}
+		
+		if (leftGatesColumn != null) {
+			leftGatesColumn.setXPosition(r.x());
+			leftGatesColumn.getNodes().stream().map(NodeImpl.class::cast).forEach(layoutManager::layout);
+		}
+
 	}
 
 	private boolean isNodeConnectedTo(NodeImpl node, List<Node> row) {
@@ -575,8 +605,71 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return node;
 	}
 
+	public NodeImpl getGate(Gate gate) {
+		return (NodeImpl)NodeUtilities.flatten(this).stream().filter(d -> d.getElement() == gate).findFirst().orElse(null);
+	}
+	
 	@Override
-	public Link connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv) {
+	public NodeImpl getGate(Interaction interaction, Gate gate) {
+		if (interaction != getInteraction())
+			return null;
+		return (NodeImpl)this.getFormalGates().stream().filter(d -> d.getElement() == gate).findFirst().orElse(null);
+	}
+
+	@Override
+	public NodeImpl getGate(InteractionUse intUse, Gate gate) {
+		FragmentClusterImpl intUseCluster = getInteractionUse(intUse);
+		if (intUseCluster == null)
+			return null;
+		return (NodeImpl)intUseCluster.getOuterGates().stream().filter(d -> d.getElement() == gate).findFirst().orElse(null);
+	}
+
+	@Override
+	public NodeImpl addGate(Interaction interaction, Gate gate, Node insertBefore) {
+		if (interaction != getInteraction())
+			return null;
+		
+		NodeImpl gateNode = getGate(interaction, gate);
+		if (gateNode != null) {
+			return gateNode;
+		}
+		
+		if (getNodeFor(gate) != null) {
+			return null;
+		}
+
+		NodeImpl node = new NodeImpl(gate);
+		addFormalGate(node, (NodeImpl)insertBefore);
+		builder.nodeCache.put(gate, node);
+		layoutGrid();
+		return node;
+	}
+
+	@Override
+	public NodeImpl addGate(InteractionUse intUse, Gate gate, Node insertBefore) {
+		FragmentClusterImpl intUseCluster = getInteractionUse(intUse);
+		if (intUseCluster == null)
+			return null;
+		
+		NodeImpl gateNode = getGate(intUse, gate);
+		if (gateNode != null) {
+			return gateNode;
+		}
+		
+		if (getNodeFor(gate) != null) {
+			return null;
+		}
+
+		
+		NodeImpl node = new NodeImpl(gate);
+		intUseCluster.addOuterGate(node, (NodeImpl)insertBefore);
+		builder.nodeCache.put(gate, node);
+		layoutGrid();
+		return node;
+	}
+
+	@Override
+	public Link connectMessageEnds(MessageEnd send, MessageEnd recv) {
 		NodeImpl sendNode = builder.getCacheNode(send);
 		NodeImpl recvNode = builder.getCacheNode(recv);
 
@@ -709,6 +802,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return execNode;
 	}
 
+	public FragmentClusterImpl getInteractionUse(InteractionUse interactionUse) {
+		return (FragmentClusterImpl)NodeUtilities.flatten(this).stream().filter(d->d.getElement() == interactionUse).findFirst().orElse(null);
+	}
 
 	public FragmentClusterImpl addInteractionUse(InteractionUse interactionUse, List<Lifeline> lifelines, InteractionFragment beforeFragment) {
 		List<Node> orderedNodes = getOrderedNodes();
@@ -832,7 +928,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}		
 		
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
-				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getLifelineNode(d))));
+				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getTopLevelCluster(d))));
 
 		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
 				collect(Collectors.toList());
@@ -915,8 +1011,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		addNodeBlock(nodesByLifelines, yPos, 0);
 	}
 	
-	public void addNodeBlock(Map<Cluster,List<Node>> nodesByLifelines, int yPos, int extraNudge) {
-		List<Node> nodes = nodesByLifelines.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
+	// TODO: @etxacam generalize lifelineXXXX variables to parentClusterXXXX => Apply to all blocks functions
+	public void addNodeBlock(Map<Cluster,List<Node>> nodesByTopClusters, int yPos, int extraNudge) {
+		List<Node> nodes = nodesByTopClusters.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
 		//Map<Cluster,List<Node>> allNodes = NodeUtilities.flattenKeepClusters(nodes);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
 		List<Node> firstNodes = nodes.stream().filter(d->d.getBounds() != null && d.getBounds().y == totalArea.y).collect(Collectors.toList());		
@@ -949,29 +1046,48 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		
 		disableLayout();
 		try {
-			for (Map.Entry<Cluster,List<Node>> lifelineEntry : nodesByLifelines.entrySet()) {
-				Cluster lifelineCluster = lifelineEntry.getKey();
-				List<Node> ns = lifelineEntry.getValue();
-				List<Node> ans = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(ns)); 
-				Rectangle lifelineNodesArea = NodeUtilities.getArea(ans);
-				Node newPrevNode = lifelineCluster.getAllNodes().stream().filter(d->(d.getBounds().y < yPos)).
-						filter(d->!ans.contains(d)).sorted(Collections.reverseOrder(RowImpl.NODE_VPOSITION_COMPARATOR)).findFirst().orElse(null);
-				Cluster prevParent = newPrevNode != null ? newPrevNode.getParent() : null;
-				if (prevParent != null && prevParent != lifelineCluster && prevParent.getNodes().indexOf(newPrevNode) == prevParent.getNodes().size() -1)
-					newPrevNode = prevParent;
-				
-				Node insertBefore = lifelineCluster.getAllNodes().stream().filter(d->!ans.contains(d) && d.getBounds().y >= yPos).
-						findFirst().orElse(null);
-				Cluster insertBeforeParent = insertBefore != null ? insertBefore.getParent() : null;
-				if (insertBeforeParent != null && insertBeforeParent != lifelineCluster && insertBeforeParent.getNodes().indexOf(insertBefore) == 0)
-					insertBefore = insertBeforeParent;
-	
-				Cluster target = lifelineCluster;
-				if (insertBefore != null) {
-					target = insertBefore.getParent();
+			for (Map.Entry<Cluster,List<Node>> entry : nodesByTopClusters.entrySet()) {
+				Cluster toCluster = entry.getKey();
+				Rectangle nodesArea;
+				if (toCluster instanceof FragmentCluster) {
+					FragmentClusterImpl fc = (FragmentClusterImpl)toCluster;
+					// Handle Gates and floating nodes....
+					List<Node> allGates = fc.getAllGates();
+					List<Node> ns = entry.getValue();					
+					nodesArea = NodeUtilities.getArea(ns);
+					Node insertBefore = allGates.stream().filter(d->!ns.contains(d) && d.getBounds().y >= yPos).
+							findFirst().orElse(null);
+		
+					Cluster target = toCluster;
+					if (insertBefore != null) {
+						target = insertBefore.getParent();
+					}
+		
+					NodeUtilities.insertNodes(this, ns, target, insertBefore, yPos + (nodesArea.y - totalArea.y));					
+					
+				} else {
+					List<Node> ns = entry.getValue();
+					List<Node> ans = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(ns)); 
+					nodesArea = NodeUtilities.getArea(ns);
+					Node newPrevNode = toCluster.getAllNodes().stream().filter(d->(d.getBounds().y < yPos)).
+							filter(d->!ans.contains(d)).sorted(Collections.reverseOrder(RowImpl.NODE_VPOSITION_COMPARATOR)).findFirst().orElse(null);
+					Cluster prevParent = newPrevNode != null ? newPrevNode.getParent() : null;
+					if (prevParent != null && prevParent != toCluster && prevParent.getNodes().indexOf(newPrevNode) == prevParent.getNodes().size() -1)
+						newPrevNode = prevParent;
+					
+					Node insertBefore = toCluster.getAllNodes().stream().filter(d->!ans.contains(d) && d.getBounds().y >= yPos).
+							findFirst().orElse(null);
+					Cluster insertBeforeParent = insertBefore != null ? insertBefore.getParent() : null;
+					if (insertBeforeParent != null && insertBeforeParent != toCluster && insertBeforeParent.getNodes().indexOf(insertBefore) == 0)
+						insertBefore = insertBeforeParent;
+		
+					Cluster target = toCluster;
+					if (insertBefore != null) {
+						target = insertBefore.getParent();
+					}
+		
+					NodeUtilities.insertNodes(this, ns, target, insertBefore, yPos + (nodesArea.y - totalArea.y));					
 				}
-	
-				NodeUtilities.insertNodes(this, ns, target, insertBefore, yPos + (lifelineNodesArea.y - totalArea.y));					
 			}
 		} finally {
 			enableLayout();
@@ -1020,7 +1136,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			}			
 		}
 	}
-	
+
+	private Diagram diagram;
+	private DiagramEditPart diagramEditPart;
 	private int disabledLayout = 0; 
 	private InteractionGraphBuilder builder;
 	private EditPartViewer viewer;

@@ -51,35 +51,21 @@ public class GateLocator extends AdvancedBorderItemLocator {
 		Rectangle bounds = getParentBorder();
 		// Enable to locate the Gate on top/bottom.
 		int alignment = getAlignment(proposedLocation);
-		if (PositionConstants.LEFT == alignment) {
-			validLocation.x = bounds.x - proposedLocation.width / 2;
-			if (validLocation.y < (bounds.y - proposedLocation.height / 2)) {
-				validLocation.y = (bounds.y - proposedLocation.height / 2);
-			} else if (validLocation.y > (bounds.bottom() - proposedLocation.height / 2)) {
-				validLocation.y = (bounds.bottom() - proposedLocation.height / 2);
-			}
-		} else if (PositionConstants.RIGHT == alignment) {
+		if (PositionConstants.RIGHT == alignment) {
 			validLocation.x = bounds.right() - proposedLocation.width / 2;
 			if (validLocation.y < (bounds.y - proposedLocation.height / 2)) {
 				validLocation.y = (bounds.y - proposedLocation.height / 2);
 			} else if (validLocation.y > (bounds.bottom() - proposedLocation.height / 2)) {
 				validLocation.y = (bounds.bottom() - proposedLocation.height / 2);
 			}
-		} else if (PositionConstants.TOP == alignment) {
-			validLocation.y = (bounds.y - proposedLocation.height / 2);
-			if (validLocation.x < (bounds.x - proposedLocation.width / 2)) {
-				validLocation.x = (bounds.x - proposedLocation.width / 2);
-			} else if (validLocation.x > (bounds.right() - proposedLocation.width / 2)) {
-				validLocation.x = (bounds.right() - proposedLocation.width / 2);
+		} else /*if (PositionConstants.LEFT == alignment)*/ {
+			validLocation.x = bounds.x - proposedLocation.width / 2;
+			if (validLocation.y < (bounds.y - proposedLocation.height / 2)) {
+				validLocation.y = (bounds.y - proposedLocation.height / 2);
+			} else if (validLocation.y > (bounds.bottom() - proposedLocation.height / 2)) {
+				validLocation.y = (bounds.bottom() - proposedLocation.height / 2);
 			}
-		} else {
-			validLocation.y = (bounds.bottom() - proposedLocation.height / 2);
-			if (validLocation.x < (bounds.x - proposedLocation.width / 2)) {
-				validLocation.x = (bounds.x - proposedLocation.width / 2);
-			} else if (validLocation.x > (bounds.right() - proposedLocation.width / 2)) {
-				validLocation.x = (bounds.right() - proposedLocation.width / 2);
-			}
-		}
+		}  
 		return validLocation;
 	}
 
@@ -88,12 +74,6 @@ public class GateLocator extends AdvancedBorderItemLocator {
 	}
 
 	public int getAlignment(Rectangle newConstraint) {
-		if (alignment != null) {
-			Rectangle modelConstraint = getModelConstraint();
-			if (modelConstraint != null && modelConstraint.equals(newConstraint)) {
-				return alignment.intValue();
-			}
-		}
 		Rectangle parentBounds = getParentBorder();
 		if (parentBounds.isEmpty()) {
 			return PositionConstants.NONE;
@@ -102,24 +82,13 @@ public class GateLocator extends AdvancedBorderItemLocator {
 			Point center = newConstraint.getCenter();
 			int leftOffset = Math.abs(center.x - parentBounds.x);
 			int rightOffset = Math.abs(center.x - parentBounds.right());
-			int topOffset = Math.abs(center.y - parentBounds.y);
-			int bottomOffset = Math.abs(center.y - parentBounds.bottom());
-			int minOffset = Math.min(Math.min(leftOffset, rightOffset), Math.min(topOffset, bottomOffset));
-			if (minOffset == leftOffset) {
+			if (leftOffset < rightOffset) {
 				alignment = PositionConstants.LEFT;
-			} else if (minOffset == rightOffset) {
-				alignment = PositionConstants.RIGHT;
-			} else if (minOffset == topOffset) {
-				alignment = PositionConstants.TOP;
 			} else {
-				alignment = PositionConstants.BOTTOM;
-			}
+				alignment = PositionConstants.RIGHT;
+			} 
 		} else {
-			if (newConstraint.x > parentBounds.x && newConstraint.bottom() < parentBounds.y && newConstraint.right() < parentBounds.right()) {
-				alignment = PositionConstants.TOP;
-			} else if (newConstraint.x > parentBounds.x && newConstraint.y > parentBounds.bottom() && newConstraint.right() < parentBounds.right()) {
-				alignment = PositionConstants.BOTTOM;
-			} else if (newConstraint.right() < parentBounds.x) {
+			if (newConstraint.right() < parentBounds.x) {
 				alignment = PositionConstants.LEFT;
 			} else {
 				alignment = PositionConstants.RIGHT;
@@ -142,12 +111,4 @@ public class GateLocator extends AdvancedBorderItemLocator {
 		borderItem.setBounds(validLocation);
 	}
 
-	/**
-	 * @return
-	 */
-	protected Rectangle getModelConstraint() {
-		// This is an old method that assumes the gateEditPart is non-null; but this edit part no longer exists
-		// That method shouldn't be called, but it is still referenced from getAlignment without any check
-		throw new IllegalStateException();
-	}
 }

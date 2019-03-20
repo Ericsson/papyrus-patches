@@ -53,6 +53,15 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 		cluster.setParent(this);
 	}
 	
+	public void addFragmentCluster(FragmentClusterImpl cluster, FragmentClusterImpl before) {
+		int index = before != null ? fragmentClusters.indexOf(before) : -1;
+		if (index == -1)
+			fragmentClusters.add(cluster);
+		else
+			fragmentClusters.add(index, cluster);
+		cluster.setParent(this);
+	}
+
 	public void removeFragmentCluster(FragmentCluster cluster) {
 		fragmentClusters.remove(cluster);
 		((FragmentClusterImpl)cluster).setParent(null);
@@ -74,14 +83,38 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 		return Collections.unmodifiableList(outerGates);
 	}
 
-	void addInnerGate(NodeImpl node) {
-		innerGates.add(node);
-		node.setParent(this);
+	public void addInnerGate(NodeImpl node) {
+		addInnerGate(node,null);
 	}
 	
-	void addOuterGate(NodeImpl node) {
-		outerGates.add(node);
+	public void addInnerGate(NodeImpl node, NodeImpl beforeNode) {
+		int index = beforeNode == null ? -1 : innerGates.indexOf(beforeNode);
+		if (index != -1)
+			innerGates.add(index,node);
+		else
+			innerGates.add(node);
 		node.setParent(this);
+	}
+
+	public boolean removeInnerGate(NodeImpl node) {
+		return innerGates.remove(node);
+	}
+	
+	public void addOuterGate(NodeImpl node) {
+		addOuterGate(node,null);
+	}
+
+	public void addOuterGate(NodeImpl node, NodeImpl beforeNode) {
+		int index = beforeNode == null ? -1 : outerGates.indexOf(beforeNode);
+		if (index != -1)
+			outerGates.add(index,node);
+		else
+			outerGates.add(node);
+		node.setParent(this);
+	}
+
+	public boolean removeOuterGate(NodeImpl node) {
+		return outerGates.remove(node);
 	}
 
 	@Override

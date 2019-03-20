@@ -16,20 +16,20 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 import java.util.List;
 
 import org.eclipse.gef.EditPartViewer;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
-import org.eclipse.uml2.uml.OccurrenceSpecification;
 
 /**
  * The {@link InteractionGraph} encapsulates the dependencies and composition of the
@@ -48,6 +48,7 @@ public interface InteractionGraph {
 	 * @return a gmf notation diagram
 	 */
 	public Diagram getDiagram();
+	public DiagramEditPart getDiagramEditPart();
 
 	public EditPartViewer getEditPartViewer();
 
@@ -200,14 +201,19 @@ public interface InteractionGraph {
 	public Node getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos, Node insertBefore);
-	public Link connectMessageOcurrenceSpecification(MessageOccurrenceSpecification send, MessageOccurrenceSpecification recv);
+	public Node getGate(Interaction interaction, Gate gate);
+	public Node addGate(Interaction interaction, Gate gate, Node insertBefore);
+	public Node getGate(InteractionUse interaction, Gate gate);
+	public Node addGate(InteractionUse interaction, Gate gate, Node insertBefore);
+	
+	public Link connectMessageEnds(MessageEnd send, MessageEnd recv);
 
 	public Cluster getExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
 	public Cluster addExecutionSpecification(Lifeline lifeline, ExecutionSpecification exec);
 	
+	public FragmentCluster getInteractionUse(InteractionUse interactionUse);
 	public FragmentCluster addInteractionUse(InteractionUse interactionUse, List<Lifeline> lifelines, InteractionFragment beforeFragment);
 	public FragmentCluster addInteractionUseToLifeline(InteractionUse interactionUse, Lifeline lifeline);
-	public FragmentCluster removeInteractionUseFromLifeline(InteractionUse interactionUse, Lifeline lifeline);
-	
+	public FragmentCluster removeInteractionUseFromLifeline(InteractionUse interactionUse, Lifeline lifeline);	
 
 }

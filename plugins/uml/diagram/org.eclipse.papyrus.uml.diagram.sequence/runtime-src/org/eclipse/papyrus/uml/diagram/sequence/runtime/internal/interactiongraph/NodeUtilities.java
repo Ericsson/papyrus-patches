@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IBorderItemEditPart;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
@@ -39,6 +40,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -102,6 +104,14 @@ public class NodeUtilities {
 		return r.y;
 	}
 	
+	public static Cluster getTopLevelCluster(Node impl) {
+		while (impl.getParent() != null) {
+			impl = impl.getParent();
+		}
+		
+		return (Cluster)impl;
+	}
+
 	public static Cluster getLifelineNode(Node impl) {
 		while (impl.getParent() != null) {
 			impl = impl.getParent();
@@ -154,7 +164,11 @@ public class NodeUtilities {
 	
 	static Stream<FragmentClusterImpl> flattenImpl(FragmentClusterImpl cluster) {
 		if (!cluster.getOwnedFragmentClusters().isEmpty()) {
-			return cluster.getOwnedFragmentClusters().stream().map(FragmentClusterImpl.class::cast).flatMap(NodeUtilities::flattenImpl);
+			List<FragmentClusterImpl> l = new ArrayList<>();
+			l.add(cluster);
+			l.addAll(cluster.getOwnedFragmentClusters().stream().map(FragmentClusterImpl.class::cast).
+					flatMap(NodeUtilities::flattenImpl).collect(Collectors.toList()));
+			return l.stream();
 		} else {
 			return Collections.singleton(cluster).stream();
 		}
@@ -278,7 +292,9 @@ public class NodeUtilities {
 	}
 	
 	public static boolean isSelfLink(Link lnk) {
-		return NodeUtilities.getLifelineNode(lnk.getSource()) == NodeUtilities.getLifelineNode(lnk.getTarget());		
+		Cluster lf1 = NodeUtilities.getLifelineNode(lnk.getSource());
+		Cluster lf2 = NodeUtilities.getLifelineNode(lnk.getTarget());
+		return  lf1 == lf2 && lf1 != null;		
 	}
 	
 	public static Link getStartLink(Link finishLink) {
@@ -290,7 +306,8 @@ public class NodeUtilities {
 	}
 	
 	public static boolean isStartNode(Node node) {
-		return getStartNode(node.getParent()) == node && NodeUtilities.getLifelineNode(node) != node.getParent();
+		Cluster lf = NodeUtilities.getLifelineNode(node);
+		return getStartNode(node.getParent()) == node &&  lf != node.getParent() && lf != null;
 	}
 	
 	public static Node getStartNode(Cluster cluster) {
@@ -317,7 +334,8 @@ public class NodeUtilities {
 	}
 
 	public static boolean isFinishNode(Node node) {
-		return getFinishNode(node.getParent()) == node && NodeUtilities.getLifelineNode(node) != node.getParent();
+		Cluster lifelineNode = NodeUtilities.getLifelineNode(node);
+		return getFinishNode(node.getParent()) == node && lifelineNode != node.getParent() & lifelineNode != null;
 	}
 	
 	public static Node getFinishNode(Cluster cluster) {
@@ -361,7 +379,29 @@ public class NodeUtilities {
 			}
 		}
 	}
-	
+
+	public static void addNode(InteractionGraph  interactionGraph, Cluster parent, Node child, Node beforeNode) {
+		if (parent instanceof FragmentCluster) {
+			FragmentClusterImpl fc = (FragmentClusterImpl)parent;
+			if (child instanceof FragmentCluster) {
+				fc.addFragmentCluster((FragmentClusterImpl)child, (FragmentClusterImpl)beforeNode);
+			} else if (child.getElement() instanceof Gate) {
+				Gate gate = (Gate)child.getElement();
+				if (fc.getFragmentCluster() != null || fc == interactionGraph) {
+					fc.addInnerGate((NodeImpl)child, (NodeImpl)beforeNode);
+				} else {
+					fc.addOuterGate((NodeImpl)child, (NodeImpl)beforeNode);
+				}
+			} else if (fc == interactionGraph && child.getElement() instanceof Lifeline) {
+				if (interactionGraph.getLifelineClusters().contains(child)) {
+					((InteractionGraphImpl)interactionGraph).addLifelineCluster((ClusterImpl)child, (ClusterImpl)beforeNode);					
+				}
+			}
+		} else if (parent != null) {
+			((ClusterImpl)parent).addNode((NodeImpl)child, beforeNode);
+		}		
+	}
+
 	public static void removeNodes(InteractionGraph interactionGraph, List<? extends Node> nodes) {
 		((InteractionGraphImpl)interactionGraph).disableLayout();
 		nodes.forEach(d -> removeNode(interactionGraph,d));
@@ -370,12 +410,22 @@ public class NodeUtilities {
 	}
 	
 	public static void removeNode(InteractionGraph  interactionGraph, Node n) {
-		if (n.getParent() != null)
+		if (n.getParent() instanceof FragmentCluster) {
+			FragmentClusterImpl fc = (FragmentClusterImpl)n.getParent();
+			if (fc.getOwnedFragmentClusters().contains(n)) {
+				fc.removeFragmentCluster((FragmentCluster)n);
+			} else if (fc.getInnerGates().contains(n)) {
+				fc.removeInnerGate((NodeImpl)n);
+			} else if (fc.getOuterGates().contains(n)) {
+				fc.removeOuterGate((NodeImpl)n);
+			}
+		} else if (n.getParent() != null) {
 			((ClusterImpl)n.getParent()).removeNode((NodeImpl)n);
-		else if (interactionGraph.getLifelineClusters().contains(n))
-			((InteractionGraphImpl)interactionGraph).removeLifelineCluster((Cluster)n);
-		else if (interactionGraph.getFragmentClusters().contains(n))
-			((InteractionGraphImpl)interactionGraph).removeFragmentCluster((FragmentCluster)n);			
+		} else {
+			if (interactionGraph.getLifelineClusters().contains(n)) {
+				((InteractionGraphImpl)interactionGraph).removeLifelineCluster((Cluster)n);					
+			}			
+		}
 	}
 	
 	public static void removeMessageLinks(InteractionGraph interactionGraph, List<Link> links) {
@@ -394,7 +444,7 @@ public class NodeUtilities {
 		int orgPosY = area.y;
 		for (Node n : nodes) {			
 			if (n != insertBefore) {
-				((ClusterImpl)targetCluster).addNode((NodeImpl)n, insertBefore);
+				addNode(interactionGraph, targetCluster, n, insertBefore);
 			}
 			if (n instanceof Cluster) {
 				// Update position in the children 
@@ -765,8 +815,15 @@ public class NodeUtilities {
 			vLimitNodes.removeAll(execSpecs);
 			for (Node n : lifelines) {
 				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
-				if (!createLifelines.contains(n))
-				minY = Math.max(minY, clientArea.y);
+				Rectangle headArea = n.getBounds().getCopy();
+				headArea.height = clientArea.y - headArea.y;
+				if (!createLifelines.contains(n)) {
+					Node coveredNode = nodesToNudge.stream().filter(d->NodeUtilities.getLifelineNode(d) == n).findFirst().orElse(null);
+					if (coveredNode != null)
+						minY = Math.max(minY, clientArea.y);
+					else
+						minY = Math.max(minY, headArea.getCenter().y);
+				}
 			}
 		}
 				
@@ -776,7 +833,7 @@ public class NodeUtilities {
 		if (vLimitNodes != null) {
 			validArea.y = Math.max(minY, validArea.y);
 		}
-		validArea.shrink(3, 3);
+		validArea.shrink(horizontal ? 3 : -3, vertical ? 3 : -3);
 		return validArea;
 	}
 	
@@ -793,8 +850,17 @@ public class NodeUtilities {
 		return intersectingLifelines;
 	}
 	
+	public static boolean isBorderNode(Node node) {
+		if (node.getEditPart() != null) {
+			return node.getEditPart() instanceof IBorderItemEditPart;
+		} else {
+			Element el = node.getElement();
+			return el instanceof Gate;
+		}
+	}
+	
 	public static boolean isLifelineNode(Node node) {
-		return getLifelineNode(node) == node;		
+		return getLifelineNode(node) == node && node != null;		
 	}	
 
 	public static boolean isCreateOcurrenceSpecification(Node node) {
@@ -807,6 +873,9 @@ public class NodeUtilities {
 
 	public static boolean isNodeLifelineStartByCreateMessage(Node node) {
 		Cluster lifeline = getLifelineNode(node);
+		if (lifeline == null)
+			return false; 
+
 		List<Node> nodes = lifeline.getNodes();
 		if (nodes.isEmpty())
 			return false;
@@ -820,6 +889,9 @@ public class NodeUtilities {
 
 	public static boolean isNodeLifelineEndsWithDestroyOcurrenceSpecification(Node node) {
 		Cluster lifeline = getLifelineNode(node);
+		if (lifeline == null)
+			return false; 
+		
 		List<Node> nodes = lifeline.getNodes();
 		if (nodes.isEmpty())
 			return false;

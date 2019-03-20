@@ -83,6 +83,9 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 		InteractionGraphImpl graph = (InteractionGraphImpl)InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
 		if (graph == null)
 			return null;
+		if (request.getEditParts() == null || request.getEditParts().isEmpty())
+			return null;
+		
 		GraphicalEditPart ep = (GraphicalEditPart)request.getEditParts().get(0);
 		View view = (View)ep.getModel();
 		ExecutionSpecification exec = (ExecutionSpecification)view.getElement();

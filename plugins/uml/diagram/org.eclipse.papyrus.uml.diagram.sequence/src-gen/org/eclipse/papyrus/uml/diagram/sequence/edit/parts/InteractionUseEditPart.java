@@ -14,18 +14,11 @@
  */
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
-import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.transaction.TransactionalEditingDomain;
-import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
-import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.editpolicies.LayoutEditPolicy;
@@ -38,28 +31,19 @@ import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.ConstrainedToolbarLayout;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
-import org.eclipse.gmf.runtime.notation.Bounds;
-import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultCreationEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultSemanticEditPolicy;
-import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusResizableShapeEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.IPapyrusNodeFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.RoundedRectangleNodePlateFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.SelectableBorderedNodeFigure;
-import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.BorderItemResizableEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.locator.PortPositionLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.OpenDiagramEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.uml2.uml.Interaction;
-import org.eclipse.uml2.uml.InteractionUse;
-import org.eclipse.uml2.uml.Lifeline;
 
 /**
  * @generated
@@ -107,17 +91,6 @@ public class InteractionUseEditPart extends InteractionFragmentEditPart {
 		installEditPolicy(EditPolicyRoles.OPEN_ROLE, new OpenDiagramEditPolicy());
 		// XXX need an SCR to runtime to have another abstract superclass that would let children add reasonable editpolicies
 		// removeEditPolicy(org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles.CONNECTION_HANDLES_ROLE);
-		
-		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy() {
-			@Override
-			protected void createResizeHandle(List handles, int direction) {
-				if (direction != PositionConstants.EAST &&  direction != PositionConstants.WEST)
-					return;
-				super.createResizeHandle(handles, direction);
-			}			
-		};
-		resizableEditPolicy.setResizeDirections(PositionConstants.EAST |PositionConstants.WEST);
-		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);
 	}
 
 	/**
@@ -346,60 +319,4 @@ public class InteractionUseEditPart extends InteractionFragmentEditPart {
 		return getChildBySemanticHint(UMLVisualIDRegistry.getType(InteractionUseNameEditPart.VISUAL_ID));
 	}
 
-	@Override
-	public DragTracker getDragTracker(Request req) {
-		return new PapyrusDragEditPartsTrackerEx(this, true, false, false) {
-			@Override
-			protected void setCloneActive(boolean cloneActive) {
-				super.setCloneActive(false); // Disable cloning
-			}			
-		};
-	}
-
-	/**
-	 * @see org.eclipse.gef.editparts.AbstractGraphicalEditPart#registerVisuals()
-	 *
-	 */
-	@Override
-	protected void refreshVisuals() {
-		super.refreshVisuals();
-		refreshCoveredLifelines();
-	}
-
-	protected void refreshCoveredLifelines() {
-		InteractionUse intUse = (InteractionUse)resolveSemanticElement();
-		Interaction interaction = intUse.getEnclosingInteraction();
-		List<Lifeline> allLifelines = interaction.getLifelines();
-		List<Lifeline> coveredLifelines = intUse.getCovereds();
-		List<IFigure> figures = new ArrayList<IFigure>();
-		Rectangle newBounds = null;
-		for (Lifeline lf : allLifelines) {
-			View vw = ViewUtilities.getViewForElement(getDiagramView(),lf);
-			if (coveredLifelines.contains(lf)) {
-				Rectangle r = ViewUtilities.absoluteLayoutConstraint(getViewer(), vw);
-				if (newBounds == null)
-					newBounds = r.getCopy();
-				else
-					newBounds.union(r);
-				continue;
-			}
-			GraphicalEditPart ep = (GraphicalEditPart)getViewer().getEditPartRegistry().get(vw);
-			figures.add(ep.getFigure());
-		}
-
-		if (newBounds != null) {
-			Rectangle intUseRect = ViewUtilities.absoluteLayoutConstraint(getViewer(),(View)getModel());
-			if ((intUseRect.x != newBounds.x || intUseRect.width != newBounds.width) && newBounds.width > 0) {
-				intUseRect.x = newBounds.x;
-				intUseRect.width = newBounds.width; 
-				intUseRect = ViewUtilities.toRelativeForLayoutConstraints(getViewer(), (View)((View)getModel()).eContainer(), intUseRect);
-				((GraphicalEditPart) getParent()).setLayoutConstraint(
-						this,
-						getFigure(),
-						intUseRect);
-			}
-		}
-		if (primaryShape instanceof InteractionUseRectangleFigure)
-			((InteractionUseRectangleFigure)primaryShape).setNonCoveredLifelinesFigures(figures);
-	}
 }

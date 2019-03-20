@@ -37,7 +37,7 @@ public class DestructionEventFigure extends DefaultSizeNodeFigure {
 	 * Constructor <!-- begin-user-doc --> <!-- end-user-doc -->
 	 */
 	public DestructionEventFigure() {
-		super(40, 40);
+		super(20, 20);
 	}
 
 	/**

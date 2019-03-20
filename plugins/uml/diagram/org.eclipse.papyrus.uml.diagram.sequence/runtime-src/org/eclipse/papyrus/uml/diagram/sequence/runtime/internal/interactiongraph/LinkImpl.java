@@ -25,6 +25,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.NamedElement;
 
 /**
@@ -102,6 +103,10 @@ public class LinkImpl extends GraphItemImpl implements Link {
 		if (src.getView() != null)
 			return src;
 		
+		if (src.getElement() instanceof Gate) {
+			return src;
+		}
+
 		return src.getParent();
 	}
 	
@@ -114,6 +119,10 @@ public class LinkImpl extends GraphItemImpl implements Link {
 			return trg;
 		
 		if (trg.getElement() instanceof DestructionOccurrenceSpecification) {
+			return trg;
+		}
+		
+		if (trg.getElement() instanceof Gate) {
 			return trg;
 		}
 		

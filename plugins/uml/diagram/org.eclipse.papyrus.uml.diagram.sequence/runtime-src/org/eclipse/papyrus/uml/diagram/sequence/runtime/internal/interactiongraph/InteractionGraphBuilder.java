@@ -24,7 +24,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPartViewer;
-import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
@@ -57,9 +57,10 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	Map<EObject, GraphItem> nodeCache = new HashMap<>(); // TODO: -> Move to the GraphImpl
 
 	InteractionGraphBuilder(Interaction interaction, Diagram diagram, EditPartViewer viewer) {
-		GraphicalEditPart editPart = viewer == null ? null : (GraphicalEditPart) viewer.getEditPartRegistry().get(diagram);
+		DiagramEditPart editPart = viewer == null ? null : (DiagramEditPart) viewer.getEditPartRegistry().get(diagram);
 		graph = new InteractionGraphImpl(interaction, diagram, editPart);
 		graph.setBuilder(this);
+		cache(graph.getInteraction(), graph);
 		this.viewer = viewer;
 	}
 
@@ -93,7 +94,7 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		
 		// Link with messages
 		graph.getInteraction().getMessages().forEach(message -> doSwitch(message));
-
+		
 		// Layout Grid
 		graph.layout();
 
@@ -260,6 +261,13 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 			intUseCluster.addOuterGate(node);
 		}
 		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
+		Rectangle r = node.getBounds();
+		if (r != null) {
+			Point p = r.getCenter();
+			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
+		}
 		cache(element, node);
 		return node;
 	}

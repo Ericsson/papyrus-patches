@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.uml2.uml.Interaction;
 
 public class DebugDiagramRootEditPart extends DiagramRootEditPart {
-	private static final boolean GRID_DISABLED = true; 
+	private static final boolean GRID_DISABLED = false; 
 	public DebugDiagramRootEditPart() {
 		super();
 	}

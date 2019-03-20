@@ -25,6 +25,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.NamedElement;
@@ -51,7 +52,10 @@ public class NodeImpl extends GraphItemImpl implements Node {
 	@Override
 	public ClusterImpl getParent() {
 		if (parent instanceof InteractionGraph) {
-			return null;
+			if (getElement() instanceof Gate)
+				return parent; // TODO: @etxacamWe could handling in specific NodeUtilities function getGateOwner() instead.... => Check the effect in moveBlocks functions 
+			else
+				return null; // Force the lifeline parent to be null. To stop searching up... 
 		}
 
 		if (parent == this) {			

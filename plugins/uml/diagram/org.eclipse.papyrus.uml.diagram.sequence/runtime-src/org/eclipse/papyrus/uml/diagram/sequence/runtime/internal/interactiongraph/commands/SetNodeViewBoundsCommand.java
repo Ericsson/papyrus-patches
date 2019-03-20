@@ -63,9 +63,7 @@ public class SetNodeViewBoundsCommand extends AbstractTransactionalCommand
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		InteractionGraphImpl graph = interactionGraphNode.getInteractionGraph();
 		View v = interactionGraphNode.getView();
-		if (v instanceof Diagram) {
-			// Case for Graph itself
-			v = ViewUtilities.getViewWithType(v, InteractionEditPart.VISUAL_ID);
+		if (v.getType().equals(InteractionEditPart.VISUAL_ID)) {
 			((Shape) v).setLayoutConstraint(ViewUtilities.toBounds(rect));
 		} else {
 			Rectangle constraints = ViewUtilities.toRelativeForLayoutConstraints(graph.getEditPartViewer(), (View) v.eContainer(), rect);

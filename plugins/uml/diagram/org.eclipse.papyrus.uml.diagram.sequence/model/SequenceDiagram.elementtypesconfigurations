@@ -24,4 +24,7 @@
   <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_oW2fQJYxEeies4N3OENAgQ" description="Graphical advice for preserving GeneralOrdering link consistency" identifier="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.GeneralOrderingLinkHelperAdvice" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.GeneralOrderingLinkHelperAdvice">
     <target xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.GeneralOrdering"/>
   </adviceBindingsConfigurations>
+  <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_krHW8EojEemnqbl8R8THTA" identifier="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice">
+    <target xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.Message"/>
+  </adviceBindingsConfigurations>
 </elementtypesconfigurations:ElementTypeSetConfiguration>

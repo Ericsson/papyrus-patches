@@ -32,7 +32,9 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CombinedFragmentEditP
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ConsiderIgnoreFragmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationConstraintLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationObservationLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomGateEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomGeneralOrderingEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomInteractionUseEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName2EditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName3EditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomMessageName4EditPart;
@@ -47,11 +49,13 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomTimeObservation
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GeneralOrderingEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionOperandEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionOperandGuardEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionUseEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateNameEditPart;
@@ -108,8 +112,8 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 
 		case InteractionOperandEditPart.VISUAL_ID:
 			return new CInteractionOperandEditPart(view);
-		// case InteractionUseEditPart.VISUAL_ID:
-		// return new CustomInteractionUseEditPart(view);
+		case InteractionUseEditPart.VISUAL_ID:
+			return new CustomInteractionUseEditPart(view);
 		// case InteractionUseNameEditPart.VISUAL_ID:
 		// return new CustomInteractionUseNameEditPart(view);
 		// case InteractionUseName2EditPart.VISUAL_ID:
@@ -202,6 +206,8 @@ public class CustomEditPartProvider extends UMLEditPartProvider {
 			return new CustomDurationConstraintLinkEditPart(view);
 		case DurationObservationLinkEditPart.VISUAL_ID:
 			return new CustomDurationObservationLinkEditPart(view);
+		case GateEditPart.VISUAL_ID:
+			return new CustomGateEditPart(view);
 		}
 		return null;
 	}
