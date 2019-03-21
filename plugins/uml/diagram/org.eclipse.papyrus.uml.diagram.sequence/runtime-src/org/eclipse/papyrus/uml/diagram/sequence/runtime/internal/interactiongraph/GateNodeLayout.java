@@ -16,14 +16,14 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CDestructionOccurrenceSpecificationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateEditPart;
 
 
 /**
  * @author ETXACAM
  *
  */
-public class DestructionOcurrenceSpecificationNodeLayout implements InteractionNodeLayout {
+public class GateNodeLayout implements InteractionNodeLayout {
 	@Override
 	public void layout(NodeImpl node) {
 		ColumnImpl column = node.column;
@@ -40,11 +40,8 @@ public class DestructionOcurrenceSpecificationNodeLayout implements InteractionN
 	@Override
 	public Rectangle getConstraints(NodeImpl node) {
 		Rectangle r = node.getBounds().getCopy();
-
-		r.translate(-CDestructionOccurrenceSpecificationEditPart.DESTRUCTION_EVENT_SIZE/2,
-				    -CDestructionOccurrenceSpecificationEditPart.DESTRUCTION_EVENT_SIZE/2);
-		r.setSize(CDestructionOccurrenceSpecificationEditPart.DESTRUCTION_EVENT_SIZE, 
-				  CDestructionOccurrenceSpecificationEditPart.DESTRUCTION_EVENT_SIZE);
+		r.translate(-GateEditPart.GATE_SIZE/2,-GateEditPart.GATE_SIZE/2);
+		r.setSize(GateEditPart.GATE_SIZE, GateEditPart.GATE_SIZE);
 		return r;
 	}
 

@@ -30,7 +30,7 @@ import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
  * Figure for a {@link DestructionOccurrenceSpecification}. It is drawn as an X centered over a Lifeline body
  */
 public class DestructionEventFigure extends DefaultSizeNodeFigure {
-
+	public static final int DEFAULT_SIZE = 20;
 	private int lineWidth = 1;
 
 	/**

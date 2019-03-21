@@ -30,6 +30,7 @@ import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.CenterAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.DestructionOccurrenceGraphicalNodeEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.figures.DestructionEventFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.DestructionEventNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
@@ -37,7 +38,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
 
 public class CDestructionOccurrenceSpecificationEditPart extends DestructionOccurrenceSpecificationEditPart {
-
+	public static final int DESTRUCTION_EVENT_SIZE = DestructionEventFigure.DEFAULT_SIZE;
 	public CDestructionOccurrenceSpecificationEditPart(View view) {
 		super(view);
 	}
@@ -94,7 +95,7 @@ public class CDestructionOccurrenceSpecificationEditPart extends DestructionOccu
 	@Override
 	protected NodeFigure createNodePlate() {
 		// Use a custom NodePlate to support the Destruction's CenterAnchor
-		DestructionEventNodePlate nodePlate = new DestructionEventNodePlate(40, 40);
+		DestructionEventNodePlate nodePlate = new DestructionEventNodePlate(DESTRUCTION_EVENT_SIZE, DESTRUCTION_EVENT_SIZE);
 		return nodePlate;
 	}
 
