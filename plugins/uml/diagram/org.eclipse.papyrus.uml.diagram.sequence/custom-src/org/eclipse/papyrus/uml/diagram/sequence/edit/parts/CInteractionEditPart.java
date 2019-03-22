@@ -40,6 +40,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.BorderItemResizableEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.GateLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
 import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
@@ -72,7 +73,7 @@ public class CInteractionEditPart extends InteractionEditPart {
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		removeEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE); // No need alinment commands for gates in sequence diagrams
-		
+		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new InteractionGraphGraphicalNodeEditPolicy());
 	}
 
 	protected LayoutEditPolicy createLayoutEditPolicy() {
@@ -256,7 +257,7 @@ public class CInteractionEditPart extends InteractionEditPart {
 				changeBoundsRequest.setMoveDelta(new Point(changeBoundsRequest.getMoveDelta().x, 0));
 			}
 		}
-		super.showTargetFeedback(request);
+		//super.showTargetFeedback(request);
 	}
 
 }

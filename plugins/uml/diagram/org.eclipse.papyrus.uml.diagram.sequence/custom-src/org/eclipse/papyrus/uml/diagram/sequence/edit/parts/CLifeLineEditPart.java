@@ -48,7 +48,7 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.draw2d.anchors.FixedAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineGraphicalNodeEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifeLineRestorePositionEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineDragDropEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.LifelineSelectionEditPolicy;
@@ -159,7 +159,7 @@ public class CLifeLineEditPart extends LifelineEditPart {
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		installEditPolicy(EditPolicyRoles.DRAG_DROP_ROLE+"Ex", new LifelineDragDropEditPolicy());
-		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new LifeLineGraphicalNodeEditPolicy());
+		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new InteractionGraphGraphicalNodeEditPolicy());
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new LifelineSelectionEditPolicy());
 		installEditPolicy(LifeLineRestorePositionEditPolicy.KEY, new LifeLineRestorePositionEditPolicy());
 		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new InteractionGraphSemanticEditPolicy());

@@ -81,7 +81,7 @@ import org.eclipse.uml2.uml.MessageSort;
  * This class overload all creation of link between lifelines
  * pay attention : this editpolicy launch a display of event during the move of the mouse
  */
-public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPolicy {
+public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPolicy {
 	private static final String CLICK_LOCATION_KEY = "clickLocation";
 
 	/** the router to use for messages */
@@ -347,6 +347,7 @@ public class LifeLineGraphicalNodeEditPolicy extends DefaultGraphicalNodeEditPol
 		return getReconnectCommand(request, false);
 	}
 
+	// TODO: @etxacam Handle gates
 	protected Command getReconnectCommand(final ReconnectRequest request, boolean isSrc) {
 		if (isMoveMessageRequest(request)) {
 			return null;
