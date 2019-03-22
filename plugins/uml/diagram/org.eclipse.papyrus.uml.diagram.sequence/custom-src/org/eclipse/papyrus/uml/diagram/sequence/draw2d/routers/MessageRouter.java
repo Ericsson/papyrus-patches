@@ -515,18 +515,10 @@ public class MessageRouter extends ObliqueRouter {
 			 */
 			if (Math.abs(lastRemovedFromSource.x - lastRemovedFromTarget.x) < toleranceValue) {
 				// Vertical
-				if (source.preciseY < target.preciseY) {
-					newLine.addPoint(lastRemovedFromSource.x, (source.getBottom().y + target.getTop().y) / 2);
-				} else {
-					newLine.addPoint(lastRemovedFromSource.x, (source.getTop().y + target.getBottom().y) / 2);
-				}
-			} else if (Math.abs(lastRemovedFromSource.y - lastRemovedFromTarget.y) < toleranceValue) {
+					newLine.addPoint(start.x, (start.y + end.y) / 2);
+			} else if (Math.abs(start.y - end.y) < toleranceValue) {
 				// Horizontal
-				if (source.preciseX < target.preciseX) {
-					newLine.addPoint((source.getRight().x + target.getLeft().x) / 2, lastRemovedFromSource.y);
-				} else {
-					newLine.addPoint((source.getLeft().x + target.getRight().x) / 2, lastRemovedFromSource.y);
-				}
+					newLine.addPoint((start.x + end.x) / 2, start.y);
 			} else if ((conn.getSourceAnchor() instanceof BaseSlidableAnchor && StringStatics.BLANK.equals(((BaseSlidableAnchor) conn.getSourceAnchor()).getTerminal()) && (conn.getTargetAnchor() instanceof BaseSlidableAnchor && StringStatics.BLANK
 					.equals(((BaseSlidableAnchor) conn.getTargetAnchor()).getTerminal())))) {
 				/*
