@@ -16,20 +16,30 @@
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.DragTracker;
+import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.Request;
+import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.editpolicies.LayoutEditPolicy;
+import org.eclipse.gef.editpolicies.NonResizableEditPolicy;
+import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusResizableShapeEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
+import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.GateLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionUse;
@@ -47,6 +57,7 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
+		removeEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE);
 		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy() {
 			@Override
 			protected void createResizeHandle(List handles, int direction) {
@@ -57,6 +68,40 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 		};
 		resizableEditPolicy.setResizeDirections(PositionConstants.EAST |PositionConstants.WEST);
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);
+		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new InteractionGraphGraphicalNodeEditPolicy());
+	}
+
+	protected LayoutEditPolicy createLayoutEditPolicy() {
+		return new LayoutEditPolicy() {
+			@Override
+			protected Command getMoveChildrenCommand(Request request) {
+				return null;
+			}
+			
+			@Override
+			protected Command getCreateCommand(CreateRequest request) {
+				return null;
+			}
+			
+			@Override
+			protected EditPolicy createChildEditPolicy(EditPart child) {
+				EditPolicy result = child.getEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE);
+				if (result == null) {
+					result = new NonResizableEditPolicy();
+				}
+				return result;
+			}
+		};
+	}	
+
+	protected boolean addFixedChild(EditPart childEditPart) {
+		if (childEditPart instanceof GateEditPart) {
+			IBorderItemLocator locator = new GateLocator(getMainFigure());
+			getBorderedFigure().getBorderItemContainer().add(((GateEditPart) childEditPart).getFigure(), locator);
+			return true;
+		}
+
+		return super.addFixedChild(childEditPart);
 	}
 
 	@Override
@@ -76,7 +121,7 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 	@Override
 	protected void refreshVisuals() {
 		super.refreshVisuals();
-		refreshCoveredLifelines();
+		refreshCoveredLifelines();	
 	}
 
 	protected void refreshCoveredLifelines() {

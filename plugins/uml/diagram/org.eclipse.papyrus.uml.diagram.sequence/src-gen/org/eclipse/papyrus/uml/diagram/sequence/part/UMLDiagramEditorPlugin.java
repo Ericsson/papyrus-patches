@@ -27,6 +27,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.papyrus.infra.core.log.LogHelper;
 import org.eclipse.papyrus.infra.gmfdiag.preferences.Activator;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.ElemenTypeAdvicerFixer;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UMLBaseItemSemanticEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.expressions.UMLOCLFactory;
 import org.eclipse.papyrus.uml.diagram.sequence.preferences.CustomDiagramPreferenceInitializer;
@@ -106,7 +107,7 @@ public class UMLDiagramEditorPlugin extends AbstractUIPlugin {
 		log = new LogHelper(instance);
 		CustomDiagramPreferenceInitializer diagramPreferenceInitializer = new CustomDiagramPreferenceInitializer();
 		diagramPreferenceInitializer.initializeDefaultPreferences();
-		// ElemenTypeAdvicerFixer.INSTANCE.start();
+		ElemenTypeAdvicerFixer.INSTANCE.start();
 	}
 
 	/**

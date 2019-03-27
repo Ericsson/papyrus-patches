@@ -427,7 +427,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					if (msgEndTrg instanceof Gate) {					
 						if (target instanceof Interaction) {
 							trgNode = interactionGraph.addGate((Interaction)target, (Gate)msgEndTrg, trgBeforeFrag);
-						} else if (source instanceof InteractionUse) {
+						} else if (target instanceof InteractionUse) {
 							trgNode = interactionGraph.addGate((InteractionUse)target, (Gate)msgEndTrg, trgBeforeFrag);							
 						}
 					} else {
@@ -1427,7 +1427,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Link link = interactionGraph.getLinkFor(msg);
 		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
 		Cluster lifelineCluster = NodeUtilities.getLifelineNode(msgEndNode);
-		boolean isChangingOwner = lifelineCluster == null && lifelineCluster != toMsgEndOwnerCluster;
+		boolean isChangingOwner = lifelineCluster != null && lifelineCluster != toMsgEndOwnerCluster;
 				
 		Node target = link.getTarget();
 		Node source = link.getSource();

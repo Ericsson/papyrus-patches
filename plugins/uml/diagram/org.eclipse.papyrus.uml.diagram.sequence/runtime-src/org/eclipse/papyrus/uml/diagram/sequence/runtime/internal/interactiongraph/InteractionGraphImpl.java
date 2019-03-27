@@ -314,7 +314,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 
 		int prevX = Integer.MIN_VALUE;
-		// Layout Columns
+		// Layout Lifeline Columns
 		for (ClusterImpl lfCluster : lifelineClusters) {
 			ColumnImpl column = new ColumnImpl(this);
 			columns.add(column);
@@ -381,12 +381,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			List<Node> coveredLifelines = cluster.getClusters().stream().map(NodeImpl.class::cast).map(NodeUtilities::getLifelineNode).
 					filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
 			Rectangle fragmentBounds = ViewUtilities.getBounds(viewer, cluster.getView());
-			int min = coveredLifelines.stream().map(d -> columns.indexOf(d.getColumn())).min(Comparator.comparing(Integer::valueOf)).orElse(-1);
-			int max = coveredLifelines.stream().map(d -> columns.indexOf(d.getColumn())).max(Comparator.comparing(Integer::valueOf)).orElse(-1);
-			if (min == -1 || max == -1) {
-				min = 0;
-				max = 0;
-			}
+			Column leftLifelineColumn = coveredLifelines.stream().map(Node::getColumn).min(Comparator.comparing(d->columns.indexOf(d))).orElse(null);
+			Column rightLifelineColumn = coveredLifelines.stream().map(Node::getColumn).max(Comparator.comparing(d->columns.indexOf(d))).orElse(null);;
 			for (Node gate : cluster.getAllGates()) {
 				// TODO: Correlate in & out gates
 				Node opposite = gate.getConnectedByNode();
@@ -394,23 +390,34 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 					opposite = gate.getConnectedNode();
 				}
 
-				int colIndex = opposite == null ? -1 : columns.indexOf(opposite.getColumn());
-				View gateView = gate.getView();
-				if (gateView != null && ViewUtilities.hasLayoutConstraints(gate.getView())) {
-					Rectangle r = ViewUtilities.getBounds(viewer, gateView);
+				Rectangle r = opposite.getBounds();
+				// Force gate to fall in left or right side				
+				if (r != null) {
+					ColumnImpl col;
 					if (Math.abs(r.getCenter().x - fragmentBounds.getLeft().x) <= Math.abs(r.getCenter().x - fragmentBounds.getRight().x)) {
-						// left side
-						colIndex = min;
+						int x = fragmentBounds.x();
+						col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
+						if (col == null) {
+							col = new ColumnImpl(this);
+							col.setXPosition(x);
+							columns.add(columns.indexOf(leftLifelineColumn), col);							
+						}
 					} else {
-						colIndex = max;
+						int x = fragmentBounds.right();
+						col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
+						if (col == null) {
+							col = new ColumnImpl(this);
+							col.setXPosition(x);
+							int index = columns.indexOf(rightLifelineColumn) +1;
+							if (index >= columns.size())
+								columns.add(col);
+							else
+								columns.add(index, col);							
+						}
 					}
+					col.addNode((NodeImpl)gate);						
 				}
-
-				if (Math.abs(colIndex - min) <= Math.abs(colIndex - max)) {
-					columns.get(min).addNode((NodeImpl) gate);
-				} else {
-					columns.get(max).addNode((NodeImpl) gate);
-				}
+				
 			}
 		}
 

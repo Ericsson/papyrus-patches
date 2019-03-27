@@ -31,29 +31,30 @@ import org.eclipse.papyrus.infra.services.edit.service.ElementEditServiceUtils;
 import org.eclipse.papyrus.infra.services.edit.service.IElementEditService;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionUse;
+import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.UMLPackage;
 
-public class MessageHelperAdvice extends AbstractEditHelperAdvice {
+public class MessageHelperAdvice extends org.eclipse.papyrus.uml.service.types.helper.advice.MessageHelperAdvice {
 	@Override
 	protected ICommand getBeforeConfigureCommand(final ConfigureRequest request) {
 		final Element source = getSource(request);
 		final Element target = getTarget(request);
 		final Message message = (Message)request.getElementToConfigure();
+		ICommand cmd = super.getBeforeConfigureCommand(request);
+		ICommand srcCmd = getCreateGateMessageEndCommand(message, true, source);
+		if (srcCmd != null)
+			cmd = cmd.compose(srcCmd);
+		ICommand trgCmd = getCreateGateMessageEndCommand(message, false, target);		
+		if (trgCmd != null)
+			cmd = cmd.compose(trgCmd);
 		
-		ICommand cmd = getCreateGateMessageEndCommand(message, true, source);
-		ICommand trgCmd = getCreateGateMessageEndCommand(message, false, target);
-		if (cmd != null) {
-			if (trgCmd != null)
-				return cmd.compose(trgCmd);
-			return cmd;
-		}
-		
-		return trgCmd;
+		return cmd;
 	}
 
 	protected ICommand getCreateGateMessageEndCommand(Message msg, boolean source, Element owner) {
@@ -61,30 +62,26 @@ public class MessageHelperAdvice extends AbstractEditHelperAdvice {
 			return new CreateGateMessageEndCommand(msg, source, new CreateElementRequest(owner,UMLElementTypes.GATE,UMLPackage.Literals.INTERACTION__FORMAL_GATE));
 		} else if (owner instanceof InteractionUse) {
 			return new CreateGateMessageEndCommand(msg, source, new CreateElementRequest(owner,UMLElementTypes.GATE,UMLPackage.Literals.INTERACTION_USE__ACTUAL_GATE));
-		}
+		} 
 		return null;
 	}
 	
-	protected Element getSource(ConfigureRequest req) {
-		Element result = null;
-		Object paramObject = req.getParameter(CreateRelationshipRequest.SOURCE);
-		if (paramObject instanceof Element) {
-			result = (Element) paramObject;
+	protected boolean isValidConfigureRequest(ConfigureRequest request) {
+		ConfigureRequest req = request;
+		boolean valid = true;
+		if ((getSource(req) == null) || (getTarget(req) == null)) {
+			valid = false;
+		} else if ((!(getSource(req) instanceof Lifeline)) && (!(getSource(req) instanceof Interaction)) && (!(getSource(req) instanceof Gate)) && 
+				   (!(getSource(req) instanceof ExecutionSpecification)) && (!(getSource(req) instanceof InteractionUse))) {
+			valid = false;
+		} else if ((!(getTarget(req) instanceof Lifeline)) && (!(getTarget(req) instanceof Interaction)) && (!(getTarget(req) instanceof Gate)) && 
+				   (!(getTarget(req) instanceof ExecutionSpecification)) && (!(getTarget(req) instanceof InteractionUse))) {
+			valid = false;
 		}
 
-		return result;
+		return valid;
 	}
-
-	protected Element getTarget(ConfigureRequest req) {
-		Element result = null;
-		Object paramObject = req.getParameter(CreateRelationshipRequest.TARGET);
-		if (paramObject instanceof Element) {
-			result = (Element) paramObject;
-		}
-
-		return result;
-	}
-
+	
 	private static class CreateGateMessageEndCommand extends CreateElementCommand {
 		public CreateGateMessageEndCommand(Message msg, boolean source, CreateElementRequest request) {
 			super(request);

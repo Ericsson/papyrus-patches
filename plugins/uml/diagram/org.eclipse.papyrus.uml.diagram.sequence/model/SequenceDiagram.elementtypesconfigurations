@@ -25,6 +25,7 @@
     <target xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.GeneralOrdering"/>
   </adviceBindingsConfigurations>
   <adviceBindingsConfigurations xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" xmi:id="_krHW8EojEemnqbl8R8THTA" identifier="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice" editHelperAdviceClassName="org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.advice.MessageHelperAdvice">
+    <before xmi:type="elementtypesconfigurations:AdviceBindingConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#_R_pqhGT7EeSzFvTXGJPhUg"/>
     <target xmi:type="elementtypesconfigurations:MetamodelTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/uml.elementtypesconfigurations#org.eclipse.papyrus.uml.Message"/>
   </adviceBindingsConfigurations>
 </elementtypesconfigurations:ElementTypeSetConfiguration>

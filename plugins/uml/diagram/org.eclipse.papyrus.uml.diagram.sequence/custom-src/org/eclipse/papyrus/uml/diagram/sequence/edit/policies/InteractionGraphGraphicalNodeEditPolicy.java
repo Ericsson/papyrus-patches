@@ -71,6 +71,8 @@ import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceRequestConstant;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.Gate;
+import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -267,6 +269,10 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 
 		Point srcAnchor =  (Point)request.getExtendedData().get("EDGE_SOURCE_POINT");
 		srcAnchor = ViewUtilities.controlToViewer(graph.getEditPartViewer(), srcAnchor.getCopy());
+		ConnectionAnchor anchor = ((NodeEditPart) request.getTargetEditPart()).getTargetConnectionAnchor(request);
+		if (anchor == null)
+			return null;
+		
 		Point trgAnchor = request.getLocation();
 		trgAnchor = ViewUtilities.controlToViewer(graph.getEditPartViewer(), trgAnchor.getCopy());
 		
@@ -368,24 +374,42 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 		if (graph == null)
 			return null;
 		
-		Lifeline newLifeline = (Lifeline)((View)getHost().getModel()).getElement();
 		MessageEnd messageEnd = isSrc ? message.getSendEvent() : message.getReceiveEvent();
+		Element element = (Element)((View)getHost().getModel()).getElement();
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
-
 		Point p = SequenceUtil.getSnappedLocation(request.getTarget(),loc.getCopy());
 		p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), p);				
-		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-			cmd.moveMessageEnd(messageEnd, newLifeline, p);		
-		} else {
-			if (!(messageEnd instanceof MessageOccurrenceSpecification))
-				return UnexecutableCommand.INSTANCE;
-			MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)messageEnd;
-			if (mos.getCovered() != newLifeline) {
-				return UnexecutableCommand.INSTANCE;
+
+		if (element instanceof Lifeline) {
+			Lifeline newLifeline = (Lifeline)element;
+			if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
+				cmd.moveMessageEnd(messageEnd, newLifeline, p);		
+			} else {
+				if (!(messageEnd instanceof MessageOccurrenceSpecification))
+					return UnexecutableCommand.INSTANCE;
+				MessageOccurrenceSpecification mos = (MessageOccurrenceSpecification)messageEnd;
+				if (mos.getCovered() != newLifeline) {
+					return UnexecutableCommand.INSTANCE;
+				}
+				cmd.nudgeMessageEnd(messageEnd, p); 
 			}
-			cmd.nudgeMessageEnd(messageEnd, p); 
+		} else {
+			InteractionFragment intFragment = (InteractionFragment)element;
+			if (!(messageEnd instanceof Gate))
+				return UnexecutableCommand.INSTANCE;
+			Gate gate = (Gate)messageEnd;			
+			if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
+				cmd.moveGate(gate, intFragment, p);		
+			} else {
+				if (gate.getOwner() != intFragment)
+					return UnexecutableCommand.INSTANCE;
+					
+				cmd.nudgeGate(gate, p); 
+			}
+			
 		}
+
 		return new ICommandProxy(cmd);
 	
 	}

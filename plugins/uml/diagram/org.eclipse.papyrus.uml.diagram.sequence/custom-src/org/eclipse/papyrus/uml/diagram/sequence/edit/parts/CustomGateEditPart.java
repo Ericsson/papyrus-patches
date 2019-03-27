@@ -18,6 +18,8 @@ package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 import java.util.List;
 
 import org.eclipse.draw2d.FigureCanvas;
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.DragTracker;
@@ -28,9 +30,11 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.ui.parts.ScrollingGraphicalViewer;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.util.SelectInDiagramHelper;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
+import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.RoundedRectangleNodePlateFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
@@ -94,6 +98,15 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 				return new ICommandProxy(cmd);
 			}
 
+			@Override
+			protected void showChangeBoundsFeedback(ChangeBoundsRequest request) {
+				Rectangle bounds = ViewUtilities.getBounds(getViewer(), ((IGraphicalEditPart)getHost()).getNotationView());
+				bounds = request.getTransformedRectangle(bounds);	
+				Rectangle beforeSnap = bounds.getCopy();
+				Point p = SequenceUtil.getSnappedLocation(getHost(),bounds.getCenter());
+				request.getMoveDelta().translate(p.getDifference(beforeSnap.getCenter()));
+				super.showChangeBoundsFeedback(request);
+			}
 		};
 		resizableEditPolicy.setResizeDirections(0);
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);
@@ -111,8 +124,32 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 	 */
 	@Override
 	protected void refreshBounds() {
-		super.refreshBounds();
-		getBorderItemLocator().relocate(getFigure());
+		if (getBorderItemLocator() != null) {
+			int x = ((Integer) getStructuralFeatureValue(NotationPackage.eINSTANCE
+				.getLocation_X())).intValue();
+			int y = ((Integer) getStructuralFeatureValue(NotationPackage.eINSTANCE
+				.getLocation_Y())).intValue();
+			Point loc = new Point(x, y);
+			
+			int width = ((Integer) getStructuralFeatureValue(NotationPackage.eINSTANCE.getSize_Width())).intValue();
+			int height = ((Integer) getStructuralFeatureValue(NotationPackage.eINSTANCE.getSize_Height())).intValue();
+			Dimension size = new Dimension(width, height);
+			if (getParent() != null) {
+				IFigure parentFigure = ((GraphicalEditPart)getParent()).getFigure();
+				if (parentFigure.getParent() != null && parentFigure.getParent().getLayoutManager() != null) {
+					Object obj = parentFigure.getParent().getLayoutManager().getConstraint(parentFigure);
+					if (obj instanceof Rectangle) {
+						Point borderLoc = ((Rectangle)obj).getLocation();
+						loc.translate(borderLoc);
+						getBorderItemLocator().setConstraint(new Rectangle(
+							loc, size));
+						getBorderItemLocator().relocate(getFigure());
+					}
+				}
+			}
+		} else {
+			super.refreshBounds();
+		}
 	}
 
 	/**

@@ -14,11 +14,13 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
@@ -43,7 +45,9 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.GateLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLDIElementTypes;
+import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 
 
 
@@ -100,7 +104,6 @@ public class CInteractionEditPart extends InteractionEditPart {
 	}
 	
 	protected boolean addFixedChild(EditPart childEditPart) {
-		// Papyrus Gencode :specific locator to move gates
 		if (childEditPart instanceof GateEditPart) {
 			IBorderItemLocator locator = new GateLocator(getMainFigure());
 			getBorderedFigure().getBorderItemContainer().add(((GateEditPart) childEditPart).getFigure(), locator);
@@ -118,8 +121,8 @@ public class CInteractionEditPart extends InteractionEditPart {
 	 */
 	@Override
 	public ConnectionAnchor getSourceConnectionAnchor(Request request) {
-		ConnectionAnchor sourceAnchor = createAnchor(request, UMLDIElementTypes.MESSAGE_FOUND_EDGE, MessageFoundEditPart.VISUAL_ID, MessageFoundEditPart.class);
-
+		ConnectionAnchor sourceAnchor = createAnchor(request, UMLElementTypes.MESSAGE, AbstractMessageEditPart.class);
+		
 		if (sourceAnchor == null) {
 			sourceAnchor = super.getSourceConnectionAnchor(request);
 		}
@@ -149,8 +152,7 @@ public class CInteractionEditPart extends InteractionEditPart {
 	 */
 	@Override
 	public ConnectionAnchor getTargetConnectionAnchor(Request request) {
-
-		ConnectionAnchor targetAnchor = createAnchor(request, UMLDIElementTypes.MESSAGE_LOST_EDGE, MessageLostEditPart.VISUAL_ID, MessageLostEditPart.class);
+		ConnectionAnchor targetAnchor = createAnchor(request, UMLElementTypes.MESSAGE, AbstractMessageEditPart.class);
 		if (targetAnchor == null) {
 			targetAnchor = super.getTargetConnectionAnchor(request);
 		}
@@ -188,14 +190,15 @@ public class CInteractionEditPart extends InteractionEditPart {
 	 *            The type of the message
 	 * @return The connection anchor
 	 */
-	private ConnectionAnchor createAnchor(Request request, IElementType elementType, String visualId, Class<?> messageType) {
+	private ConnectionAnchor createAnchor(Request request, IElementType elementType, Class<?> messageType) {
 		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
 
 			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
 
 			List<?> relationshipTypes = createRequest.getElementTypes();
 			for (Object obj : relationshipTypes) {
-				if (elementType.equals(obj)) {
+				IElementType type = (IElementType)obj;
+				if (type.equals(elementType) || Arrays.asList(type.getAllSuperTypes()).contains(elementType)) {
 					return createAnchor(createRequest.getLocation().getCopy());
 				}
 			}
@@ -203,7 +206,8 @@ public class CInteractionEditPart extends InteractionEditPart {
 			CreateConnectionViewRequest createRequest = (CreateConnectionViewRequest) request;
 			ConnectionViewDescriptor connectionViewDescriptor = createRequest.getConnectionViewDescriptor();
 			if (connectionViewDescriptor != null) {
-				if (visualId.equals(connectionViewDescriptor.getSemanticHint())) {
+				IElementType type = connectionViewDescriptor.getElementAdapter().getAdapter(IElementType.class);
+				if (type.equals(elementType) || Arrays.asList(type.getAllSuperTypes()).contains(elementType)) {
 					return createAnchor(createRequest.getLocation().getCopy());
 				}
 			}
@@ -226,6 +230,16 @@ public class CInteractionEditPart extends InteractionEditPart {
 	 * @return The connection anchor
 	 */
 	private ConnectionAnchor createAnchor(Point location) {
+		Rectangle rect = getFigure().getBounds();
+		int leftDiff = Math.abs(location.x - rect.x());
+		int rightDif = Math.abs(location.x - rect.right());
+
+		if (leftDiff < rightDif) {
+			location.x = rect.x;
+		} else {
+			location.x = rect.right();
+		}
+		SequenceUtil.getSnappedLocation(this, location);
 		return AnchorHelper.InnerPointAnchor.createAnchorAtLocation(getFigure(), new PrecisionPoint(location));
 	}
 

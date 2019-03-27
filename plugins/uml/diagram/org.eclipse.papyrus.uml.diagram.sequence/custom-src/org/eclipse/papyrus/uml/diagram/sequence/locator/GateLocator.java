@@ -20,7 +20,12 @@ import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gmf.runtime.diagram.ui.internal.ruler.SnapToGridEx;
+import org.eclipse.papyrus.infra.gmfdiag.common.snap.SnapUtils;
 import org.eclipse.papyrus.uml.diagram.common.locator.AdvancedBorderItemLocator;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 
 /**
  * @author Jin Liu (jin.liu@soyatec.com)
@@ -66,6 +71,7 @@ public class GateLocator extends AdvancedBorderItemLocator {
 				validLocation.y = (bounds.bottom() - proposedLocation.height / 2);
 			}
 		}  
+		
 		return validLocation;
 	}
 
@@ -78,22 +84,14 @@ public class GateLocator extends AdvancedBorderItemLocator {
 		if (parentBounds.isEmpty()) {
 			return PositionConstants.NONE;
 		}
-		if (parentBounds.touches(newConstraint)) {
-			Point center = newConstraint.getCenter();
-			int leftOffset = Math.abs(center.x - parentBounds.x);
-			int rightOffset = Math.abs(center.x - parentBounds.right());
-			if (leftOffset < rightOffset) {
-				alignment = PositionConstants.LEFT;
-			} else {
-				alignment = PositionConstants.RIGHT;
-			} 
+		Point center = newConstraint.getCenter();
+		int leftOffset = Math.abs(center.x - parentBounds.x);
+		int rightOffset = Math.abs(center.x - parentBounds.right());
+		if (leftOffset < rightOffset) {
+			alignment = PositionConstants.LEFT;
 		} else {
-			if (newConstraint.right() < parentBounds.x) {
-				alignment = PositionConstants.LEFT;
-			} else {
-				alignment = PositionConstants.RIGHT;
-			}
-		}
+			alignment = PositionConstants.RIGHT;
+		} 
 		return alignment.intValue();
 	}
 

@@ -17,31 +17,31 @@
   </drawerConfigurations>
   <drawerConfigurations xmi:type="paletteconfiguration:DrawerConfiguration" id="createEdges2Group" label="Edges" description="Message tools">
     <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.gmf.runtime.diagram.ui" iconPath="/icons/group.gif"/>
-    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageSync1ACreationTool" label="Message Sync (Action)" description="Create MessageSync" kind="ConnectionTool">
+    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageSync1ACreationTool" label="Message Sync (Action)" description="Create MessageSync" kind="ConnectionTool" toolClassName="org.eclipse.papyrus.uml.diagram.sequence.service.MessageCreationTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_synchCall.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
         <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.diagram.sequence/model/SequenceDiagram.elementtypesconfigurations#_W0V4QD9KEemtU4xRDyxxIQ"/>
       </elementDescriptors>
     </ownedConfigurations>
-    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageSync1BCreationTool" label="Message Sync (Behavior)" description="Create MessageSync" kind="ConnectionTool">
+    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageSync1BCreationTool" label="Message Sync (Behavior)" description="Create MessageSync" kind="ConnectionTool" toolClassName="org.eclipse.papyrus.uml.diagram.sequence.service.MessageCreationTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_synchCall.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
         <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.diagram.sequence/model/SequenceDiagram.elementtypesconfigurations#_SSvf4D9LEemtU4xRDyxxIQ"/>
       </elementDescriptors>
     </ownedConfigurations>
-    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageAsync2CreationTool" label="Message Async" description="Create MessageAsync" kind="ConnectionTool">
+    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageAsync2CreationTool" label="Message Async" description="Create MessageAsync" kind="ConnectionTool" toolClassName="org.eclipse.papyrus.uml.diagram.sequence.service.MessageCreationTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_asynchCall.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
         <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/umldi.elementtypesconfigurations#org.eclipse.papyrus.umldi.Message_AsynchEdge"/>
       </elementDescriptors>
     </ownedConfigurations>
-    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageCreate4CreationTool" label="Message Create" description="Create MessageCreate" kind="ConnectionTool">
+    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageCreate4CreationTool" label="Message Create" description="Create MessageCreate" kind="ConnectionTool" toolClassName="org.eclipse.papyrus.uml.diagram.sequence.service.MessageCreationTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_createMessage.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
         <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/umldi.elementtypesconfigurations#org.eclipse.papyrus.umldi.Message_CreateEdge"/>
       </elementDescriptors>
     </ownedConfigurations>
-    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageDelete5CreationTool" label="Message Delete" description="Create MessageDelete" kind="ConnectionTool">
+    <ownedConfigurations xmi:type="paletteconfiguration:ToolConfiguration" id="createMessageDelete5CreationTool" label="Message Delete" description="Create MessageDelete" kind="ConnectionTool" toolClassName="org.eclipse.papyrus.uml.diagram.sequence.service.MessageCreationTool">
       <icon xmi:type="paletteconfiguration:IconDescriptor" pluginID="org.eclipse.uml2.uml.edit" iconPath="/icons/full/obj16/Message_deleteMessage.gif"/>
       <elementDescriptors xmi:type="paletteconfiguration:ElementDescriptor">
         <elementType xmi:type="elementtypesconfigurations:SpecializationTypeConfiguration" href="platform:/plugin/org.eclipse.papyrus.uml.service.types/model/umldi.elementtypesconfigurations#org.eclipse.papyrus.umldi.Message_DeleteEdge"/>
