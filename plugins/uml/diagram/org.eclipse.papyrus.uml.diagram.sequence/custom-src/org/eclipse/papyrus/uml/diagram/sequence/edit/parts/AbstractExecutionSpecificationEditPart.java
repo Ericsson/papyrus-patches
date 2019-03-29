@@ -358,7 +358,8 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 				return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 			}
 		}
-		return super.getTargetConnectionAnchor(request);
+		ConnectionAnchor anchor = super.getTargetConnectionAnchor(request);
+		return anchor;
 	}
 
 	/**
@@ -437,7 +438,9 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 				return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 			}
 		}
-		return super.getSourceConnectionAnchor(request);
+		ConnectionAnchor anchor = super.getSourceConnectionAnchor(request);
+		return anchor;
+		
 	}
 
 	/**

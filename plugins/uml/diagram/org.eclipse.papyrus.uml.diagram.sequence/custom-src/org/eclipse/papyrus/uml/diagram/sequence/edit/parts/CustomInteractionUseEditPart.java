@@ -16,12 +16,17 @@
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
@@ -31,16 +36,25 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.editpolicies.LayoutEditPolicy;
 import org.eclipse.gef.editpolicies.NonResizableEditPolicy;
 import org.eclipse.gef.requests.CreateRequest;
+import org.eclipse.gef.requests.LocationRequest;
+import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
+import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
+import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeConnectionRequest;
+import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest.ConnectionViewDescriptor;
+import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.PapyrusResizableShapeEditPolicy;
 import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.GateLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
+import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
@@ -160,4 +174,72 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 		if (primaryShape instanceof InteractionUseRectangleFigure)
 			((InteractionUseRectangleFigure)primaryShape).setNonCoveredLifelinesFigures(figures);
 	}
+
+	@Override
+	public ConnectionAnchor getSourceConnectionAnchor(Request request) {
+		ConnectionAnchor sourceAnchor = createAnchor(request, UMLElementTypes.MESSAGE, AbstractMessageEditPart.class);
+		
+		if (sourceAnchor == null) {
+			sourceAnchor = super.getSourceConnectionAnchor(request);
+		}
+		return sourceAnchor;
+	}
+
+	@Override
+	public ConnectionAnchor getTargetConnectionAnchor(Request request) {
+		ConnectionAnchor sourceAnchor = createAnchor(request, UMLElementTypes.MESSAGE, AbstractMessageEditPart.class);
+		
+		if (sourceAnchor == null) {
+			sourceAnchor = super.getSourceConnectionAnchor(request);
+		}
+		return sourceAnchor;
+	}
+
+	private ConnectionAnchor createAnchor(Request request, IElementType elementType, Class<?> messageType) {
+		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
+
+			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
+
+			List<?> relationshipTypes = createRequest.getElementTypes();
+			for (Object obj : relationshipTypes) {
+				IElementType type = (IElementType)obj;
+				if (type.equals(elementType) || Arrays.asList(type.getAllSuperTypes()).contains(elementType)) {
+					return createAnchor(createRequest.getLocation().getCopy());
+				}
+			}
+		} else if (request instanceof CreateConnectionViewRequest) {
+			CreateConnectionViewRequest createRequest = (CreateConnectionViewRequest) request;
+			ConnectionViewDescriptor connectionViewDescriptor = createRequest.getConnectionViewDescriptor();
+			if (connectionViewDescriptor != null) {
+				IElementType type = connectionViewDescriptor.getElementAdapter().getAdapter(IElementType.class);
+				if (type.equals(elementType) || Arrays.asList(type.getAllSuperTypes()).contains(elementType)) {
+					return createAnchor(createRequest.getLocation().getCopy());
+				}
+			}
+		} else if (request instanceof ReconnectRequest) {
+			ReconnectRequest reconnectRequest = (ReconnectRequest) request;
+			ConnectionEditPart connectionEditPart = reconnectRequest.getConnectionEditPart();
+			// Fixed bug creating anchors for MessageLost and MessageFound.
+			if (messageType.isInstance(connectionEditPart) && request instanceof LocationRequest) {
+				return createAnchor(((LocationRequest) request).getLocation().getCopy());
+			}
+		}
+		return null;
+	}
+	
+	private ConnectionAnchor createAnchor(Point location) {
+		Rectangle rect = getFigure().getBounds().getCopy();
+		getFigure().translateToAbsolute(rect);
+		int leftDiff = Math.abs(location.x - rect.x());
+		int rightDif = Math.abs(location.x - rect.right());
+
+		if (leftDiff < rightDif) {
+			location.x = rect.x;
+		} else {
+			location.x = rect.right();
+		}
+		SequenceUtil.getSnappedLocation(this, location);
+		return AnchorHelper.InnerPointAnchor.createAnchorAtLocation(shape, new PrecisionPoint(location));
+	}
+
 }

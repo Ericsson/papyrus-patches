@@ -15,7 +15,13 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.eclipse.draw2d.Connection;
+import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
@@ -26,6 +32,7 @@ import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.draw2d.geometry.Ray;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.common.core.util.StringStatics;
+import org.eclipse.gmf.runtime.diagram.ui.internal.figures.BorderItemContainerFigure;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.FigureUtilities;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.OrthogonalConnectionAnchor;
@@ -33,9 +40,17 @@ import org.eclipse.gmf.runtime.draw2d.ui.geometry.PointListUtilities;
 import org.eclipse.gmf.runtime.draw2d.ui.internal.routers.ObliqueRouter;
 import org.eclipse.gmf.runtime.draw2d.ui.internal.routers.OrthogonalRouterUtilities;
 import org.eclipse.gmf.runtime.draw2d.ui.mapmode.MapModeUtil;
+import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.SVGNodePlateFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.utils.FigureUtils;
+import org.eclipse.papyrus.uml.diagram.common.figure.node.InteractionRectangleFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.figures.ExecutionSpecificationNodePlate;
+import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceDiagramConstants;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 
 /**
  * A multi behavior router which enable to draw message.
@@ -93,18 +108,48 @@ public class MessageRouter extends ObliqueRouter {
 			if (conn == null || conn.getSourceAnchor() == null || conn.getTargetAnchor() == null) {
 				return false;
 			}
-			IFigure sourceLifeline = conn.getSourceAnchor().getOwner();
-			while (sourceLifeline != null && !(sourceLifeline instanceof LifelineNodePlate)) {
-				sourceLifeline = sourceLifeline.getParent();
-			}
-			IFigure targetLifeline = conn.getTargetAnchor().getOwner();
-			while (targetLifeline != null && !(targetLifeline instanceof LifelineNodePlate)) {
-				targetLifeline = targetLifeline.getParent();
+			IFigure sourceLifeline = getLifelineOrFragmentFigure(conn.getSourceAnchor().getOwner());
+			IFigure targetLifeline = getLifelineOrFragmentFigure(conn.getTargetAnchor().getOwner());
+
+			// Check Overlapping Source & target
+			if (sourceLifeline != null && targetLifeline != null) {
+				Rectangle srcRect = sourceLifeline.getBounds().getCopy();
+				sourceLifeline.translateToAbsolute(srcRect);
+				Rectangle trgRect = targetLifeline.getBounds().getCopy();
+				targetLifeline.translateToAbsolute(trgRect);
+				
+				if (trgRect.intersects(srcRect)) {
+					return true;
+					
+				}
 			}
 			return sourceLifeline != null && sourceLifeline.equals(targetLifeline);
 		}
 	}
 
+	private static IFigure getLifelineOrFragmentFigure(IFigure figure) {
+		IFigure fig = figure;
+		while (fig != null) {
+			if (fig instanceof LifelineNodePlate)
+				return fig;
+			if (fig instanceof InteractionUseRectangleFigure)
+				return fig;
+			// For Gates, we need to get the NodePlate figure. 
+			if (fig instanceof BorderItemContainerFigure) {
+				// TODO: Find BorderedNodeFigure (Ancestor) and then get the MainFigure 
+				IFigure nodePlate = ((List<?>)fig.getParent().getChildren()).stream().filter(SVGNodePlateFigure.class::isInstance).
+						map(NodeFigure.class::cast).findFirst().orElse(null);
+				if (nodePlate != null && nodePlate.getChildren().size() > 0) {
+					fig = (IFigure)nodePlate.getChildren().get(0); 
+					continue;
+				}
+			}
+			
+			fig = fig.getParent();
+		}
+		return fig;
+	}
+	
 	@Override
 	public void routeLine(Connection conn, int nestedRoutingDepth, PointList newLine) {
 		Point sourcePoint, targetPoint;
@@ -134,10 +179,11 @@ public class MessageRouter extends ObliqueRouter {
 		case SELF:
 			// Handle special routing: self connections and intersecting shapes connections
 			if (checkSelfRelConnection(conn, newLine)) {
-				super.resetEndPointsToEdge(conn, newLine);
+				getSelfRelVertices(conn,newLine);
+				/*super.resetEndPointsToEdge(conn, newLine);
 				OrthogonalRouterUtilities.transformToOrthogonalPointList(newLine, getOffShapeDirection(getAnchorOffRectangleDirection(newLine.getFirstPoint(), sourceBoundsRelativeToConnection(conn))),
 						getOffShapeDirection(getAnchorOffRectangleDirection(newLine.getLastPoint(), targetBoundsRelativeToConnection(conn))));
-				removeRedundantPoints(newLine);
+				removeRedundantPoints(newLine);*/
 				return;
 			}
 			break;
@@ -171,59 +217,45 @@ public class MessageRouter extends ObliqueRouter {
 
 	@Override
 	protected void getSelfRelVertices(Connection conn, PointList newLine) {
-		// Copy the points calculated from Bendpoints.
-		PointList oldLine = newLine.getCopy();
-		rectilinearResetEndPointsToEdge(conn, newLine);
-		IFigure owner = conn.getSourceAnchor().getOwner();
-		Point middle = owner.getBounds().getCenter();
-		// ensure that the end points are anchored properly to the shape.
-		Point ptS2 = newLine.getPoint(0);
-		Point ptS1 = conn.getSourceAnchor().getReferencePoint();
-		conn.translateToRelative(ptS1);
-		Point ptAbsS2 = new Point(ptS2);
-		conn.translateToAbsolute(ptAbsS2);
-		Point ptEdge = conn.getSourceAnchor().getLocation(ptAbsS2);
-		conn.translateToRelative(ptEdge);
-		ptS1 = getStraightEdgePoint(ptEdge, ptS1, ptS2);
-		Point ptE2 = newLine.getPoint(newLine.size() - 1);
-		Point ptE1 = conn.getTargetAnchor().getReferencePoint();
-		conn.translateToRelative(ptE1);
-		Point ptAbsE2 = new Point(ptE2);
-		conn.translateToAbsolute(ptAbsE2);
-		ptEdge = conn.getTargetAnchor().getLocation(ptAbsE2);
-		conn.translateToRelative(ptEdge);
-		ptE1 = getStraightEdgePoint(ptEdge, ptE1, ptE2);
-		newLine.removeAllPoints();
-		newLine.addPoint(ptS1);
-		// Fixed bug about custom self message. If there are 4 points, insert middle two ones for supporting bendpoints.
-		if (oldLine.size() == 4) {
-			Point p2 = oldLine.getPoint(1);
-			Point p3 = oldLine.getPoint(2);
-			int x = Math.min(p2.x, p3.x);
-			newLine.addPoint(x, ptS1.y);
-			newLine.addPoint(x, ptE1.y);
+		Point ptSource = conn.getSourceAnchor().getReferencePoint();
+		Point ptTarget = conn.getTargetAnchor().getReferencePoint();
+		Point pe1 = ptSource.getCopy();
+		Point pe2 = ptTarget.getCopy();
+		Rectangle messageBounds = new Rectangle(ptSource, ptTarget);
+		messageBounds.expand(messageBounds.width == 0 ? 1 : 0,  messageBounds.height == 0 ? 1 : 0);
+		
+		IFigure srcFigure = getLifelineOrFragmentFigure(conn.getSourceAnchor().getOwner());
+		IFigure trgFigure = getLifelineOrFragmentFigure(conn.getTargetAnchor().getOwner());
+		// Common Container
+		IFigure containerFigure = FigureUtils.findParentFigureInstance(srcFigure, InteractionRectangleFigure.class);
+		
+		List<Rectangle> figuresOverlapping = Stream.concat(
+			FigureUtils.findChildFigureInstances(containerFigure, InteractionUseRectangleFigure.class).
+				stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
+			FigureUtils.findChildFigureInstances(containerFigure, ExecutionSpecificationNodePlate.class).
+				stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
+			collect(Collectors.toList());
+		int minx = figuresOverlapping.stream().map(Rectangle::x).min(Integer::compare).orElse(pe1.x);
+		int maxx = figuresOverlapping.stream().map(d->d.right()-1).max(Integer::compare).orElse(pe1.x);
+		
+		int leftDiff = Math.abs(messageBounds.x - minx);
+		int rightDiff = Math.abs(messageBounds.right() - maxx - 1);
+		if (rightDiff <= leftDiff) {
+			// towards the right
+			pe1.x = maxx + 30;
+			pe2.x = maxx + 30;			
 		} else {
-			// insert two points
-			Point extraPoint1 = ptS2.getTranslated(ptE2).scale(0.5);
-			if (isOnRightHand(conn, owner, middle)) {
-				extraPoint1.translate(SELFRELSIZEINIT, 0);
-			} else {
-				extraPoint1.translate(-SELFRELSIZEINIT, 0);
-			}
-			Point extraPoint2 = extraPoint1.getCopy();
-			if (isFeedback(conn)) {
-				extraPoint1.y = ptS2.y;
-				extraPoint2.y = ptE2.y;
-			} else {
-				extraPoint1.y = ptS1.y;
-				extraPoint2.y = ptE1.y;
-			}
-			newLine.addPoint(extraPoint1);
-			newLine.addPoint(extraPoint2);
+			pe1.x = minx - 30;
+			pe2.x = minx - 30;
 		}
-		newLine.addPoint(ptE1);
+		
+		newLine.removeAllPoints();
+		newLine.addPoint(conn.getSourceAnchor().getLocation(pe1));
+		newLine.addPoint(pe1);
+		newLine.addPoint(pe2);
+		newLine.addPoint(conn.getTargetAnchor().getLocation(pe2));
 	}
-
+	
 	protected boolean isOnRightHand(Connection conn, IFigure owner, Point middle) {
 		boolean right = true;
 		if (conn.getTargetAnchor() instanceof AnchorHelper.SideAnchor) {

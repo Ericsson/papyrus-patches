@@ -545,7 +545,10 @@ public class NodeUtilities {
 		if (allNodes.containsAll(bottomRow.getNodes())) {
 			if (bottomRow.getIndex() == nRows-1)
 				bottomRow = null;
-			bottomRow = interactionGraph.getRows().get(maxRow +1);
+			else if (maxRow+1 >= interactionGraph.getRows().size())
+				bottomRow = null;
+			else 
+				bottomRow = interactionGraph.getRows().get(maxRow +1);
 		}
 		int maxY = bottomRow != null ? bottomRow.getYPosition() : (interactionRect.y + interactionRect.height);
 		
@@ -602,17 +605,10 @@ public class NodeUtilities {
 		Rectangle r = null;
 		for (Node n : nodes) {
 			Rectangle b = n.getBounds();
-			if (b.width <= 1 && b.height <= 1) {
-				if (r == null)
-					r = new Rectangle(b.x,b.y,0,0);
-				else
-					r.union(b.x,b.y);
-			} else {
-				if (r == null)
-					r = b.getCopy();
-				else
-					r.union(b);				
-			}				
+			if (r == null)
+				r = new Rectangle(b.x,b.y,0,0);
+			else
+				Draw2dUtils.union(r,b);
 		}
 		
 		if (r == null)

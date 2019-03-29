@@ -230,7 +230,8 @@ public class CInteractionEditPart extends InteractionEditPart {
 	 * @return The connection anchor
 	 */
 	private ConnectionAnchor createAnchor(Point location) {
-		Rectangle rect = getFigure().getBounds();
+		Rectangle rect = getFigure().getBounds().getCopy();
+		getFigure().translateToAbsolute(rect);
 		int leftDiff = Math.abs(location.x - rect.x());
 		int rightDif = Math.abs(location.x - rect.right());
 

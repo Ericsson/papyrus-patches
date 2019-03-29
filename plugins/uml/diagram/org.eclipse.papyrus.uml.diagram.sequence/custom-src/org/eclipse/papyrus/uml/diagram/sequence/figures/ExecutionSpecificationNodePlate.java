@@ -76,7 +76,7 @@ public class ExecutionSpecificationNodePlate extends LinkLFSVGNodePlateFigure im
 
 	@Override
 	protected ConnectionAnchor createAnchor(PrecisionPoint p) {
-		return new LinkLFSlidableRoundedRectangleAnchor(this, p) {
+		return new LinkLFSlidableRoundedRectangleAnchor(this, p) {			
 			@Override
 			public Point getLocation(Point refParent, Point refPort) {
 				Rectangle r = super.getOwner().getBounds().getCopy();

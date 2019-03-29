@@ -413,7 +413,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					NodeImpl srcNode = null;
 					if (msgEndSrc instanceof Gate) {					
 						if (source instanceof Interaction) {
-							srcNode = srcNode = interactionGraph.addGate((Interaction)source, (Gate)msgEndSrc, srcBeforeFrag);
+							srcNode = interactionGraph.addGate((Interaction)source, (Gate)msgEndSrc, srcBeforeFrag);
 						} else if (source instanceof InteractionUse) {
 							srcNode = interactionGraph.addGate((InteractionUse)source, (Gate)msgEndSrc, srcBeforeFrag);
 						}
@@ -450,9 +450,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						final Node _trgNode = trgNode;
 						List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().filter(
 								d-> d != _srcNode && d != _trgNode && d.getBounds().y >= nudgeFrom).collect(Collectors.toList());
+						boolean isSelf = NodeUtilities.isSelfLink(message);
 						interactionGraph.disableLayout();
 						try {
-							NodeUtilities.nudgeNodes(nodesAfter, 0, 40);
+							NodeUtilities.nudgeNodes(nodesAfter, 0, !isSelf ? 40 : 60);
 						} finally {
 							interactionGraph.enableLayout();
 							interactionGraph.layout();
@@ -477,7 +478,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						
 						Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
 						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, repMosTrg, srcBeforeFrag);				
-						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y);
+						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y + (isSelf ? 20 : 0));
 						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(0, 0)));
 	
 						message = graph.connectMessageEnds(repMosSrc, repMosTrg);
@@ -1905,7 +1906,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
-				
+				/*
+				// TODO: Layout SelfMessage using columns....
+				// TODO: Fix the MessageRouter to align the feedback 
 				// Handling Bendpoints for self message
 				if (isSelfLink) {
 					RelativeBendpoints bendpoints = (RelativeBendpoints)edge.getBendpoints();
@@ -1916,9 +1919,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					l.add(new RelativeBendpoint(trgAnchorPoint.x - srcAnchorPoint.x, trgAnchorPoint.y - srcAnchorPoint.y, 0, 0));
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, bendpoints, NotationPackage.Literals.RELATIVE_BENDPOINTS__POINTS, l)));
-					/*command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-							editingDomain, edge, NotationPackage.Literals.EDGE__BENDPOINTS, bendpoints)));*/
-				}
+					// command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+					//	 	editingDomain, edge, NotationPackage.Literals.EDGE__BENDPOINTS, bendpoints)));
+				}*/
 			}
 			
 			// Handling Destroy Ocurrences

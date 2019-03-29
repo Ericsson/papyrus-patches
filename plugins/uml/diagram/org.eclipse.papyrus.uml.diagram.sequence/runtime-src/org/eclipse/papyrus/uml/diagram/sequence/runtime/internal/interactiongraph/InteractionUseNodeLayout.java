@@ -39,7 +39,7 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 			if (!clusters.isEmpty()) {				
 				Rectangle childRect = NodeUtilities.getArea(clusters);
 				r = childRect.getCopy();
-				r.height = 40;
+				r.height = 60;
 				List<Cluster> lifelines = clusters.stream().map(NodeUtilities::getLifelineNode).filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
 				if (!lifelines.isEmpty()) {
 					int leftSide = lifelines.stream().map(Node::getBounds).map(Rectangle::x).collect(Collectors.minBy(Integer::compare)).get();

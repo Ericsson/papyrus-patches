@@ -64,7 +64,7 @@ public class InteractionUseRectangleFigure extends RoundedCompartmentFigure {
 				int centerHeight = centerSize.height;
 				// Centered the label
 				int centerX = containerBounds.getCenter().x() - centerWidth / 2;
-				int centerY = containerBounds.getCenter().y() - centerHeight / 2;
+				int centerY = containerBounds.getCenter().y() + 12 - centerHeight / 2;
 
 				centerLabel.setBounds(new Rectangle(centerX, centerY, centerWidth, centerHeight));
 

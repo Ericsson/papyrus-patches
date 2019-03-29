@@ -236,7 +236,7 @@ public class InteractionUseEditPart extends InteractionFragmentEditPart {
 	 */
 	@Override
 	protected NodeFigure createNodePlate() {
-		RoundedRectangleNodePlateFigure result = new RoundedRectangleNodePlateFigure(40, 40);
+		RoundedRectangleNodePlateFigure result = new RoundedRectangleNodePlateFigure(100, 60);
 		return result;
 	}
 

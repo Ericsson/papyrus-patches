@@ -181,10 +181,28 @@ public class AnchorHelper {
 		protected int position;
 
 		public FixedAnchorEx(IFigure f, int location) {
-			super(f, location == PositionConstants.TOP ? new PrecisionPoint(0.0, 0.0) : new PrecisionPoint(0.0, 1.0));
+			super(f, getFixedLocationPrecisionPoint(location));
 			this.position = location;
 		}
 
+		private static PrecisionPoint getFixedLocationPrecisionPoint(int location) {
+			double x = 0.5;
+			double y = 0.0;
+			if ((location & PositionConstants.BOTTOM) != 0) {
+				y = 1.0;
+			} else if ((location & PositionConstants.MIDDLE) != 0) {
+				y = 0.5;
+			} 
+
+			if ((location & PositionConstants.RIGHT) != 0) {
+				x = 1.0;
+			} else if ((location & PositionConstants.LEFT) != 0) {
+				x = 0.0;
+			} 
+			
+			return new PrecisionPoint(x, y);
+		}
+		
 		@Override
 		public Point getLocation(Point reference) {
 			if (position == PositionConstants.TOP) {

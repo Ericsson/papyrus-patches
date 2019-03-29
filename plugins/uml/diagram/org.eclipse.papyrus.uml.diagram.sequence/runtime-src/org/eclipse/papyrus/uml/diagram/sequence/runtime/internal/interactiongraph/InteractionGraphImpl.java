@@ -951,9 +951,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	
 	public void removeNodeBlock(List<Node> nodes) {
 		Rectangle r = NodeUtilities.getArea(nodes);
-		Row row = NodeUtilities.getRowAt(this, r.y);
-		Row prevRow = (row == null || row.getIndex() == 0) ? null : getRows().get(row.getIndex()-1);
-		int nudge = prevRow == null ? 0 : row.getYPosition() - prevRow.getYPosition();
+		Node nodeAfter = NodeUtilities.getNodeAfterVerticalPos(this, r.bottom());		
+		Row nextRow = nodeAfter == null ? null : nodeAfter.getRow();
+		int nudge = nextRow == null ? 0 : nextRow.getYPosition() - r.bottom();
 		
 		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
 		List<Node> others = NodeUtilities.getBlockOtherNodes(nodes);
@@ -1003,7 +1003,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			
 			nudgeArea = NodeUtilities.getNudgeArea(this, nodesAfter, false, true, allNodes);
 			int maxNudgeAfter = nudge; 
-			if (nudgeArea != null && otherArea != null)
+			if (nudgeArea != null && nodesAfterArea != null)
 				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / 20 * 20;
 
 			NodeUtilities.nudgeNodes(otherNodes, 0, -Math.max(0, Math.min(prev, maxNudgePrev)));			

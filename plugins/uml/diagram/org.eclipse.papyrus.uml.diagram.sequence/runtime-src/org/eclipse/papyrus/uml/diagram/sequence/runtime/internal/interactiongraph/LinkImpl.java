@@ -72,7 +72,7 @@ public class LinkImpl extends GraphItemImpl implements Link {
 
 	public Rectangle getBounds() {
 		Rectangle r = new Rectangle(getSourceLocation(), new Dimension(0,0));
-		r = r.getUnion(getTargetLocation());
+		r = Draw2dUtils.union(r.getCopy(),getTargetLocation());
 		r.width = Math.max(1,r.width);
 		r.height = Math.max(1,r.height);			
 		return r;

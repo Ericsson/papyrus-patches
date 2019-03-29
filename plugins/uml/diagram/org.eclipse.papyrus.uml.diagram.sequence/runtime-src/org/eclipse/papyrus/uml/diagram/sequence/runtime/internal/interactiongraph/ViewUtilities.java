@@ -20,6 +20,7 @@ import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.draw2d.geometry.Translatable;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
@@ -64,6 +65,16 @@ public class ViewUtilities {
 	public static final int LIFELINE_HEADER_HEIGHT = 19;
 	public static final int LIFELINE_DEFAULT_WIDTH = 100;
 	public static final int EXECUTION_SPECIFICATION_WIDTH = AbstractExecutionSpecificationEditPart.DEFAUT_WIDTH;
+
+	public static <T extends Translatable> T translateToAbsolute(IFigure fig, T t) {
+		fig.translateToAbsolute(t);
+		return t;
+	}
+	
+	public static <T extends Translatable> T translateToRelative(IFigure fig, T t) {
+		fig.translateToRelative(t);
+		return t;
+	}
 
 	public static View getViewForElement(View containerView, Element element) {
 		if (containerView == null) {
@@ -203,7 +214,7 @@ public class ViewUtilities {
 			if (r == null) {
 				r = getBounds(viewer, vw);
 			} else {
-				r.union(getBounds(viewer, vw));
+				Draw2dUtils.union(r,getBounds(viewer, vw));
 			}
 		}
 		
@@ -229,7 +240,7 @@ public class ViewUtilities {
 				if (r == null) {
 					r = new Rectangle(p.x, p.y, 0, 0);
 				} else {
-					r.union(p);
+					Draw2dUtils.union(r,p);
 				}
 				p = getAnchorLocationForView(viewer, e, EdgeSide.Target);
 			}
@@ -466,187 +477,6 @@ public class ViewUtilities {
 		return dimension;
 	}
 
-	/*
-	 * public static boolean hasConstraints(View view) {
-	 * Location constraint = getLocationConstraint(view);
-	 * if (constraint instanceof Bounds) {
-	 * Bounds b = (Bounds)constraint;
-	 * if (b.getWidth() == -1 && b.getHeight() == -1 && b.getX() == 0 && b.getY() == 0)
-	 * return false;
-	 * }
-	 * return (constraint != null);
-	 * }
-	 *
-	 * public static Point getLocationForView(EditPartViewer viewer, View view) {
-	 * Location constraint = getLocationConstraint(viewer, view);
-	 * if (constraint == null) {
-	 * return null;
-	 * }
-	 * return absolutePoint(viewer, (View)view.eContainer(), new Point(constraint.getX(), constraint.getY()));
-	 * }
-	 *
-	 * public static void setAbsoluteBounds(EditPartViewer viewer, View view, Rectangle bb) {
-	 * if (view instanceof org.eclipse.gmf.runtime.notation.Node) {
-	 * org.eclipse.gmf.runtime.notation.Node node = (org.eclipse.gmf.runtime.notation.Node)view;
-	 * Bounds b = NotationFactory.eINSTANCE.createBounds();
-	 * Rectangle parentBounds = getBounds(viewer, (View)view.eContainer());
-	 * Point tl = relativePoint(viewer, (View)view.eContainer(), bb.getTopLeft());
-	 * b.setX(tl.x);
-	 * b.setY(tl.y);
-	 * b.setHeight(bb.height);
-	 * b.setWidth(bb.width);
-	 * node.setLayoutConstraint(b);
-	 *
-	 * }
-	 * }
-	 *
-	 * public static Rectangle getBounds(EditPartViewer viewer, View view) {
-	 * if (view instanceof org.eclipse.gmf.runtime.notation.Node) {
-	 * org.eclipse.gmf.runtime.notation.Node node = (org.eclipse.gmf.runtime.notation.Node)view;
-	 * Location constraints = getLocationConstraint(viewer,view);
-	 * if (constraints == null)
-	 * return null;
-	 * Point p = absolutePoint(viewer, (View)view.eContainer(), (Location)constraints);
-	 * if (constraints instanceof Size) {
-	 * Size sz = (Size)constraints;
-	 * return new Rectangle(p.x, p.y, sz.getWidth(), sz.getHeight());
-	 * } else {
-	 * return new Rectangle(p.x, p.y, 0, 0);
-	 * }
-	 * }
-	 * return null;
-	 * }
-	 *
-	 * public static Rectangle getChildrenBounds(EditPartViewer viewer, View container, List<View> filter, String... types) {
-	 * Set<String> typeSet = new HashSet<String>(Arrays.asList(types));
-	 * List<View> views = new ArrayList(container.getChildren());
-	 * views.removeAll(filter);
-	 * Iterator<View> it = views.iterator();
-	 * while (it.hasNext()) {
-	 * View vw = it.next();
-	 * if (typeSet.contains(vw.getType())) {
-	 * it.remove();
-	 * }
-	 * if (vw.getElement() == null) {
-	 * it.remove();
-	 * }
-	 * }
-	 * return getBounds(viewer, views);
-	 * }
-	 *
-	 * public static Rectangle getBounds(EditPartViewer viewer, List<View> viewList) {
-	 * Rectangle r = null;
-	 * for (View vw : viewList) {
-	 * if (vw instanceof Edge) {
-	 * Edge e = (Edge)vw;
-	 * Point p = getAnchorLocationForView(viewer, e, e.getSource());
-	 * for (int i=0; i<2; i++) {
-	 * if (r == null) {
-	 * r = new Rectangle(p.x, p.y, 0, 0);
-	 * } else {
-	 * r.union(p);
-	 * }
-	 * p = getAnchorLocationForView(viewer, e, e.getTarget());
-	 * }
-	 * } else {
-	 * if (r == null)
-	 * r = getBounds(viewer, vw);
-	 * else
-	 * r.union(getBounds(viewer, vw));
-	 * }
-	 * }
-	 * return r;
-	 * }
-	 *
-	 * private static Rectangle getLocationConstraint(EditPartViewer viewer, View view) {
-	 * View parentView = (View)view.eContainer();
-	 * GraphicalEditPart ep = getEditPart(viewer,view);
-	 * if (ep == null)
-	 * return getLocationConstraint(view);
-	 *
-	 * Location loc = getAbsoluteLocationConstraint(ep.getFigure());
-	 * if (loc == null) {
-	 * return getLocationConstraint(view);
-	 * }
-	 * cancelViewportEffects(ep,loc);
-	 *
-	 * GraphicalEditPart parentEp = getEditPart(viewer,parentView);
-	 * if (parentEp == null)
-	 * return loc;
-	 * Location parentLoc = getAbsoluteLocationConstraint(parentEp.getContentPane());
-	 * cancelViewportEffects(parentEp,parentLoc);
-	 * loc.setX(loc.getX() - parentLoc.getX());
-	 * loc.setY(loc.getY() - parentLoc.getY());
-	 * return loc;
-	 * }
-	 *
-	 * private static Location getLocationConstraint(View view) {
-	 * if (view instanceof org.eclipse.gmf.runtime.notation.Node) {
-	 * org.eclipse.gmf.runtime.notation.Node node = (org.eclipse.gmf.runtime.notation.Node)view;
-	 * LayoutConstraint constraints = node.getLayoutConstraint();
-	 * if (constraints instanceof Location) {
-	 * return (Location)constraints;
-	 * }
-	 * }
-	 * return null;
-	 * }
-	 *
-	 * private static Location cancelViewportEffects(EditPart ep, Location loc) {
-	 * if (ep == ep.getRoot())
-	 * return loc;
-	 * IFigure viewport = ((GraphicalEditPart)ep.getRoot()).getFigure();
-	 * if (viewport instanceof Viewport) {
-	 * Point p = ((Viewport) viewport).getViewLocation();
-	 * loc.setX(loc.getX()+p.x);
-	 * loc.setY(loc.getY()+p.y);
-	 * }
-	 * return loc;
-	 * }
-	 *
-	 *
-	 * public static Point absolutePoint(EditPartViewer viewer, View view, Point p) {
-	 * p = p.getCopy();
-	 * View container = view;
-	 * while (container != null) {
-	 * Rectangle r = getLocationConstraint(viewer, container);
-	 * if (r == null) {
-	 * return p;
-	 * }
-	 * p.x += r.x;
-	 * p.y += r.y;
-	 * container = (View)container.eContainer();
-	 * }
-	 * return p;
-	 * }
-	 *
-	 * private static Point relativePoint(EditPartViewer viewer, View view, Location loc) {
-	 * return relativePoint(viewer, view, new Point(loc.getX(), loc.getY()));
-	 * }
-	 *
-	 * public static Point relativePoint(EditPartViewer viewer, View view, Point p) {
-	 * List<View> containers = new ArrayList<View>();
-	 * View container = view;
-	 * while (container != null) {
-	 * containers.add(container);
-	 * container = (View)container.eContainer();
-	 * }
-	 *
-	 * Collections.reverse(containers);
-	 * p = p.getCopy();
-	 *
-	 *
-	 * for (View parent : containers) {
-	 * Location loc = getLocationConstraint(viewer, parent);
-	 * if (loc == null) {
-	 * continue;
-	 * }
-	 * p.x -= loc.getX();
-	 * p.y -= loc.getY();
-	 * }
-	 *
-	 * return p;
-	 * }
-	 */
 	private static GraphicalEditPart getEditPart(EditPartViewer viewer, View v) {
 		if (viewer == null) {
 			return null;
