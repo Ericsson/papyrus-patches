@@ -912,8 +912,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		int after = blockEndPoint - otherEndPoint; 
 		
 		int postInsertionNudge = 0;
-		int newYPos = yPos;
-		if (yPos > blockEndPoint) {
+/*		if (yPos > blockEndPoint) {
 			// Insertion point after block
 			if (otherArea != null) {
 				newYPos -= prev;
@@ -933,13 +932,39 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			newYPos = yPos;
 			postInsertionNudge = yPos - blockStartPoint;
 		}		
-		
+*/		
+				
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
 				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getTopLevelCluster(d))));
 
 		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
 				collect(Collectors.toList());
 		removeNodeBlockImpl(nodes,otherNodes,0);		
+		
+		Rectangle newOtherArea = NodeUtilities.getArea(otherNodes);
+		
+		int newYPos = yPos;
+		if (yPos > blockEndPoint) {
+			// Insertion point after block
+			if (otherArea != null) {
+				newYPos -= prev;
+				newYPos -= after;
+			} else {
+				newYPos -= height;
+			}
+		} else if (otherArea != null && yPos > otherEndPoint) {
+			// Insertion point inside block after the other content
+			newYPos = newOtherArea.bottom() + yPos - otherArea.bottom();
+			postInsertionNudge = blockEndPoint - yPos ;
+		} else if (otherArea != null && yPos > otherStartPoint) {
+			// Insertion point inside block inside the other content
+			newYPos -= prev;
+		} else if (yPos > blockStartPoint) {
+			// Insertion point inside block before the other content
+			newYPos = yPos;
+			postInsertionNudge = yPos - blockStartPoint;
+		}				
+		
 		addNodeBlock(nodesByLifeline, newYPos, postInsertionNudge);
 	}
 	
@@ -953,6 +978,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		Rectangle r = NodeUtilities.getArea(nodes);
 		Node nodeAfter = NodeUtilities.getNodeAfterVerticalPos(this, r.bottom());		
 		Row nextRow = nodeAfter == null ? null : nodeAfter.getRow();
+		// TODO: @etxacam Check if we need to do it always... (Remove space to the next row.)
 		int nudge = nextRow == null ? 0 : nextRow.getYPosition() - r.bottom();
 		
 		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
@@ -1006,8 +1032,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			if (nudgeArea != null && nodesAfterArea != null)
 				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / 20 * 20;
 
-			NodeUtilities.nudgeNodes(otherNodes, 0, -Math.max(0, Math.min(prev, maxNudgePrev)));			
-			NodeUtilities.nudgeNodes(nodesAfter, 0, -Math.max(0, Math.min(nudge, maxNudgeAfter)));
+			int nudgeUpOthers = otherArea == null ? 0 : Math.max(0, Math.min(prev, maxNudgePrev));
+			NodeUtilities.nudgeNodes(otherNodes, 0, -nudgeUpOthers);			
+			NodeUtilities.nudgeNodes(nodesAfter, 0, -Math.max(0, Math.min(nudge, maxNudgeAfter) + nudgeUpOthers ));
 		} finally {
 			enableLayout();
 			layout();

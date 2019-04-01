@@ -15,13 +15,11 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.draw2d.Connection;
-import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
@@ -50,7 +48,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.figures.ExecutionSpecificationNo
 import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceDiagramConstants;
-import org.eclipse.uml2.uml.ExecutionSpecification;
 
 /**
  * A multi behavior router which enable to draw message.
