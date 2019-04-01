@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
@@ -73,6 +74,14 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 			r.height = 0;
 			node.setBounds(r);
 		}
+	}
+
+	@Override
+	public Dimension getMinimumSize(NodeImpl node) {
+		if (node instanceof Cluster) {
+			return new Dimension(40,60);
+		}
+		return new Dimension(0,0);
 	}
 
 }

@@ -15,6 +15,7 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.validation.internal.service.GetBatchConstraintsOperation;
 
@@ -35,4 +36,9 @@ public interface InteractionNodeLayout {
 	public default Rectangle getConstraints(NodeImpl node) {
 		return node.getBounds().getCopy();
 	}
+
+	public default Dimension getMinimumSize(NodeImpl node) {
+		return new Dimension(0,0);
+	}
+
 }

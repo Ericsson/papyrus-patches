@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EClass;
@@ -480,18 +481,50 @@ public class NodeUtilities {
 	}
 
 	public static void nudgeNodes(Node n, int xDelta, int yDelta) {
-		n.getBounds().x += xDelta;
-		n.getBounds().y += yDelta;
+		nudgeNodes(Collections.singletonList(n), xDelta, yDelta);
 	}
 	
-	public static void nudgeNodes(List<Node> nodes, int xDelta, int yDelta) {
+	public static Dimension nudgeNodes(List<Node> nodes, int xDelta, int yDelta) {
+		if (nodes.isEmpty())
+			return new Dimension(xDelta,yDelta);
+		InteractionGraphImpl graph = ((InteractionGraphImpl)nodes.get(0).getInteractionGraph());
+		
+		int minYDelta = yDelta;
+		Set<Cluster> parents = nodes.stream().map(Node::getParent).collect(Collectors.toSet());
+		// Check how much we can nudge without break parents minimum size.
+		for (Cluster c : parents) {
+			Dimension minSize = graph.getLayoutManager().getMinimumSize((ClusterImpl)c);
+			Node startNode = getStartNode(c);
+			Node endNode = getFinishNode(c);
+			if (startNode == null || endNode == null)
+				continue;
+			
+			if (nodes.contains(startNode) && nodes.contains(endNode))
+				continue;
+			// We do not use the parent bounds as it may not be recalculated.
+			int height = endNode.getBounds().y - startNode.getBounds().y;
+			if (nodes.contains(startNode)) {
+				if (height - yDelta < minSize.height) {
+					minYDelta = Math.min(minYDelta, Math.max(0, height - minSize.height));
+				}
+			}
+			
+			if (nodes.contains(endNode)) {
+				if (height + yDelta < minSize.height) {
+					minYDelta = Math.max(minYDelta, - Math.max(0, height - minSize.height));
+				}				
+			}
+		}
+		
+		yDelta = minYDelta;
 		for (Node n : nodes) {
 			n.getBounds().x += xDelta;
 			n.getBounds().y += yDelta;
-			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
 		}		
-		if (nodes.size() > 0)
-			((InteractionGraphImpl)nodes.get(0).getInteractionGraph()).layout();
+
+		graph.layout();
+		
+		return new Dimension(xDelta, yDelta);
 	}
 
 	public static Rectangle getEmptyAreaAround(InteractionGraphImpl interactionGraph, List<Node> nodes) {

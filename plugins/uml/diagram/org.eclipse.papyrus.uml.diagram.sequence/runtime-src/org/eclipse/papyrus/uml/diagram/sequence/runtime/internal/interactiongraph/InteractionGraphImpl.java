@@ -947,7 +947,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		if (yPos > blockEndPoint) {
 			// Insertion point after block
 			if (otherArea != null) {
-				newYPos -= prev;
+				// TODO: @etxacam Need to calculate the newYPos based on the next row (if any otherwise -prev-after)
+				newYPos -= prev; 
 				newYPos -= after;
 			} else {
 				newYPos -= height;
@@ -958,7 +959,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			postInsertionNudge = blockEndPoint - yPos ;
 		} else if (otherArea != null && yPos > otherStartPoint) {
 			// Insertion point inside block inside the other content
-			newYPos -= prev;
+			newYPos -= prev; // TODO: @etxacam Need to calculate the newYPos based other block start (if any otherwise -prev-after)
 		} else if (yPos > blockStartPoint) {
 			// Insertion point inside block before the other content
 			newYPos = yPos;
@@ -1033,7 +1034,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / 20 * 20;
 
 			int nudgeUpOthers = otherArea == null ? 0 : Math.max(0, Math.min(prev, maxNudgePrev));
-			NodeUtilities.nudgeNodes(otherNodes, 0, -nudgeUpOthers);			
+			nudgeUpOthers = -NodeUtilities.nudgeNodes(otherNodes, 0, -nudgeUpOthers).height;			
 			NodeUtilities.nudgeNodes(nodesAfter, 0, -Math.max(0, Math.min(nudge, maxNudgeAfter) + nudgeUpOthers ));
 		} finally {
 			enableLayout();

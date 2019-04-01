@@ -15,6 +15,7 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -54,6 +55,14 @@ public class ExecutionSpecificationNodeLayout implements InteractionNodeLayout {
 			r.height = 0;
 			node.setBounds(r);
 		}
+	}
+
+	@Override
+	public Dimension getMinimumSize(NodeImpl node) {
+		if (node instanceof Cluster) {
+			return new Dimension(20,40);
+		}
+		return new Dimension(0,0);
 	}
 
 }

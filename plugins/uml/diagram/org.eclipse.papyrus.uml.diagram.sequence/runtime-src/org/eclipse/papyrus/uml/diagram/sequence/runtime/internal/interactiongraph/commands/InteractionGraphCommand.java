@@ -2039,7 +2039,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	private ICommand deleteMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
 		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Message");		
 		cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message)));
-		if (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification) {
+		if (message.getSendEvent() instanceof Gate) {
+			cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message.getSendEvent())));			
+		}
+
+		if (message.getReceiveEvent() instanceof DestructionOccurrenceSpecification || message.getReceiveEvent() instanceof Gate) {
 			cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message.getReceiveEvent())));			
 		}
 		

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -81,6 +82,21 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 			InteractionNodeLayout layout = getNodeLayoutFor(node);
 			layoutImp(node, layout);
 		}
+	}
+
+	@Override
+	public Dimension getMinimumSize(NodeImpl node) {
+		if (node instanceof ClusterImpl) {
+			InteractionNodeLayout layout = getClusterLayoutFor((ClusterImpl)node);
+			if (layout != null)
+				return layout.getMinimumSize(node);
+		} 
+
+		InteractionNodeLayout layout = getNodeLayoutFor(node);
+		if (layout != null)
+			return layout.getMinimumSize(node);
+		
+		return new Dimension(0,0);
 	}
 
 	private void layoutImp(NodeImpl node, InteractionNodeLayout layout) {
