@@ -66,7 +66,7 @@ public class MessageRouter extends ObliqueRouter {
 
 		public static RouterKind getKind(Connection conn, PointList newLine) {
 
-			if (isSelfConnection(conn)) {
+			if (isSelfConnection(conn, newLine)) {
 
 				return SELF;
 			}
@@ -101,7 +101,7 @@ public class MessageRouter extends ObliqueRouter {
 		/**
 		 * It is self if the parent lifeline is the same.
 		 */
-		private static boolean isSelfConnection(Connection conn) {
+		private static boolean isSelfConnection(Connection conn, PointList newLine) {
 			if (conn == null || conn.getSourceAnchor() == null || conn.getTargetAnchor() == null) {
 				return false;
 			}
@@ -116,10 +116,28 @@ public class MessageRouter extends ObliqueRouter {
 				targetLifeline.translateToAbsolute(trgRect);
 				
 				if (trgRect.intersects(srcRect)) {
-					return true;
-					
+					return true;					
 				}
+				
+			} else {
+				if (newLine.size() != 4)
+					return false;
+				
+				Point p1 = newLine.getFirstPoint();
+				Point p12 = newLine.getPoint(1);
+				Point p22 = newLine.getPoint(2);
+				Point p2 = newLine.getLastPoint();
+				
+				if (Math.abs(p1.y - p12.y) > 2 && Math.abs(p2.y - p22.y) > 2 && Math.abs(p12.x - p22.x) > 2) {
+					return false;
+				}
+				
+				float sig1 = Math.signum(p1.x-p12.x);
+				float sig2 = Math.signum(p2.x-p22.x);
+				
+				return sig1 == sig2 && sig1 != 0 && sig2 != 0; 
 			}
+
 			return sourceLifeline != null && sourceLifeline.equals(targetLifeline);
 		}
 	}
@@ -163,15 +181,14 @@ public class MessageRouter extends ObliqueRouter {
 			break;
 		case OBLIQUE:
 			super.routeLine(conn, nestedRoutingDepth, newLine);
-			adjustCreateEndpoint(conn, newLine);
 			// force 2 bendpoints only
-			if (newLine.size() > 2) {
+			/*if (newLine.size() > 2) {
 				sourcePoint = newLine.getFirstPoint();
 				targetPoint = newLine.getLastPoint();
 				newLine.removeAllPoints();
 				newLine.addPoint(sourcePoint);
 				newLine.addPoint(targetPoint);
-			}
+			}*/
 			break;
 		case SELF:
 			// Handle special routing: self connections and intersecting shapes connections
@@ -199,19 +216,6 @@ public class MessageRouter extends ObliqueRouter {
 		return super.checkShapesIntersect(conn, newLine);
 	}
 
-	protected void adjustCreateEndpoint(Connection conn, PointList newLine) {
-		// if (conn instanceof MessageCreate) {
-		// if (newLine.size() >= 2) {
-		// Point start = newLine.getFirstPoint();
-		// Point end = newLine.getLastPoint();
-		// if (start.y != end.y) {
-		// start.y = end.y;
-		// newLine.setPoint(start, 0);
-		// }
-		// }
-		// }
-	}
-
 	@Override
 	protected void getSelfRelVertices(Connection conn, PointList newLine) {
 		Point ptSource = conn.getSourceAnchor().getReferencePoint();
@@ -224,16 +228,21 @@ public class MessageRouter extends ObliqueRouter {
 		IFigure srcFigure = getLifelineOrFragmentFigure(conn.getSourceAnchor().getOwner());
 		IFigure trgFigure = getLifelineOrFragmentFigure(conn.getTargetAnchor().getOwner());
 		// Common Container
-		IFigure containerFigure = FigureUtils.findParentFigureInstance(srcFigure, InteractionRectangleFigure.class);
-		
-		List<Rectangle> figuresOverlapping = Stream.concat(
-			FigureUtils.findChildFigureInstances(containerFigure, InteractionUseRectangleFigure.class).
-				stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
-			FigureUtils.findChildFigureInstances(containerFigure, ExecutionSpecificationNodePlate.class).
-				stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
-			collect(Collectors.toList());
-		int minx = figuresOverlapping.stream().map(Rectangle::x).min(Integer::compare).orElse(pe1.x);
-		int maxx = figuresOverlapping.stream().map(d->d.right()-1).max(Integer::compare).orElse(pe1.x);
+		int minx = pe1.x;
+		int maxx = pe1.x;
+
+		if (srcFigure != null && trgFigure != null) {
+			IFigure containerFigure = FigureUtils.findParentFigureInstance(srcFigure, InteractionRectangleFigure.class);
+			
+			List<Rectangle> figuresOverlapping = Stream.concat(
+				FigureUtils.findChildFigureInstances(containerFigure, InteractionUseRectangleFigure.class).
+					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
+				FigureUtils.findChildFigureInstances(containerFigure, ExecutionSpecificationNodePlate.class).
+					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
+				collect(Collectors.toList());
+			minx = figuresOverlapping.stream().map(Rectangle::x).min(Integer::compare).orElse(pe1.x);
+			maxx = figuresOverlapping.stream().map(d->d.right()-1).max(Integer::compare).orElse(pe1.x);
+		}
 		
 		int leftDiff = Math.abs(messageBounds.x - minx);
 		int rightDiff = Math.abs(messageBounds.right() - maxx - 1);
@@ -253,20 +262,6 @@ public class MessageRouter extends ObliqueRouter {
 		newLine.addPoint(conn.getTargetAnchor().getLocation(pe2));
 	}
 	
-	protected boolean isOnRightHand(Connection conn, IFigure owner, Point middle) {
-		boolean right = true;
-		if (conn.getTargetAnchor() instanceof AnchorHelper.SideAnchor) {
-			AnchorHelper.SideAnchor anchor = (AnchorHelper.SideAnchor) conn.getTargetAnchor();
-			right = anchor.isRight();
-		} else {
-			PointList list = conn.getPoints();
-			if (list.getPoint(0).x > list.getPoint(1).x) {
-				right = false;
-			}
-		}
-		return right;
-	}
-
 	@Override
 	protected boolean checkSelfRelConnection(Connection conn, PointList newLine) {
 		if (RouterKind.getKind(conn, newLine).equals(RouterKind.SELF)) {
