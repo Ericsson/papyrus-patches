@@ -1,5 +1,5 @@
 /*****************************************************************************
-  * (c) Copyright 2018 Telefonaktiebolaget LM Ericsson
+ * (c) Copyright 2019 Telefonaktiebolaget LM Ericsson
  *
  *    
  * All rights reserved. This program and the accompanying materials
@@ -8,7 +8,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *  Antonio Campesino (Ericsson) antonio.campesino.robles@ericsson.com - Initial API and implementation
+ *  Antonio Campesino (Ericsson) - Initial API and implementation
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;

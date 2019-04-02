@@ -10,6 +10,7 @@
  *
  * Contributors:
  *  Benoit Maggi (CEA LIST) benoit.maggi@cea.fr - Initial API and implementation
+ *  Antonio campesino (Ericsson) - Seq. Diag. patch
  *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.strategy.paste;

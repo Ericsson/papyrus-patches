@@ -12,6 +12,7 @@
  *  Benoit Maggi (CEA LIST) benoit.maggi@cea.fr - Initial API and implementation
  *  Christian W. Damus - bug 508404
  *  Asma Smaoui (CEA LIST) asma.smaoui@cea.fr -Bug 490804
+ *  Antonio campesino (Ericsson) - Seq. Diag. patch
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.commands;
 

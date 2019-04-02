@@ -1,18 +1,14 @@
 /*****************************************************************************
- * Copyright (c) 2017 CEA LIST, ALL4TEC, EclipseSource and others.
+ * (c) Copyright 2019 Telefonaktiebolaget LM Ericsson
  *
+ *    
  * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
+ * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
- *
- * SPDX-License-Identifier: EPL-2.0
+ * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *   CEA LIST - Initial API and implementation
- *   MickaÃ«l ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 519621, 519756, 526191
- *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 531596
- *   EclipseSource - Bug 536641
+ *  Antonio Campesino (Ericsson) - Initial API and implementation
  *
  *****************************************************************************/
 

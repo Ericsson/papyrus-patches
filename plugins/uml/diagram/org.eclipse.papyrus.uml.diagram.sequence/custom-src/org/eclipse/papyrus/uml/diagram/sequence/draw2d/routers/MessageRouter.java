@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010 CEA
+ * Copyright (c) 2010-2019 CEA and Telefonaktiebolaget LM Ericsson
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -11,6 +11,7 @@
  *
  * Contributors:
  *   Atos Origin - Initial API and implementation
+ *   Antonio Campesino (Ericsson) - Fixing several issues for Self Messages and feedbacks
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.draw2d.routers;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2017 CEA LIST, ALL4TEC and others.
+ * Copyright (c) 2017-2019 CEA LIST, ALL4TEC, Ericsson and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,9 @@
  *
  * Contributors:
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 521312
- *****************************************************************************/
+ *   Antonio Campesino (Ericsson) - Extending fix locations
+ *
+  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.helpers;
 
 import org.eclipse.draw2d.ConnectionAnchor;

@@ -1,4 +1,4 @@
-/*****************************************************************************
+﻿/*****************************************************************************
  * Copyright (c) 2015, 2017 CEA LIST.
  * 
  * All rights reserved. This program and the accompanying materials
@@ -13,6 +13,7 @@
  *  Celine JANSSENS (ALL4TEC) celine.janssens@all4tec.net - Bug 471348
  *  Thanh Liem PHAN (ALL4TEC) thanhliem.phan@all4tec.net - Bug 507488
  *  Fanch BONNABESSE (ALL4TEC) fanch.bonnabesse@all4tec.net - Bug 521573, 525463
+ *  Antonio campesino (Ericsson) - Seq. Diag. patch
  *****************************************************************************/
 
 /* Display name in italic when isAbstract=true (bug 464129)*/
