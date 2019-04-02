@@ -9,6 +9,6 @@
 	  <relativePath>../../../../../tea-nwa-papyrus-ext/papyrus-patches</relativePath>
 	</parent>
 	<artifactId>org.eclipse.papyrus.uml.properties</artifactId>
-	<version>3.2.500-SNAPSHOT</version>
+	<version>3.3.100-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 </project>
