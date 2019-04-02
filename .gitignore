@@ -15,5 +15,4 @@ tests/**/.metadata/
 *.iml
 
 # All .project that are not in a Papyrus plugin
-.project
 !**/org.eclipse.papyrus.*/.project
