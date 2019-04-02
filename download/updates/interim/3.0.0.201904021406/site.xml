@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description name="NWADSL R3A Update Site">
+      Ericsson Papyrus patches update site.
+   </description>
+   <feature url="features/com.ericsson.papyrus.patches.feature_3.0.0.201904021406.jar" id="com.ericsson.papyrus.patches.feature" version="3.0.0.201904021406">
+      <category name="com.ericsson.papyrus.patches"/>
+   </feature>
+   <category-def name="com.ericsson.papyrus.patches" label="Ericsson Papyrus Patches"/>
+</site>
