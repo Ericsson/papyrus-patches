@@ -12,21 +12,29 @@
  *   CEA LIST - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 519621, 526803
  *   Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - Bug 531520
- *   Christian W. Damus - bug 533672
+ *   Christian W. Damus - bugs 533672, 536486
  *****************************************************************************/
 
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 
+import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.PositionConstants;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.requests.CreateRequest;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
@@ -44,8 +52,13 @@ import org.eclipse.papyrus.uml.diagram.sequence.figures.LifeLineLayoutManager;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineNodeFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.MessageCreateLifelineAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
+import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.DisplayEvent;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
+import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
+import org.eclipse.uml2.uml.MessageSort;
 
 /**
  * @author Patrick Tessier
@@ -273,5 +286,73 @@ public class CLifeLineEditPart extends LifelineEditPart {
 			return;
 		}
 		super.eraseTargetFeedback(request);
+	}
+
+	@Override
+	protected boolean addFixedChild(EditPart childEditPart) {
+		Optional<MessageEnd> createEnd = TimeElementLocator.getTimedElement(childEditPart, MessageEnd.class)
+				.filter(MessageEnd::isReceive)
+				.filter(end -> end.getMessage().getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL);
+
+		return createEnd.map(__ -> {
+			getBorderedFigure().getBorderItemContainer()
+					.add(((IGraphicalEditPart) childEditPart).getFigure(),
+							new TimeElementLocator(getMainFigure(), this::getTimeElementSide));
+
+			return true;
+		}).orElseGet(() -> super.addFixedChild(childEditPart));
+	}
+
+	public OptionalInt getCreateMessageIncomingSide(Point where) {
+		// The proposed location is in relative coordinates, but the DisplayEvent API is
+		// in absolute terms (dealing with the mouse pointer)
+		Point search = where.getCopy();
+		getMainFigure().translateToAbsolute(search);
+
+		DisplayEvent displayEvent = new DisplayEvent(this);
+		MessageEnd end = displayEvent.getMessageEvent(getMainFigure(), search);
+		if ((end != null) && end.isReceive() && (end.getMessage().getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL)) {
+			return getCreateMessageIncomingSide(end);
+		}
+
+		return OptionalInt.empty();
+	}
+
+	private OptionalInt getCreateMessageIncomingSide(MessageEnd end) {
+		LifelineFigure lifelineFigure = (LifelineFigure) svgNodePlate.getChildren().get(0);
+		IFigure headerFigure = lifelineFigure.getHeaderFigure();
+
+		OptionalInt result = OptionalInt.empty();
+
+		for (Object next : getTargetConnections()) {
+			ConnectionEditPart incoming = (ConnectionEditPart) next;
+			EObject semantic = incoming.getAdapter(EObject.class);
+			if (semantic instanceof Message) {
+				Message message = (Message) semantic;
+				if (message.getMessageSort() == MessageSort.CREATE_MESSAGE_LITERAL) {
+					Point headCenter = headerFigure.getBounds().getCenter();
+					lifelineFigure.translateToAbsolute(headCenter);
+					Connection conn = (Connection) incoming.getFigure();
+					Point target = conn.getPoints().getLastPoint();
+					if (target.x() > headCenter.x()) {
+						// The create message is incoming from the right
+						result = OptionalInt.of(PositionConstants.EAST);
+					} else {
+						result = OptionalInt.of(PositionConstants.WEST);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	int getTimeElementSide(Rectangle proposedBounds) {
+		OptionalInt incoming = getCreateMessageIncomingSide(proposedBounds.getTopLeft());
+		return incoming.isPresent()
+				// Put the time element on the side opposite to the incoming create message
+				? PositionConstants.EAST_WEST ^ incoming.getAsInt()
+				// Center it on the lifeline
+				: PositionConstants.CENTER;
 	}
 }

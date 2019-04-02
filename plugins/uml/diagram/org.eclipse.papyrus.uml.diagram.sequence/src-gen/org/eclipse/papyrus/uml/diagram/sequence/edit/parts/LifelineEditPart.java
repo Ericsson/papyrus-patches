@@ -123,10 +123,9 @@ public class LifelineEditPart extends RoundedCompartmentEditPart {
 				if (vid != null) {
 					switch (vid) {
 					case StateInvariantEditPart.VISUAL_ID:
-					case TimeConstraintEditPart.VISUAL_ID:
-					case TimeObservationEditPart.VISUAL_ID:
-					case DurationConstraintEditPart.VISUAL_ID:
 					case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
+					case TimeConstraintBorderNodeEditPart.VISUAL_ID:
+					case TimeObservationBorderNodeEditPart.VISUAL_ID:
 						return new BorderItemResizableEditPolicy();
 					}
 				}
@@ -188,48 +187,12 @@ public class LifelineEditPart extends RoundedCompartmentEditPart {
 			return true;
 		}
 
-
-
-
 		// Papyrus Gencode :Specific locator for the itemBorder of the lifeline.
 		if (childEditPart instanceof StateInvariantEditPart) {
 			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
 			getBorderedFigure().getBorderItemContainer().add(((StateInvariantEditPart) childEditPart).getFigure(), locator);
 			return true;
 		}
-
-
-
-
-		// Papyrus Gencode :Affixed locator for Lifelines to place element with a time bar
-		if (childEditPart instanceof TimeConstraintEditPart) {
-			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
-			getBorderedFigure().getBorderItemContainer().add(((TimeConstraintEditPart) childEditPart).getFigure(), locator);
-			return true;
-		}
-
-
-
-
-		// Papyrus Gencode :Affixed locator for Lifelines to place element with a time bar
-		if (childEditPart instanceof TimeObservationEditPart) {
-			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
-			getBorderedFigure().getBorderItemContainer().add(((TimeObservationEditPart) childEditPart).getFigure(), locator);
-			return true;
-		}
-
-
-
-
-		// Papyrus Gencode :Affixed locator for Lifelines to place element with a time bar
-		if (childEditPart instanceof DurationConstraintEditPart) {
-			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
-			getBorderedFigure().getBorderItemContainer().add(((DurationConstraintEditPart) childEditPart).getFigure(), locator);
-			return true;
-		}
-
-
-
 
 		// Papyrus Gencode :Specific locator for the itemBorder of the lifeline.
 		if (childEditPart instanceof DestructionOccurrenceSpecificationEditPart) {
@@ -238,6 +201,21 @@ public class LifelineEditPart extends RoundedCompartmentEditPart {
 			return true;
 		}
 
+		// Papyrus Gencode :Specific locator for the itemBorder of the lifeline.
+		if (childEditPart instanceof TimeConstraintBorderNodeEditPart) {
+			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
+			getBorderedFigure().getBorderItemContainer()
+					.add(((TimeConstraintBorderNodeEditPart) childEditPart).getFigure(), locator);
+			return true;
+		}
+
+		// Papyrus Gencode :Specific locator for the itemBorder of the lifeline.
+		if (childEditPart instanceof TimeObservationBorderNodeEditPart) {
+			IBorderItemLocator locator = new CenterLocator(getMainFigure(), PositionConstants.NONE);
+			getBorderedFigure().getBorderItemContainer()
+					.add(((TimeObservationBorderNodeEditPart) childEditPart).getFigure(), locator);
+			return true;
+		}
 
 		return false;
 	}
@@ -253,20 +231,18 @@ public class LifelineEditPart extends RoundedCompartmentEditPart {
 			getBorderedFigure().getBorderItemContainer().remove(((StateInvariantEditPart) childEditPart).getFigure());
 			return true;
 		}
-		if (childEditPart instanceof TimeConstraintEditPart) {
-			getBorderedFigure().getBorderItemContainer().remove(((TimeConstraintEditPart) childEditPart).getFigure());
-			return true;
-		}
-		if (childEditPart instanceof TimeObservationEditPart) {
-			getBorderedFigure().getBorderItemContainer().remove(((TimeObservationEditPart) childEditPart).getFigure());
-			return true;
-		}
-		if (childEditPart instanceof DurationConstraintEditPart) {
-			getBorderedFigure().getBorderItemContainer().remove(((DurationConstraintEditPart) childEditPart).getFigure());
-			return true;
-		}
 		if (childEditPart instanceof DestructionOccurrenceSpecificationEditPart) {
 			getBorderedFigure().getBorderItemContainer().remove(((DestructionOccurrenceSpecificationEditPart) childEditPart).getFigure());
+			return true;
+		}
+		if (childEditPart instanceof TimeConstraintBorderNodeEditPart) {
+			getBorderedFigure().getBorderItemContainer()
+					.remove(((TimeConstraintBorderNodeEditPart) childEditPart).getFigure());
+			return true;
+		}
+		if (childEditPart instanceof TimeObservationBorderNodeEditPart) {
+			getBorderedFigure().getBorderItemContainer()
+					.remove(((TimeObservationBorderNodeEditPart) childEditPart).getFigure());
 			return true;
 		}
 		return false;

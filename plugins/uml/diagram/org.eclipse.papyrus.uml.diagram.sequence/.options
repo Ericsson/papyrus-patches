@@ -5,6 +5,3 @@ org.eclipse.papyrus.uml.diagram.sequence/debug=false
 
 # Visual IDs
 org.eclipse.papyrus.uml.diagram.sequence/debug/visualID=false
-org.eclipse.papyrus.uml.diagram.sequence/debug/SequenceDebug=false
-org.eclipse.papyrus.uml.diagram.sequence/debug/SequenceDebugGrid=false
-org.eclipse.papyrus.uml.diagram.sequence/debug/SequenceDebugUtil=false

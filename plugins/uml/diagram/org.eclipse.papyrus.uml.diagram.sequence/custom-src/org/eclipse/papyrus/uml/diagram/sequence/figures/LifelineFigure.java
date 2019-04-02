@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010 - 2018 CEA
+ * Copyright (c) 2010 - 2018 CEA, Christian W. Damus, and others
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -13,6 +13,7 @@
  *   Soyatec - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 519408
  *   Vincent LORENZO (CEA LIST) vincent.lorenzo@cea.fr - Bug 531520
+ *   Christian W. Damus - bugs 539373, 536486
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.figures;
 
@@ -32,6 +33,7 @@ import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.LayoutManager;
 import org.eclipse.draw2d.MarginBorder;
 import org.eclipse.draw2d.RectangleFigure;
+import org.eclipse.draw2d.TreeSearch;
 import org.eclipse.draw2d.XYLayout;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
@@ -74,6 +76,9 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 		}
 	}
 
+	// Buffer on either side of the stem to take as hit area for mouse pointer
+	private static final int STEM_HIT_BUFFER = 20;
+
 	protected RectangleFigure lifelineHeaderBoundsFigure;
 
 	@Deprecated
@@ -88,6 +93,12 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 	 * @since 5.0
 	 */
 	private List<NodeFigure> childrenFigure = new ArrayList<>();
+
+	// The polygon to which connections (messages etc.) attach
+	private PointList cachedPolygon;
+
+	// A polygon defining the area in which the lifeline may be selected by the mouse pointer
+	private PointList cachedHitAreaPolygon;
 
 	/**
 	 * Constructor.
@@ -115,33 +126,57 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 	 */
 	@Override
 	public PointList getPolygonPoints() {
-		// we create the nude Lifeline figure
+		if (cachedPolygon == null) {
+			// we create the basic Lifeline figure
 		final PointList points = new PointList(8);
-		// top left corner
-		points.addPoint(this.getBounds().x, this.getBounds().y);
-		// top right corner
-		points.addPoint(this.getBounds().x + this.getBounds().width, this.getBounds().y);
-		// bottom header right corner
-		points.addPoint(this.getBounds().x + this.getBounds().width, ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader());
-		// bottom middle header
-		points.addPoint(this.getBounds().x + this.getBounds().width / 2, ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader());
-		// middle bottom lifeline
-		points.addPoint(this.getBounds().x + this.getBounds().width / 2, this.getBounds().y + this.getBounds().height);
-		// bottom middle header
-		points.addPoint(this.getBounds().x + this.getBounds().width / 2, ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader());
-		// bottom left header
-		points.addPoint(this.getBounds().x, ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader());
-		// top left header
-		points.addPoint(this.getBounds().x, this.getBounds().y);
 
-		if (this.childrenFigure.isEmpty()) {
-			return points;
-		} else {
+			int bottomOfHeader = ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader();
+			Rectangle bounds = this.getBounds();
+			int right = bounds.right();
+			int midX = bounds.x + bounds.width / 2;
+
+		// top left corner
+			points.addPoint(bounds.x, bounds.y);
+		// top right corner
+			points.addPoint(right, bounds.y);
+		// bottom header right corner
+			points.addPoint(right, bottomOfHeader);
+		// bottom middle header
+			points.addPoint(midX, bottomOfHeader);
+		// middle bottom lifeline
+			points.addPoint(midX, bounds.bottom());
+		// bottom middle header
+			points.addPoint(midX, bottomOfHeader);
+		// bottom left header
+			points.addPoint(bounds.x, bottomOfHeader);
+		// top left header
+			points.addPoint(bounds.x, bounds.y);
+
+			// Duplicate this basic shape for the hit area but make a wider target on the stem
+			final PointList hitArea = points.getCopy();
+			Point broadStem = new Point(midX + STEM_HIT_BUFFER, bottomOfHeader);
+			hitArea.setPoint(broadStem, 3);
+			broadStem.setY(bounds.bottom());
+			hitArea.setPoint(broadStem, 4);
+			broadStem.setX(midX - STEM_HIT_BUFFER);
+			hitArea.insertPoint(broadStem, 5); // This is a new point at the bottom of the stem
+			broadStem.setY(bottomOfHeader);
+			hitArea.setPoint(broadStem, 6);
+			cachedHitAreaPolygon = hitArea;
+
 			// for bug 531520:
 			// all messages are now attached in the notation to the Lifeline
 			// we continue to represent them attached to the ExecutionSpeficiation, that why we complete the polygon list with the ExecutionSpeficiation of the Lifeline
-			return completeFigureWithChildren(points);
+			cachedPolygon = completeFigureWithChildren(points);
 		}
+
+		return cachedPolygon;
+	}
+
+	private PointList getHitAreaPolygon() {
+		// Ensure it is computed
+		getPolygonPoints();
+		return cachedHitAreaPolygon;
 	}
 
 	/**
@@ -397,15 +432,16 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 		// Draw dash line first to be under child
 		graphics.setLineDash(new int[] { 5, 5 });
 		graphics.drawLine(new Point(rect.x + rect.width / 2, ((LifeLineLayoutManager) this.getLifeLineLayoutManager()).getBottomHeader()), new Point(rect.x + rect.width / 2, rect.y + rect.height - 1));
-		graphics.popState();
 
-		// to draw the anchor shape for debug (bug 531520)
-		// if (false == this.childrenFigure.isEmpty()) {
-		// graphics.setForegroundColor(new Color(Display.getDefault(), new RGB(255, 0, 0)));
-		// PointList pol = getPolygonPoints();
+		// DEBUG: to draw the convex hull of the lifeline shape (bug 531520)
+		// if (!this.childrenFigure.isEmpty()) {
+		// graphics.setForegroundColor(org.eclipse.draw2d.ColorConstants.red);
+		// PointList pol = getPolygonPoints(); // getHitAreaPolygon();
 		// graphics.drawPolygon(pol);
 		// graphics.setForegroundColor(getForegroundColor());
 		// }
+
+		graphics.popState();
 
 
 		// Then finish to draw figure.
@@ -474,6 +510,10 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 		this.add(lifelineHeaderBoundsFigure);
 	}
 
+	public IFigure getHeaderFigure() {
+		return lifelineHeaderBoundsFigure;
+	}
+
 	protected IMapMode getMapMode() {
 		return MapModeUtil.getMapMode();
 	}
@@ -509,6 +549,29 @@ public class LifelineFigure extends RoundedCompartmentFigure {
 		this.childrenFigure = childrenFigure == null ? Collections.emptyList() : childrenFigure;
 	}
 
+	@Override
+	public void invalidate() {
+		cachedPolygon = null;
+		cachedHitAreaPolygon = null;
+		super.invalidate();
+	}
+
+	@Override
+	public boolean containsPoint(int x, int y) {
+		// The easy case: on the lifeline itself (and its buffer zone)
+		boolean result = getHitAreaPolygon().polygonContainsPoint(x, y);
+		if (!result) {
+			// Drill into children for their border items etc.
+			result = FigureHitTestUtil.INSTANCE.anyChildContainsPoint(this, x, y);
+		}
+		return result;
+	}
+
+	@Override
+	protected IFigure findDescendantAtExcluding(int x, int y, TreeSearch search) {
+		// Our client area is degenerate, so don't consider it as super does
+		return FigureHitTestUtil.INSTANCE.findChildAt(this, x, y, search);
+	}
 
 	/**
 	 *

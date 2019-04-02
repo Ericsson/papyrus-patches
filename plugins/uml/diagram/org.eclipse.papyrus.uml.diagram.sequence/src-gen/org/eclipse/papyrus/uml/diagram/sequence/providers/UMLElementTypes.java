@@ -37,9 +37,8 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ConstraintEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContextLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ContinuationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DestructionOccurrenceSpecificationEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintInMessageEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationConstraintLinkEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.DurationObservationLinkEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GeneralOrderingEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
@@ -55,8 +54,8 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.SequenceDiagramEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.StateInvariantEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeConstraintBorderNodeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.TimeObservationBorderNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.uml2.uml.UMLPackage;
@@ -146,21 +145,6 @@ public class UMLElementTypes {
 	/**
 	 * @generated
 	 */
-	public static final IElementType TimeConstraint_Shape = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.TimeConstraint_Shape"); //$NON-NLS-1$
-	/**
-	 * @generated
-	 */
-	public static final IElementType TimeObservation_Shape = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.TimeObservation_Shape"); //$NON-NLS-1$
-	/**
-	 * @generated
-	 */
-	public static final IElementType DurationConstraint_Shape = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.DurationConstraint_Shape"); //$NON-NLS-1$
-	/**
-	 * @generated
-	 */
 	public static final IElementType DestructionOccurrenceSpecification_Shape = getElementTypeByUniqueId(
 			"org.eclipse.papyrus.umldi.DestructionOccurrenceSpecification_Shape"); //$NON-NLS-1$
 	/**
@@ -176,17 +160,19 @@ public class UMLElementTypes {
 	/**
 	 * @generated
 	 */
-	public static final IElementType DurationConstraint_Shape_CN = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.DurationConstraint_Shape_CN"); //$NON-NLS-1$
-	/**
-	 * @generated
-	 */
-	public static final IElementType DurationObservation_Shape = getElementTypeByUniqueId(
-			"org.eclipse.papyrus.umldi.DurationObservation_Shape"); //$NON-NLS-1$
-	/**
-	 * @generated
-	 */
 	public static final IElementType Gate_Shape = getElementTypeByUniqueId("org.eclipse.papyrus.umldi.Gate_Shape"); //$NON-NLS-1$
+
+	/**
+	 * @generated
+	 */
+	public static final IElementType TimeConstraint_Shape = getElementTypeByUniqueId(
+			"org.eclipse.papyrus.umldi.TimeConstraint_Shape"); //$NON-NLS-1$
+
+	/**
+	 * @generated
+	 */
+	public static final IElementType TimeObservation_Shape = getElementTypeByUniqueId(
+			"org.eclipse.papyrus.umldi.TimeObservation_Shape"); //$NON-NLS-1$
 
 	/**
 	 * @generated
@@ -243,6 +229,18 @@ public class UMLElementTypes {
 	 */
 	public static final IElementType Constraint_ContextEdge = getElementTypeByUniqueId(
 			"org.eclipse.papyrus.umldi.Constraint_ContextEdge"); //$NON-NLS-1$
+
+	/**
+	 * @generated
+	 */
+	public static final IElementType DurationConstraint_Edge = getElementTypeByUniqueId(
+			"org.eclipse.papyrus.umldi.DurationConstraint_Edge"); //$NON-NLS-1$
+
+	/**
+	 * @generated
+	 */
+	public static final IElementType DurationObservation_Edge = getElementTypeByUniqueId(
+			"org.eclipse.papyrus.umldi.DurationObservation_Edge"); //$NON-NLS-1$
 
 	/**
 	 * @generated
@@ -305,12 +303,6 @@ public class UMLElementTypes {
 
 			elements.put(StateInvariant_Shape, UMLPackage.eINSTANCE.getStateInvariant());
 
-			elements.put(TimeConstraint_Shape, UMLPackage.eINSTANCE.getTimeConstraint());
-
-			elements.put(TimeObservation_Shape, UMLPackage.eINSTANCE.getTimeObservation());
-
-			elements.put(DurationConstraint_Shape, UMLPackage.eINSTANCE.getDurationConstraint());
-
 			elements.put(DestructionOccurrenceSpecification_Shape,
 					UMLPackage.eINSTANCE.getDestructionOccurrenceSpecification());
 
@@ -318,11 +310,11 @@ public class UMLElementTypes {
 
 			elements.put(Comment_Shape, UMLPackage.eINSTANCE.getComment());
 
-			elements.put(DurationConstraint_Shape_CN, UMLPackage.eINSTANCE.getDurationConstraint());
-
-			elements.put(DurationObservation_Shape, UMLPackage.eINSTANCE.getDurationObservation());
-
 			elements.put(Gate_Shape, UMLPackage.eINSTANCE.getGate());
+
+			elements.put(TimeConstraint_Shape, UMLPackage.eINSTANCE.getTimeConstraint());
+
+			elements.put(TimeObservation_Shape, UMLPackage.eINSTANCE.getTimeObservation());
 
 			elements.put(Message_SynchEdge, UMLPackage.eINSTANCE.getMessage());
 
@@ -345,6 +337,10 @@ public class UMLElementTypes {
 			elements.put(GeneralOrdering_Edge, UMLPackage.eINSTANCE.getGeneralOrdering());
 
 			elements.put(Constraint_ContextEdge, UMLPackage.eINSTANCE.getConstraint_Context());
+
+			elements.put(DurationConstraint_Edge, UMLPackage.eINSTANCE.getDurationConstraint());
+
+			elements.put(DurationObservation_Edge, UMLPackage.eINSTANCE.getDurationObservation());
 		}
 		return elements.get(type);
 	}
@@ -373,15 +369,12 @@ public class UMLElementTypes {
 			KNOWN_ELEMENT_TYPES.add(ActionExecutionSpecification_Shape);
 			KNOWN_ELEMENT_TYPES.add(BehaviorExecutionSpecification_Shape);
 			KNOWN_ELEMENT_TYPES.add(StateInvariant_Shape);
-			KNOWN_ELEMENT_TYPES.add(TimeConstraint_Shape);
-			KNOWN_ELEMENT_TYPES.add(TimeObservation_Shape);
-			KNOWN_ELEMENT_TYPES.add(DurationConstraint_Shape);
 			KNOWN_ELEMENT_TYPES.add(DestructionOccurrenceSpecification_Shape);
 			KNOWN_ELEMENT_TYPES.add(Constraint_Shape);
 			KNOWN_ELEMENT_TYPES.add(Comment_Shape);
-			KNOWN_ELEMENT_TYPES.add(DurationConstraint_Shape_CN);
-			KNOWN_ELEMENT_TYPES.add(DurationObservation_Shape);
 			KNOWN_ELEMENT_TYPES.add(Gate_Shape);
+			KNOWN_ELEMENT_TYPES.add(TimeConstraint_Shape);
+			KNOWN_ELEMENT_TYPES.add(TimeObservation_Shape);
 			KNOWN_ELEMENT_TYPES.add(Message_SynchEdge);
 			KNOWN_ELEMENT_TYPES.add(Message_AsynchEdge);
 			KNOWN_ELEMENT_TYPES.add(Message_ReplyEdge);
@@ -393,6 +386,8 @@ public class UMLElementTypes {
 			KNOWN_ELEMENT_TYPES.add(Constraint_ConstrainedElementEdge);
 			KNOWN_ELEMENT_TYPES.add(GeneralOrdering_Edge);
 			KNOWN_ELEMENT_TYPES.add(Constraint_ContextEdge);
+			KNOWN_ELEMENT_TYPES.add(DurationConstraint_Edge);
+			KNOWN_ELEMENT_TYPES.add(DurationObservation_Edge);
 		}
 
 		boolean result = KNOWN_ELEMENT_TYPES.contains(elementType);
@@ -435,24 +430,18 @@ public class UMLElementTypes {
 				return BehaviorExecutionSpecification_Shape;
 			case StateInvariantEditPart.VISUAL_ID:
 				return StateInvariant_Shape;
-			case TimeConstraintEditPart.VISUAL_ID:
-				return TimeConstraint_Shape;
-			case TimeObservationEditPart.VISUAL_ID:
-				return TimeObservation_Shape;
-			case DurationConstraintEditPart.VISUAL_ID:
-				return DurationConstraint_Shape;
 			case DestructionOccurrenceSpecificationEditPart.VISUAL_ID:
 				return DestructionOccurrenceSpecification_Shape;
 			case ConstraintEditPart.VISUAL_ID:
 				return Constraint_Shape;
 			case CommentEditPart.VISUAL_ID:
 				return Comment_Shape;
-			case DurationConstraintInMessageEditPart.VISUAL_ID:
-				return DurationConstraint_Shape_CN;
-			case DurationObservationEditPart.VISUAL_ID:
-				return DurationObservation_Shape;
 			case GateEditPart.VISUAL_ID:
 				return Gate_Shape;
+			case TimeConstraintBorderNodeEditPart.VISUAL_ID:
+				return TimeConstraint_Shape;
+			case TimeObservationBorderNodeEditPart.VISUAL_ID:
+				return TimeObservation_Shape;
 			case MessageSyncEditPart.VISUAL_ID:
 				return Message_SynchEdge;
 			case MessageAsyncEditPart.VISUAL_ID:
@@ -475,6 +464,10 @@ public class UMLElementTypes {
 				return GeneralOrdering_Edge;
 			case ContextLinkEditPart.VISUAL_ID:
 				return Constraint_ContextEdge;
+			case DurationConstraintLinkEditPart.VISUAL_ID:
+				return DurationConstraint_Edge;
+			case DurationObservationLinkEditPart.VISUAL_ID:
+				return DurationObservation_Edge;
 			}
 		}
 		return null;

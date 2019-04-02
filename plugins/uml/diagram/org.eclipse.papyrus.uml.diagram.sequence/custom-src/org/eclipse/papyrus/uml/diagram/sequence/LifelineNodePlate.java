@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 CEA LIST and others.
+ * Copyright (c) 2016, 2018 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,12 +11,15 @@
  * Contributors:
  *   CEA LIST - Initial API and implementation
  *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 531596
+ *   Christian W. Damus - bug 539373
  *
  *****************************************************************************/
 
 package org.eclipse.papyrus.uml.diagram.sequence;
 
 import org.eclipse.draw2d.ConnectionAnchor;
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.TreeSearch;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
@@ -54,12 +57,13 @@ public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 
 	}
 
-	/**
-	 * @see org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure#getPolygonPoints()
-	 */
 	@Override
 	public PointList getPolygonPoints() {
-		return ((NodeFigure) this.getChildren().get(0)).getPolygonPoints();
+		return getLifelineFigure().getPolygonPoints();
+	}
+
+	NodeFigure getLifelineFigure() {
+		return (NodeFigure) this.getChildren().get(0);
 	}
 
 	@Override
@@ -88,9 +92,6 @@ public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 		}
 	}
 
-	/**
-	 * @see org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure#isDefaultAnchorArea(org.eclipse.draw2d.geometry.PrecisionPoint)
-	 */
 	@Override
 	protected boolean isDefaultAnchorArea(PrecisionPoint p) {
 		return false;
@@ -98,10 +99,13 @@ public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 
 	@Override
 	public boolean containsPoint(int x, int y) {
-		if (Math.abs(this.getBounds().x + this.getBounds().width / 2 - x) < 20) {
-			return super.containsPoint(x, y);
-		}
-		return false;
+		return getLifelineFigure().containsPoint(x, y);
+	}
+
+	@Override
+	public final IFigure findFigureAt(int x, int y, TreeSearch search) {
+		NodeFigure lifeline = getLifelineFigure();
+		return lifeline.findFigureAt(x, y, search);
 	}
 
 }

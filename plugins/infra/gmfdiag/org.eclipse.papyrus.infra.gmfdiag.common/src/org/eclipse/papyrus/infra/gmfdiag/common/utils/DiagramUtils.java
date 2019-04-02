@@ -13,6 +13,8 @@
  *  Mathieu Velten (Atos Origin) mathieu.velten@atosorigin.com - Initial API and implementation
  *  Benoit Maggi    (Cea)        benoit.maggi@cea.fr - Add utility to get the containing diagram
  *  Christian W. Damus - bug 527580
+ *  Ansgar Radermacher - bug 539754
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.utils;
 
@@ -178,13 +180,13 @@ public class DiagramUtils {
 
 	/**
 	 * Gets the prototype of a {@code diagram} according to a given policy {@code checker}.
-	 * 
+	 *
 	 * @param diagram
 	 *            a diagram
 	 * @param checker
 	 *            a policy checker
 	 * @return the policy {@code checker}'s prototype for the {@code diagram}
-	 * 
+	 *
 	 * @since 3.2
 	 */
 	public static ViewPrototype getPrototype(Diagram diagram, PolicyChecker checker) {
@@ -262,8 +264,12 @@ public class DiagramUtils {
 				pvs = (PapyrusDiagramStyle) diagram.createStyle(StylePackage.Literals.PAPYRUS_DIAGRAM_STYLE);
 				pvs.setDiagramKindId(prototype.getRepresentationKind().getId());
 			}
-		} else
-			throw new IllegalArgumentException("The diagram's type differs from the prototype's implementation id");
+		} else {
+			throw new IllegalArgumentException(
+					String.format("The diagram type (=%s) differs from the prototype's implementation id (=%s)", //$NON-NLS-1$
+							diagram.getType(),
+							prototype.getRepresentationKind().getImplementationID()));
+		}
 	}
 
 

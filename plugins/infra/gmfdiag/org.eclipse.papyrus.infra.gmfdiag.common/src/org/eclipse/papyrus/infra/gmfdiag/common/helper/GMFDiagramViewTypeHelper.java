@@ -11,22 +11,21 @@
  * Contributors:
  *  Laurent Wouters laurent.wouters@cea.fr - Initial API and implementation
  *  Christian W. Damus - bug 527580
- *  
+ *  Ansgar Radermacher - bug 539754
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.helper;
 
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.papyrus.infra.gmfdiag.common.AbstractPapyrusGmfCreateDiagramCommandHandler;
 import org.eclipse.papyrus.infra.gmfdiag.common.Activator;
 import org.eclipse.papyrus.infra.gmfdiag.common.utils.DiagramUtils;
 import org.eclipse.papyrus.infra.gmfdiag.representation.PapyrusDiagram;
+import org.eclipse.papyrus.infra.tools.util.ClassLoaderHelper;
 import org.eclipse.papyrus.infra.viewpoints.policy.AbstractViewTypeHelper;
 import org.eclipse.papyrus.infra.viewpoints.policy.PolicyChecker;
 import org.eclipse.papyrus.infra.viewpoints.policy.ViewPrototype;
-import org.osgi.framework.Bundle;
 
 /**
  * Represents the dynamic contribution of a policy to menus
@@ -49,26 +48,15 @@ public class GMFDiagramViewTypeHelper extends AbstractViewTypeHelper<PapyrusDiag
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @since 3.100
 	 */
 	@Override
 	protected ViewPrototype doGetPrototypeFor(PapyrusDiagram diagramKind) {
 		String commandClassName = diagramKind.getCreationCommandClass();
 		if (commandClassName != null) {
-			Class<?> creationCommandClass = null;
-			
-			URI uri = diagramKind.eResource().getURI();
-			if (uri.isPlatformPlugin()) {
-				String bundleName = uri.segment(1);
-				Bundle bundle = Platform.getBundle(bundleName);
-				try {
-					creationCommandClass = bundle.loadClass(diagramKind.getCreationCommandClass());
-				} catch (ClassNotFoundException e) {
-					Activator.log.error(e);
-				}
-			}
-			
+			Class<?> creationCommandClass = ClassLoaderHelper.loadClass(commandClassName);
+
 			if (creationCommandClass != null) {
 				AbstractPapyrusGmfCreateDiagramCommandHandler command;
 				try {
@@ -77,9 +65,14 @@ public class GMFDiagramViewTypeHelper extends AbstractViewTypeHelper<PapyrusDiag
 					Activator.log.error(e);
 					return null;
 				}
-		
+
 				String language = diagramKind.getLanguage().getId();
 				return new DiagramPrototype(diagramKind, language, command);
+			} else {
+				// ClassLoaderHelper should have already logged an exception, but without stating diagram kind
+				Activator.log.error(new ClassNotFoundException(
+						String.format("Can not load creation command class %s for diagramKind %s.", //$NON-NLS-1$
+								commandClassName, diagramKind.getName())));
 			}
 		}
 		return null;
@@ -87,7 +80,7 @@ public class GMFDiagramViewTypeHelper extends AbstractViewTypeHelper<PapyrusDiag
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @since 3.2
 	 */
 	@Override

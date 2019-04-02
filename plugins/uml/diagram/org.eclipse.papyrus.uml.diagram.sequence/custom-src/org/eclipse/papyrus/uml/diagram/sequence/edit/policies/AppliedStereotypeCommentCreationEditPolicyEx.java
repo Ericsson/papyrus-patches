@@ -27,7 +27,6 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.emf.gmf.util.GMFUnsafe;
 import org.eclipse.papyrus.uml.diagram.common.Activator;
 import org.eclipse.papyrus.uml.diagram.sequence.command.CreateAppliedStereotypeCommentViewCommandEx;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CustomDurationConstraintEditPart;
 import org.eclipse.papyrus.uml.diagram.stereotype.edition.editpolicies.AppliedStereotypeCommentEditPolicy;
 import org.eclipse.swt.widgets.Display;
 
@@ -70,10 +69,8 @@ public class AppliedStereotypeCommentCreationEditPolicyEx extends AppliedStereot
 
 				}
 				boolean isBorderElement = false;
-				if (!(hostEditPart instanceof CustomDurationConstraintEditPart)) {
-					if (hostEditPart instanceof BorderedBorderItemEditPart) {
-						isBorderElement = true;
-					}
+				if (hostEditPart instanceof BorderedBorderItemEditPart) {
+					isBorderElement = true;
 				}
 				if (helper.getStereotypeComment((View) getHost().getModel()) == null) {
 					CreateAppliedStereotypeCommentViewCommandEx command = new CreateAppliedStereotypeCommentViewCommandEx(domain, (View) hostEditPart.getModel(), x, y, semanticElement, isBorderElement);

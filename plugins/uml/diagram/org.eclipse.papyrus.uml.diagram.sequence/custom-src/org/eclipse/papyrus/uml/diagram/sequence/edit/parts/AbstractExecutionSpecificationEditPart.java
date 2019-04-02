@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2017 CEA LIST and others.
+ * Copyright (c) 2017, 2018 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,10 +11,12 @@
  * Contributors:
  *   CEA LIST - Initial API and implementation
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 526079
+ *   Christian W. Damus - bug 536486
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.DelegatingLayout;
@@ -32,10 +34,13 @@ import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
+import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.common.core.util.Log;
 import org.eclipse.gmf.runtime.common.core.util.Trace;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IBorderItemEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.ResizableShapeEditPolicy;
+import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIDebugOptions;
 import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIPlugin;
 import org.eclipse.gmf.runtime.diagram.ui.internal.DiagramUIStatusCodes;
@@ -57,28 +62,42 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.gmf.runtime.notation.datatype.GradientData;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.IPapyrusNodeFigure;
 import org.eclipse.papyrus.uml.diagram.common.editparts.RoundedCompartmentEditPart;
+import org.eclipse.papyrus.uml.diagram.common.editpolicies.AffixedNodeAlignmentEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeBottomAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeTopAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.AppliedStereotypeCommentCreationEditPolicyEx;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.ExecutionSpecificationAffixedChildAlignmentPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateConnectionReferenceEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.UpdateWeakReferenceForExecSpecEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.ExecutionSpecificationNodePlate;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.CenterLocator;
+import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.BoundForEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectExecutionToGridEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectYCoordinateToGrillingEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.util.CoordinateReferentialUtils;
+import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.OccurrenceSpecificationUtil;
 import org.eclipse.papyrus.uml.diagram.stereotype.edition.editpolicies.AppliedStereotypeCommentEditPolicy;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.uml2.uml.MessageEnd;
 
 /**
  * Add implementing IPapyrusEditPart to displaying Stereotypes.
  *
  * @author Jin Liu (jin.liu@soyatec.com)
  */
+@SuppressWarnings("restriction")
 public abstract class AbstractExecutionSpecificationEditPart extends RoundedCompartmentEditPart {
 
-	public static final String EXECUTION_FIX_ANCHOR_POSITION = "Execution Fix Anchor Position";
+	/**
+	 * @deprecated since 5.1 this constant is not used anymore.
+	 */
+	@Deprecated
 	public static int DEFAUT_HEIGHT = 100;
 	public static int DEFAUT_WIDTH = 20;
 
@@ -148,7 +167,61 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 				feedback.setBounds(rect);
 			}
 		});
+		installEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE, new ExecutionSpecificationAffixedChildAlignmentPolicy());
+	}
 
+	@Override
+	protected void addBorderItem(IFigure borderItemContainer, IBorderItemEditPart borderItemEditPart) {
+		if (borderItemEditPart instanceof TimeConstraintBorderNodeEditPart ||
+				borderItemEditPart instanceof TimeObservationBorderNodeEditPart) {
+			Optional<MessageEnd> messageEnd = Optional.of(borderItemEditPart)
+					.filter(ITimeElementBorderNodeEditPart.class::isInstance)
+					.map(ITimeElementBorderNodeEditPart.class::cast)
+					.flatMap(ITimeElementBorderNodeEditPart::getMessageEnd);
+
+			IBorderItemLocator locator = messageEnd
+					// It needs to remain anchored to the message end
+					.map(__ -> new CenterLocator(getMainFigure(), PositionConstants.NONE))
+					.map(IBorderItemLocator.class::cast)
+					.orElseGet(() -> new TimeElementLocator(getMainFigure(),
+							constraint -> findNearestSide(getMainFigure(), constraint)));
+			borderItemContainer.add(borderItemEditPart.getFigure(), locator);
+		} else {
+			super.addBorderItem(borderItemContainer, borderItemEditPart);
+		}
+	}
+
+	/**
+	 * Given a {@code constraint} proposed for a border item (usually a time element)
+	 * on an execution figure, compute the side to which it should be attached.
+	 *
+	 * @param execFig
+	 *            an execution specification figure
+	 * @param constraint
+	 *            a proposed time element border item bounds
+	 *
+	 * @return a {@link PositionConstants} side
+	 */
+	public static int findNearestSide(IFigure execFig, Rectangle constraint) {
+		Rectangle figBounds = execFig.getBounds().getCopy();
+		Point where = constraint.getTopLeft();
+		where.setX((figBounds.width() - constraint.width()) / 2);
+
+		if (DurationLinkUtil.isStart(execFig, where)) {
+			// Pin it to the top of the execution
+			return PositionConstants.NORTH;
+		} else {
+			// Pin it to the bottome
+			return PositionConstants.SOUTH;
+		}
+	}
+
+	@Override
+	public EditPart getTargetEditPart(Request request) {
+		if (request instanceof CreateRequest) {
+			return super.getTargetEditPart(request);
+		}
+		return super.getTargetEditPart(request);
 	}
 
 	@Override
@@ -234,15 +307,15 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 	protected void moveExecutionSpecificationFeedback(ChangeBoundsRequest request, AbstractExecutionSpecificationEditPart movedPart, PrecisionRectangle rect, Rectangle originalBounds) {
 
 		// If this is a move to the top, the execution specification cannot be moved upper than the life line y position
-		if(request.getMoveDelta().y < 0) {
+		if (request.getMoveDelta().y < 0) {
 			EditPart parent = getParent();
-			if(parent instanceof CLifeLineEditPart) {
-				
+			if (parent instanceof CLifeLineEditPart) {
+
 				Point locationOnDiagram = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(originalBounds.getCopy().getLocation(), (GraphicalViewer) movedPart.getViewer());
-				Bounds parentBounds = BoundForEditPart.getBounds((Node)((CLifeLineEditPart)parent).getModel());
-				
+				Bounds parentBounds = BoundForEditPart.getBounds((Node) ((CLifeLineEditPart) parent).getModel());
+
 				// This magic delta is needed to be at the bottom of the life line name
-				if((locationOnDiagram.y + request.getMoveDelta().y) < (parentBounds.getY() + 50)) {
+				if ((locationOnDiagram.y + request.getMoveDelta().y) < (parentBounds.getY() + 50)) {
 					Point loc = locationOnDiagram.getCopy();
 					loc.y = parentBounds.getY() + 50;
 					rect.setLocation(loc);
@@ -306,20 +379,18 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 	 */
 	@Override
 	public ConnectionAnchor getTargetConnectionAnchor(Request request) {
-		Object fixPos = request.getExtendedData().get(EXECUTION_FIX_ANCHOR_POSITION);
-		if (fixPos != null && (fixPos.equals(PositionConstants.TOP) || fixPos.equals(PositionConstants.BOTTOM))) {
-			return new AnchorHelper.FixedAnchorEx(getFigure(), (Integer) fixPos);
-		}
 		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
 			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
 			List<?> relationshipTypes = createRequest.getElementTypes();
-			for (Object obj : relationshipTypes) {
-				if (UMLElementTypes.Message_SynchEdge.equals(obj)) {
+			for (Object type : relationshipTypes) {
+				if (UMLElementTypes.Message_SynchEdge.equals(type)) {
 					// Sync Message
 					if (!createRequest.getTargetEditPart().equals(createRequest.getSourceEditPart())) {
 						return new AnchorHelper.FixedAnchorEx(getFigure(), PositionConstants.TOP);
 					}
 					// otherwise, this is a recursive call, let destination free
+				} else if (UMLElementTypes.DurationConstraint_Edge.equals(type) || UMLElementTypes.DurationObservation_Edge.equals(type) || UMLElementTypes.GeneralOrdering_Edge.equals(type)) {
+					return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 				}
 			}
 		} else if (request instanceof ReconnectRequest) {
@@ -328,6 +399,8 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 			if (connectionEditPart instanceof MessageSyncEditPart) {
 				// Sync Message
 				return new AnchorHelper.FixedAnchorEx(getFigure(), PositionConstants.TOP);
+			} else if (DurationLinkUtil.isDurationLink(reconnectRequest) || GeneralOrderingUtil.isGeneralOrderingLink(reconnectRequest)) {
+				return OccurrenceSpecificationUtil.isStart(getFigure(), reconnectRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 			}
 		}
 		// Fixed bug about computing target anchor when creating message sync.
@@ -339,6 +412,9 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 				if (!createRequest.getTargetEditPart().equals(createRequest.getSourceEditPart())) {
 					return new AnchorHelper.FixedAnchorEx(getFigure(), PositionConstants.TOP);
 				}
+			}
+			if (DurationLinkUtil.isDurationLink(createRequest) || GeneralOrderingUtil.isGeneralOrderingLink(createRequest)) {
+				return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 			}
 		}
 		return super.getTargetConnectionAnchor(request);
@@ -360,7 +436,7 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		final org.eclipse.gmf.runtime.diagram.ui.editparts.ConnectionEditPart connection = (org.eclipse.gmf.runtime.diagram.ui.editparts.ConnectionEditPart) connEditPart;
 		String t = null;
 		try {
-			t = (String) getEditingDomain().runExclusive(new RunnableWithResult.Impl() {
+			t = (String) getEditingDomain().runExclusive(new RunnableWithResult.Impl<String>() {
 
 				@Override
 				public void run() {
@@ -394,17 +470,15 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 	 */
 	@Override
 	public ConnectionAnchor getSourceConnectionAnchor(Request request) {
-		Object fixPos = request.getExtendedData().get(EXECUTION_FIX_ANCHOR_POSITION);
-		if (fixPos != null && (fixPos.equals(PositionConstants.TOP) || fixPos.equals(PositionConstants.BOTTOM))) {
-			return new AnchorHelper.FixedAnchorEx(getFigure(), (Integer) fixPos);
-		}
 		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
 			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
 			List<?> relationshipTypes = createRequest.getElementTypes();
-			for (Object obj : relationshipTypes) {
-				if (UMLElementTypes.Message_ReplyEdge.equals(obj)) {
+			for (Object type : relationshipTypes) {
+				if (UMLElementTypes.Message_ReplyEdge.equals(type)) {
 					// Reply Message
 					return new AnchorHelper.FixedAnchorEx(getFigure(), PositionConstants.BOTTOM);
+				} else if (UMLElementTypes.DurationConstraint_Edge.equals(type) || UMLElementTypes.DurationObservation_Edge.equals(type) || UMLElementTypes.GeneralOrdering_Edge.equals(type)) {
+					return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 				}
 			}
 		} else if (request instanceof ReconnectRequest) {
@@ -413,6 +487,13 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 			if (connectionEditPart instanceof MessageReplyEditPart) {
 				// Reply Message
 				return new AnchorHelper.FixedAnchorEx(getFigure(), PositionConstants.BOTTOM);
+			} else if (DurationLinkUtil.isDurationLink(reconnectRequest) || GeneralOrderingUtil.isGeneralOrderingLink(reconnectRequest)) {
+				return OccurrenceSpecificationUtil.isStart(getFigure(), reconnectRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
+			}
+		} else if (request instanceof CreateConnectionViewRequest) {
+			CreateConnectionViewRequest createRequest = (CreateConnectionViewRequest) request;
+			if (DurationLinkUtil.isDurationLink(createRequest) || GeneralOrderingUtil.isGeneralOrderingLink(createRequest)) {
+				return OccurrenceSpecificationUtil.isStart(getFigure(), createRequest.getLocation()) ? new NodeTopAnchor(getFigure()) : new NodeBottomAnchor(getFigure());
 			}
 		}
 		return super.getSourceConnectionAnchor(request);
@@ -434,7 +515,7 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		final org.eclipse.gmf.runtime.diagram.ui.editparts.ConnectionEditPart connection = (org.eclipse.gmf.runtime.diagram.ui.editparts.ConnectionEditPart) connEditPart;
 		String t = null;
 		try {
-			t = (String) getEditingDomain().runExclusive(new RunnableWithResult.Impl() {
+			t = (String) getEditingDomain().runExclusive(new RunnableWithResult.Impl<String>() {
 
 				@Override
 				public void run() {
@@ -520,4 +601,5 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 		}
 		super.showTargetFeedback(request);
 	}
+
 }

@@ -135,8 +135,8 @@
 	      <viewProvider class="org.eclipse.papyrus.uml.diagram.sequence.providers.UMLViewProvider">
 	         <Priority name="Lowest"/>
 	         <context viewClass="org.eclipse.gmf.runtime.notation.Diagram" semanticHints="PapyrusUMLSequenceDiagram"/>
-	         <context viewClass="org.eclipse.gmf.runtime.notation.Node" semanticHints="Interaction_Shape,ConsiderIgnoreFragment_Shape,CombinedFragment_Shape,InteractionOperand_Shape,InteractionUse_Shape,Continuation_Shape,Lifeline_Shape,ActionExecutionSpecification_Shape,BehaviorExecutionSpecification_Shape,StateInvariant_Shape,TimeConstraint_Shape,TimeObservation_Shape,DurationConstraint_Shape,DestructionOccurrenceSpecification_Shape,Constraint_Shape,Comment_Shape,DurationConstraint_Shape_CN,DurationObservation_Shape,Gate_Shape"/>
-         <context viewClass="org.eclipse.gmf.runtime.notation.Edge" semanticHints="Message_SynchEdge,Message_AsynchEdge,Message_ReplyEdge,Message_CreateEdge,Message_DeleteEdge,Message_LostEdge,Message_FoundEdge,Comment_AnnotatedElementEdge,Constraint_ConstrainedElementEdge,GeneralOrdering_Edge,Constraint_ContextEdge"/>
+	         <context viewClass="org.eclipse.gmf.runtime.notation.Node" semanticHints="Interaction_Shape,ConsiderIgnoreFragment_Shape,CombinedFragment_Shape,InteractionOperand_Shape,InteractionUse_Shape,Continuation_Shape,Lifeline_Shape,ActionExecutionSpecification_Shape,BehaviorExecutionSpecification_Shape,StateInvariant_Shape,DestructionOccurrenceSpecification_Shape,Constraint_Shape,Comment_Shape,Gate_Shape,TimeConstraint_Shape,TimeObservation_Shape"/>
+         <context viewClass="org.eclipse.gmf.runtime.notation.Edge" semanticHints="Message_SynchEdge,Message_AsynchEdge,Message_ReplyEdge,Message_CreateEdge,Message_DeleteEdge,Message_LostEdge,Message_FoundEdge,Comment_AnnotatedElementEdge,Constraint_ConstrainedElementEdge,GeneralOrdering_Edge,Constraint_ContextEdge,DurationConstraint_Edge,DurationObservation_Edge"/>
 	      </viewProvider>
 	   </extension>
 
@@ -148,13 +148,13 @@
 	            <method name="getType()" value="PapyrusUMLSequenceDiagram"/>
 	         </object>
 	         <object class="org.eclipse.gmf.runtime.notation.Node" id="generated-nodes">
-	            <method name="getType()" value="Interaction_Shape,ConsiderIgnoreFragment_Shape,CombinedFragment_Shape,InteractionOperand_Shape,InteractionUse_Shape,Continuation_Shape,Lifeline_Shape,ActionExecutionSpecification_Shape,BehaviorExecutionSpecification_Shape,StateInvariant_Shape,TimeConstraint_Shape,TimeObservation_Shape,DurationConstraint_Shape,DestructionOccurrenceSpecification_Shape,Constraint_Shape,Comment_Shape,DurationConstraint_Shape_CN,DurationObservation_Shape,Gate_Shape"/>
+	            <method name="getType()" value="Interaction_Shape,ConsiderIgnoreFragment_Shape,CombinedFragment_Shape,InteractionOperand_Shape,InteractionUse_Shape,Continuation_Shape,Lifeline_Shape,ActionExecutionSpecification_Shape,BehaviorExecutionSpecification_Shape,StateInvariant_Shape,DestructionOccurrenceSpecification_Shape,Constraint_Shape,Comment_Shape,Gate_Shape,TimeConstraint_Shape,TimeObservation_Shape"/>
 	         </object>
 	         <object class="org.eclipse.gmf.runtime.notation.Edge" id="generated-links">
-	            <method name="getType()" value="Message_SynchEdge,Message_AsynchEdge,Message_ReplyEdge,Message_CreateEdge,Message_DeleteEdge,Message_LostEdge,Message_FoundEdge,Comment_AnnotatedElementEdge,Constraint_ConstrainedElementEdge,GeneralOrdering_Edge,Constraint_ContextEdge"/>
+	            <method name="getType()" value="Message_SynchEdge,Message_AsynchEdge,Message_ReplyEdge,Message_CreateEdge,Message_DeleteEdge,Message_LostEdge,Message_FoundEdge,Comment_AnnotatedElementEdge,Constraint_ConstrainedElementEdge,GeneralOrdering_Edge,Constraint_ContextEdge,DurationConstraint_Edge,DurationObservation_Edge"/>
 	         </object>
 	         <object class="org.eclipse.gmf.runtime.notation.Node" id="generated-labels">
-	            <method name="getType()" value="Interaction_NameLabel,InteractionUse_NameLabel,InteractionUse_TypeLabel,Continuation_NameLabel,Lifeline_NameLabel,StateInvariant_NameLabel,StateInvariant_ConstraintLabel,TimeConstraint_ConstraintLabel,TimeConstraint_StereotypeLabel,TimeObservation_NameLabel,TimeObservation_StereotypeLabel,DurationConstraint_BodyLabel,DurationConstraint_StereotypeLabel,Constraint_NameLabel,Constraint_BodyLabel,Comment_BodyLabel,DurationConstraint_BodyLabel_CN,DurationConstraint_StereotypeLabel_CN,DurationObservation_NameLabel,DurationObservation_StereotypeLabel,Gate_NameLabel"/>
+	            <method name="getType()" value="Interaction_NameLabel,InteractionUse_NameLabel,InteractionUse_TypeLabel,Continuation_NameLabel,Lifeline_NameLabel,StateInvariant_NameLabel,StateInvariant_ConstraintLabel,Constraint_NameLabel,Constraint_BodyLabel,Comment_BodyLabel,Gate_NameLabel,TimeConstraint_NameLabel,TimeConstraint_StereotypeLabel,TimeObservation_NameLabel,TimeObservation_StereotypeLabel"/>
 	         </object>
 	         <object class="org.eclipse.gmf.runtime.notation.Node" id="generated-compartments">
 	            <method name="getType()" value="Interaction_SubfragmentCompartment,CombinedFragment_SubfragmentCompartment"/>
@@ -349,6 +349,12 @@
       </Priority>
    </editpolicyProvider>
    <editpolicyProvider
+         class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomDestructionOccurrenceSpecificationEditPolicyProvider">
+      <Priority
+            name="Highest">
+      </Priority>
+   </editpolicyProvider>
+   <editpolicyProvider
          class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomExecutionSpecificationEditPolicyProvider">
       <Priority
             name="Highest">
@@ -376,6 +382,18 @@
          class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomInteractionOperandEditPolicyProvider">
       <Priority
             name="Highest">
+      </Priority>
+   </editpolicyProvider>
+   <editpolicyProvider
+         class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomLifelineEditPolicyProvider">
+      <Priority
+            name="Highest">
+      </Priority>
+   </editpolicyProvider>
+   <editpolicyProvider
+         class="org.eclipse.papyrus.uml.diagram.sequence.providers.SemanticOccurrenceEditPolicyProvider">
+      <Priority
+            name="Medium">
       </Priority>
    </editpolicyProvider>
 </extension>
@@ -480,10 +498,6 @@
       <menuContribution
             locationURI="popup:org.eclipse.gmf.runtime.diagram.ui.DiagramEditorContextMenu">
          <dynamic
-               class="org.eclipse.papyrus.uml.diagram.sequence.providers.DurationConstraintContributionItem"
-               id="org.eclipse.papyrus.sequence.duraitonconstraint.DynamicMenu">
-         </dynamic>
-         <dynamic
                class="org.eclipse.papyrus.uml.diagram.sequence.providers.DisplayBehaviorContributionItem"
                id="org.eclipse.papyrus.uml.diagram.sequence.displayBehaviorMenu">
          </dynamic>
@@ -565,6 +579,22 @@
 			<mapping
 				humanReadableType="Stereotype"
 				type="Constraint_KeywordLabel">
+			</mapping>
+			<mapping
+				humanReadableType="Name"
+				type="DurationConstraint_NameLabel">
+			</mapping>
+			<mapping
+				humanReadableType="Stereotype"
+				type="DurationConstraint_StereotypeLabel">
+			</mapping>
+			<mapping
+				humanReadableType="Name"
+				type="DurationObservation_NameLabel">
+			</mapping>
+			<mapping
+				humanReadableType="Stereotype"
+				type="DurationObservation_StereotypeLabel">
 			</mapping>
 			<mapping
 				humanReadableType="Floating Label"

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 CEA LIST.
+ * Copyright (c) 2016, 2018 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,7 @@
  *
  * Contributors:
   *  CEA LIST - Initial API and implementation
+  *  Christian W. Damus - bug 536486
  */
 package org.eclipse.papyrus.uml.diagram.sequence.part;
 
@@ -254,292 +255,292 @@ public class Messages extends NLS {
 	public static String ValidateActionMessage;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Nodes1Group_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Nodes1Group_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Edges2Group_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Edges2Group_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Lifeline1CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Lifeline1CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ActionExecutionSpecification2CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ActionExecutionSpecification2CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String BehaviorExecutionSpecification3CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String BehaviorExecutionSpecification3CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String InteractionUse4CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String InteractionUse4CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String CombinedFragment5CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String CombinedFragment5CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String InteractionOperand6CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String InteractionOperand6CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Continuation7CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Continuation7CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String StateInvariant8CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String StateInvariant8CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Comment9CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Comment9CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Constraint10CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Constraint10CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String DurationObservation11CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String DurationObservation11CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String TimeConstraint12CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String TimeConstraint12CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String TimeObservation13CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String TimeObservation13CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String DurationConstraint14CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String DurationConstraint14CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String NEWGateCreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String NEWGateCreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ConsiderIgnoreFragment16CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ConsiderIgnoreFragment16CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageSync1CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageSync1CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageAsync2CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageAsync2CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageReply3CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageReply3CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageCreate4CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageCreate4CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageDelete5CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageDelete5CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageLost6CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageLost6CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageFound7CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String MessageFound7CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String GeneralOrdering8CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String GeneralOrdering8CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Commentlink9CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Commentlink9CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Constraintlink10CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String Constraintlink10CreationTool_desc;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ContextLink11CreationTool_title;
 
 	/**
-	 * @generated
+	 * @generated not
 	 */
 	public static String ContextLink11CreationTool_desc;
 

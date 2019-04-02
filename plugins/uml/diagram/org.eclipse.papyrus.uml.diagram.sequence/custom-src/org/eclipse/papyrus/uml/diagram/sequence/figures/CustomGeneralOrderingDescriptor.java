@@ -91,9 +91,6 @@ public class CustomGeneralOrderingDescriptor extends GeneralOrderingDescriptor i
 		add(fAppliedStereotypeLabel);
 	}
 
-	/**
-	 * @generated
-	 */
 	private RotatableDecoration createTargetDecoration() {
 		PolygonDecoration df = new PolygonDecoration();
 		df.setFill(true);
@@ -153,7 +150,6 @@ public class CustomGeneralOrderingDescriptor extends GeneralOrderingDescriptor i
 	 * Set the middle decoration
 	 *
 	 * @see org.eclipse.draw2d.PolylineConnection#setTargetDecoration(org.eclipse.draw2d.RotatableDecoration)
-	 * @generated NOT
 	 */
 	public void setMiddleDecoration(RotatableDecoration dec) {
 		if (getMiddleDecoration() != null) {

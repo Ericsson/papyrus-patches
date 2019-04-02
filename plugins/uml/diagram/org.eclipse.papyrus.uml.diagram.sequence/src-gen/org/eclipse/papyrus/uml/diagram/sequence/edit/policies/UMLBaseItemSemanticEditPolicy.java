@@ -58,13 +58,17 @@ import org.eclipse.papyrus.uml.diagram.sequence.part.UMLVisualIDRegistry;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Constraint;
+import org.eclipse.uml2.uml.DurationConstraint;
+import org.eclipse.uml2.uml.DurationObservation;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.GeneralOrdering;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.NamedElement;
 import org.eclipse.uml2.uml.Namespace;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
+import org.eclipse.uml2.uml.Package;
 import org.eclipse.uml2.uml.UMLPackage;
 
 /**
@@ -475,6 +479,20 @@ public class UMLBaseItemSemanticEditPolicy extends SemanticEditPolicy {
 		/**
 		 * @generated
 		 */
+		public boolean canCreateDurationConstraint_Edge(Namespace container, Element source, Element target) {
+			return canExistDurationConstraint_Edge(container, null, source, target);
+		}
+
+		/**
+		 * @generated
+		 */
+		public boolean canCreateDurationObservation_Edge(Package container, NamedElement source, NamedElement target) {
+			return canExistDurationObservation_Edge(container, null, source, target);
+		}
+
+		/**
+		 * @generated
+		 */
 		public boolean canExistMessage_SynchEdge(Interaction container, Message linkInstance, Element source,
 				Element target) {
 			try {
@@ -743,6 +761,22 @@ public class UMLBaseItemSemanticEditPolicy extends SemanticEditPolicy {
 		 * @generated
 		 */
 		public boolean canExistConstraint_ContextEdge(Constraint source, Namespace target) {
+			return true;
+		}
+
+		/**
+		 * @generated
+		 */
+		public boolean canExistDurationConstraint_Edge(Namespace container, DurationConstraint linkInstance,
+				Element source, Element target) {
+			return true;
+		}
+
+		/**
+		 * @generated
+		 */
+		public boolean canExistDurationObservation_Edge(Package container, DurationObservation linkInstance,
+				NamedElement source, NamedElement target) {
 			return true;
 		}
 	}

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2017 CEA LIST and others.
+ * Copyright (c) 2017, 2018 CEA LIST, EclipseSource and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,13 +11,20 @@
  * Contributors:
  * CEA LIST - Initial API and implementation
  * Celine Janssens (ALL4TEC) - Bug 507348
+ *   EclipseSource - Bug 536631
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.parts;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.eclipse.draw2d.Connection;
+import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.Cursors;
+import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.emf.common.notify.Notification;
@@ -25,10 +32,12 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.LabelEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.l10n.DiagramColorRegistry;
+import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeConnectionRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeRequest;
 import org.eclipse.gmf.runtime.draw2d.ui.geometry.LineSeg;
@@ -39,6 +48,10 @@ import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.IMaskManagedLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.common.editparts.UMLConnectionNodeEditPart;
 import org.eclipse.papyrus.uml.diagram.common.figure.edge.UMLEdgeFigure;
+import org.eclipse.papyrus.uml.diagram.common.service.ApplyStereotypeRequest;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionSourceAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.ConnectionTargetAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.MessageLabelEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.SequenceReferenceEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.MessageDelete;
@@ -49,6 +62,9 @@ import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectMessageToGridEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.ConnectRectangleToGridEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.LifeLineGraphicalNodeEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
+import org.eclipse.papyrus.uml.diagram.sequence.util.OccurrenceSpecificationUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SelectMessagesEditPartTracker;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SelfMessageHelper;
 import org.eclipse.swt.SWT;
@@ -57,8 +73,6 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.ui.PlatformUI;
 
 public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart implements IKeyPressState {
-
-	private List messageEventParts;
 
 	private boolean reorderMessages = false;
 
@@ -191,7 +205,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 		if (points.size() <= 1) {
 			return;
 		}
-		List lineSegments = PointListUtilities.getLineSegments(points);
+		List<?> lineSegments = PointListUtilities.getLineSegments(points);
 		LineSeg nearestSegment = PointListUtilities.getNearestSegment(lineSegments, p.x, p.y);
 		if (points.size() > 3 && (p.getDistance(points.getPoint(1)) < 5 || p.getDistance(points.getPoint(2)) < 5)) {
 			myCursor = Cursors.SIZEALL;
@@ -250,7 +264,7 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 	}
 
 	public View findChildByModel(EObject model) {
-		List list = getModelChildren();
+		List<?> list = getModelChildren();
 		if (list != null && list.size() > 0) {
 			for (Object o : list) {
 				if (!(o instanceof View)) {
@@ -273,12 +287,13 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 		// Ordering Message Occurrence Specification. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=403233
 		installEditPolicy(ConnectRectangleToGridEditPolicy.CONNECT_TO_GRILLING_MANAGEMENT, new ConnectMessageToGridEditPolicy());
 		installEditPolicy(SequenceReferenceEditPolicy.SEQUENCE_REFERENCE, new SequenceReferenceEditPolicy());
+		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new MessageGraphicalNodeEditPolicy());
 	}
 
 	@Override
 	public EditPart getTargetEditPart(Request request) {
 		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
-			List types = ((CreateUnspecifiedTypeConnectionRequest) request).getElementTypes();
+			List<?> types = ((CreateUnspecifiedTypeConnectionRequest) request).getElementTypes();
 			if (types.contains(UMLElementTypes.Message_FoundEdge) || types.contains(UMLElementTypes.Message_LostEdge)) {
 				return null;
 			}
@@ -287,9 +302,134 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 			if (con instanceof MessageLostEditPart || con instanceof MessageFoundEditPart) {
 				return null;
 			}
+			// Workaround for Bug 537724: GMF does not support reconnection of links if link.source == link.target and
+			// the source/target is a link.
+			// We need to copy all inherited implementations, except the problematic GMF one... To be safe, only do
+			// that for DurationLinks and GeneralOrderings, since that's the case we want to support
+			ReconnectRequest reconnectRequest = (ReconnectRequest) request;
+			if (DurationLinkUtil.isDurationLink(reconnectRequest) || GeneralOrderingUtil.isGeneralOrderingLink(reconnectRequest)) {
+				return doGetTargetEditPart(reconnectRequest);
+			}
 		}
 		return super.getTargetEditPart(request);
 	}
+
+	/**
+	 * Workaround for Bug 537724: GMF's implementation of cyclic dependency is incorrect,
+	 * and we need to bypass it. Unfortunately, that means we need to copy all inherited
+	 * implementations.
+	 *
+	 * @param reconnectRequest
+	 * @return
+	 */
+	protected EditPart doGetTargetEditPart(ReconnectRequest reconnectRequest) {
+		// From UMLConnectionNodeEditPart
+		if (ApplyStereotypeRequest.APPLY_STEREOTYPE_REQUEST.equals(reconnectRequest.getType())) {
+			return this;
+		}
+
+		// From GEF's AbstractEditPart
+		EditPolicyIterator i = getEditPolicyIterator();
+		EditPart targetEditPart = null;
+		while (i.hasNext()) {
+			targetEditPart = i.next().getTargetEditPart(reconnectRequest);
+			if (targetEditPart != null) {
+				break;
+			}
+		}
+
+		// From GMF's ConnectionNodeEditPart (The buggy part)
+
+		if (reconnectRequest.isMovingStartAnchor()) {
+			if (reconnectRequest.getConnectionEditPart().getSource() == targetEditPart) {
+				return targetEditPart;
+			}
+		} else if (reconnectRequest.getConnectionEditPart().getTarget() == targetEditPart) {
+			return targetEditPart;
+		}
+
+		// If source anchor is moved, the connection's source edit part
+		// should not be taken into account for a cyclic dependency
+		// check so as to avoid false checks. Same goes for the target
+		// anchor. See bugzilla# 155243 -- we do not want to target a
+		// connection that is already connected to us so that we do not
+		// introduce a cyclic connection
+		if (isCyclicConnectionRequest((org.eclipse.gef.ConnectionEditPart) targetEditPart,
+				reconnectRequest.getConnectionEditPart(), false, reconnectRequest.isMovingStartAnchor())) {
+			return null;
+		}
+
+		return targetEditPart;
+	}
+
+	// Custom implementation of the parent method, which is buggy
+	// This is a workaround for Bug 537724
+	// TODO This implementation should be properly tested... It allows more cases than
+	// the parent one, and may potentially allow cycles
+	private boolean isCyclicConnectionRequest(org.eclipse.gef.ConnectionEditPart targetCEP,
+			org.eclipse.gef.ConnectionEditPart sourceCEP,
+			boolean checkSourceAndTargetEditParts, boolean doNotCheckSourceEditPart) {
+		if (targetCEP == null || sourceCEP == null) {
+			return false;
+		}
+
+		// first, do a cyclic check on source and target connections
+		// of the source connection itself.
+		// (as every connection is also a node).
+
+		Set<IFigure> set = new HashSet<>();
+		getSourceAndTargetConnections(set, sourceCEP);
+		if (set.contains(targetCEP.getFigure())) {
+			return true;
+		}
+
+		// now do the cyclic check on the source and target of the source connection...
+		EditPart sourceEP = sourceCEP.getSource(),
+				targetEP = sourceCEP.getTarget();
+
+		if (!checkSourceAndTargetEditParts && doNotCheckSourceEditPart) {
+			// .
+		} else if (sourceEP instanceof org.eclipse.gef.ConnectionEditPart &&
+				isCyclicConnectionRequest(targetCEP,
+						(org.eclipse.gef.ConnectionEditPart) sourceEP,
+						true, doNotCheckSourceEditPart)) {
+			return true;
+		}
+
+		if (!checkSourceAndTargetEditParts && !doNotCheckSourceEditPart) {
+			// .
+		} else if (targetEP instanceof org.eclipse.gef.ConnectionEditPart &&
+				isCyclicConnectionRequest(targetCEP,
+						(org.eclipse.gef.ConnectionEditPart) targetEP,
+						true, doNotCheckSourceEditPart)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private void getSourceAndTargetConnections(Set<IFigure> set,
+			org.eclipse.gef.ConnectionEditPart connectionEditPart) {
+
+		if (connectionEditPart == null || set == null) {
+			return;
+		}
+
+		for (Iterator<?> i = connectionEditPart.getSourceConnections().iterator(); i.hasNext();) {
+			org.eclipse.gef.ConnectionEditPart next = (org.eclipse.gef.ConnectionEditPart) i.next();
+			Connection sourceConnection = (Connection) next.getFigure();
+			set.add(sourceConnection);
+			getSourceAndTargetConnections(set, next);
+		}
+
+		for (Iterator<?> i = connectionEditPart.getTargetConnections().iterator(); i.hasNext();) {
+			org.eclipse.gef.ConnectionEditPart next = (org.eclipse.gef.ConnectionEditPart) i.next();
+			Connection targetConnection = (Connection) next.getFigure();
+			set.add(targetConnection);
+			getSourceAndTargetConnections(set, next);
+		}
+	}
+
 
 	@Override
 	protected void handleNotificationEvent(Notification notification) {
@@ -394,4 +534,54 @@ public abstract class AbstractMessageEditPart extends UMLConnectionNodeEditPart 
 			super.refreshFont();
 		}
 	}
+
+	@Override
+	public ConnectionAnchor getSourceConnectionAnchor(Request request) {
+		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
+			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
+			List<?> relationshipTypes = createRequest.getElementTypes();
+			for (Object type : relationshipTypes) {
+				if (UMLElementTypes.DurationConstraint_Edge.equals(type) || UMLElementTypes.DurationObservation_Edge.equals(type) || UMLElementTypes.GeneralOrdering_Edge.equals(type)) {
+					return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), createRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+				}
+			}
+		} else if (request instanceof CreateConnectionViewRequest) {
+			CreateConnectionViewRequest createRequest = (CreateConnectionViewRequest) request;
+			if (DurationLinkUtil.isDurationLink(createRequest) || GeneralOrderingUtil.isGeneralOrderingLink(createRequest)) {
+				return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), createRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+			}
+		} else if (request instanceof ReconnectRequest) {
+			ReconnectRequest reconnectRequest = (ReconnectRequest) request;
+			if (DurationLinkUtil.isDurationLink(reconnectRequest) || GeneralOrderingUtil.isGeneralOrderingLink(reconnectRequest)) {
+				return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), reconnectRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+			}
+		}
+		return super.getSourceConnectionAnchor(request);
+	}
+
+	@Override
+	public ConnectionAnchor getTargetConnectionAnchor(Request request) {
+		if (request instanceof CreateUnspecifiedTypeConnectionRequest) {
+			CreateUnspecifiedTypeConnectionRequest createRequest = (CreateUnspecifiedTypeConnectionRequest) request;
+			List<?> relationshipTypes = createRequest.getElementTypes();
+			for (Object type : relationshipTypes) {
+				if (UMLElementTypes.DurationConstraint_Edge.equals(type) || UMLElementTypes.DurationObservation_Edge.equals(type) || UMLElementTypes.GeneralOrdering_Edge.equals(type)) {
+					return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), createRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+				}
+			}
+		} else if (request instanceof CreateConnectionViewRequest) {
+			CreateConnectionViewRequest createRequest = (CreateConnectionViewRequest) request;
+			if (DurationLinkUtil.isDurationLink(createRequest) || GeneralOrderingUtil.isGeneralOrderingLink(createRequest)) {
+				return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), createRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+			}
+		} else if (request instanceof ReconnectRequest) {
+			ReconnectRequest reconnectRequest = (ReconnectRequest) request;
+			if (DurationLinkUtil.isDurationLink(reconnectRequest) || GeneralOrderingUtil.isGeneralOrderingLink(reconnectRequest)) {
+				return OccurrenceSpecificationUtil.isSource(getConnectionFigure(), reconnectRequest.getLocation()) ? new ConnectionSourceAnchor(getPrimaryShape()) : new ConnectionTargetAnchor(getPrimaryShape());
+			}
+		}
+		return super.getTargetConnectionAnchor(request);
+	}
+
+
 }

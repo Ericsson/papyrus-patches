@@ -31,7 +31,7 @@ import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.gef.requests.ReconnectRequest;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
+import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElementRequest;
 import org.eclipse.gmf.runtime.draw2d.ui.figures.PolylineConnectionEx;
 import org.eclipse.gmf.runtime.notation.View;
@@ -132,8 +132,8 @@ public class UpdateWeakReferenceForMessageSpecEditPolicy extends UpdateWeakRefer
 			for (OccurrenceSpecification nextEvent : nextEventsFromPosition) {
 				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG, "\tNext Event: " + nextEvent);
 
-				GraphicalEditPart sourceLifeLineEP = (GraphicalEditPart) createRequest.getSourceEditPart();
-				GraphicalEditPart targetLifeLineEP = (GraphicalEditPart) createRequest.getTargetEditPart();
+				IGraphicalEditPart sourceLifeLineEP = (IGraphicalEditPart) createRequest.getSourceEditPart();
+				IGraphicalEditPart targetLifeLineEP = (IGraphicalEditPart) createRequest.getTargetEditPart();
 				ArrayList<EditPart> senderList = SenderRequestUtils.getSenders(request);
 
 				List<?> connectionsAndChildren = new ArrayList<>();
@@ -149,7 +149,7 @@ public class UpdateWeakReferenceForMessageSpecEditPolicy extends UpdateWeakRefer
 				}
 
 				for (Object editPart : connectionsAndChildren) {
-					if (editPart instanceof ConnectionEditPart) {
+					if (editPart instanceof AbstractMessageEditPart) {
 						EObject element = ((View) ((AbstractMessageEditPart) editPart).getAdapter(View.class)).getElement();
 						if (element instanceof Message && null != ((Message) element).getSendEvent() && ((Message) element).getSendEvent().equals(nextEvent)
 								|| element instanceof Message && null != ((Message) element).getReceiveEvent() && ((Message) element).getReceiveEvent().equals(nextEvent)) {
