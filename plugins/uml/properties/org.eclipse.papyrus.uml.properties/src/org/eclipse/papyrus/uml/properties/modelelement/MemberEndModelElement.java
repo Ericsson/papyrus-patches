@@ -16,8 +16,8 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.modelelement;
 
-import static org.eclipse.papyrus.uml.tools.databinding.OwnerObservableValue.ASSOCIATION;
-import static org.eclipse.papyrus.uml.tools.databinding.OwnerObservableValue.CLASSIFIER;
+import static org.eclipse.papyrus.uml.properties.databinding.OwnerObservableValue.ASSOCIATION;
+import static org.eclipse.papyrus.uml.properties.databinding.OwnerObservableValue.CLASSIFIER;
 import static org.eclipse.papyrus.uml.tools.util.MultiplicityParser.ANY;
 import static org.eclipse.papyrus.uml.tools.util.MultiplicityParser.ONE;
 import static org.eclipse.papyrus.uml.tools.util.MultiplicityParser.ONE_OR_MORE;
@@ -33,10 +33,10 @@ import org.eclipse.papyrus.infra.properties.ui.modelelement.AbstractModelElement
 import org.eclipse.papyrus.infra.widgets.providers.IStaticContentProvider;
 import org.eclipse.papyrus.infra.widgets.providers.StaticContentProvider;
 import org.eclipse.papyrus.uml.properties.Activator;
-import org.eclipse.papyrus.uml.tools.databinding.ExtendedMultiplicityObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.ExtensionEndMultiplicityObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.NavigationObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.OwnerObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ExtendedMultiplicityObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ExtensionEndMultiplicityObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.NavigationObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.OwnerObservableValue;
 import org.eclipse.uml2.uml.ExtensionEnd;
 import org.eclipse.uml2.uml.Property;
 import org.eclipse.uml2.uml.UMLPackage;

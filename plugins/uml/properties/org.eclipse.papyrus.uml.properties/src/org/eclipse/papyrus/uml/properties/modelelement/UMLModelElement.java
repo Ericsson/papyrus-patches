@@ -47,6 +47,8 @@ import org.eclipse.gmf.runtime.emf.core.util.EMFCoreUtil;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.papyrus.infra.emf.utils.EMFHelper;
 import org.eclipse.papyrus.infra.emf.utils.HistoryUtil;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 import org.eclipse.papyrus.infra.internationalization.common.utils.InternationalizationPreferencesUtils;
 import org.eclipse.papyrus.infra.internationalization.utils.utils.InternationalizationConstants;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.EMFModelElement;
@@ -63,14 +65,12 @@ import org.eclipse.papyrus.uml.properties.creation.ConnectorTypeEditorFactory;
 import org.eclipse.papyrus.uml.properties.creation.MessageValueSpecificationFactory;
 import org.eclipse.papyrus.uml.properties.creation.OwnedRuleCreationFactory;
 import org.eclipse.papyrus.uml.properties.creation.UMLPropertyEditorFactory;
+import org.eclipse.papyrus.uml.properties.databinding.ExtensionRequiredObservableValue;
 import org.eclipse.papyrus.uml.properties.databinding.KeywordObservableValue;
+import org.eclipse.papyrus.uml.properties.databinding.ProvidedInterfaceObservableList;
+import org.eclipse.papyrus.uml.properties.databinding.RequiredInterfaceObservableList;
 import org.eclipse.papyrus.uml.properties.databinding.UMLLabelObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.ExtensionRequiredObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.ProvidedInterfaceObservableList;
-import org.eclipse.papyrus.uml.tools.databinding.RequiredInterfaceObservableList;
-import org.eclipse.papyrus.uml.tools.databinding.UnsettableStringValue;
+import org.eclipse.papyrus.uml.properties.databinding.UnsettableStringObservableValue;
 import org.eclipse.papyrus.uml.tools.providers.ConstrainedElementContentProvider;
 import org.eclipse.papyrus.uml.tools.providers.UMLContainerContentProvider;
 import org.eclipse.papyrus.uml.tools.providers.UMLContentProvider;
@@ -144,13 +144,13 @@ public class UMLModelElement extends EMFModelElement {
 			} else if (feature == null) {
 				value = null;
 			} else if (feature.getUpperBound() != 1) {
-				IObservableList list = domain == null ? EMFProperties.list(featurePath).observe(source) : new PapyrusObservableList(EMFProperties.list(featurePath).observe(source), domain, getSource(featurePath), feature);
+				IObservableList list = domain == null ? EMFProperties.list(featurePath).observe(source) : new GMFObservableList(EMFProperties.list(featurePath).observe(source), domain, getSource(featurePath), feature);
 				value = list;
 			} else if ((feature == UMLPackage.Literals.NAMED_ELEMENT__NAME) && (domain != null)) {
 				// Empty string as a name is not useful, so we unset instead
-				value = new UnsettableStringValue(getSource(featurePath), feature, domain);
+				value = new UnsettableStringObservableValue(getSource(featurePath), feature, domain);
 			} else {
-				value = domain == null ? EMFProperties.value(featurePath).observe(source) : new PapyrusObservableValue(getSource(featurePath), feature, domain);
+				value = domain == null ? EMFProperties.value(featurePath).observe(source) : new GMFObservableValue(getSource(featurePath), feature, domain);
 			}
 		}
 		return value;
@@ -296,7 +296,7 @@ public class UMLModelElement extends EMFModelElement {
 		ITreeContentProvider contentProvider = new UMLContainerContentProvider(source, reference);
 
 		ResourceSet rs = source == null ? null : source.eResource() == null ? null : source.eResource().getResourceSet();
-		EMFGraphicalContentProvider provider = ProviderHelper.encapsulateProvider(contentProvider, rs, HistoryUtil.getHistoryID(source, feature, "container"));
+		EMFGraphicalContentProvider provider = ProviderHelper.encapsulateProvider(contentProvider, rs, HistoryUtil.getHistoryID(source, feature, "container")); //$NON-NLS-1$
 
 		factory.setContainerContentProvider(provider);
 		factory.setReferenceContentProvider(new FeatureContentProvider(type));

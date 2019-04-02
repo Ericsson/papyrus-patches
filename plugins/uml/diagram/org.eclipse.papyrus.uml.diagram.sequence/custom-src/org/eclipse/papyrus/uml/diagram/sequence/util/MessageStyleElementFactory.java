@@ -23,11 +23,11 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.gmf.runtime.notation.Style;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 import org.eclipse.papyrus.infra.gmfdiag.common.helper.NotationHelper;
 import org.eclipse.papyrus.infra.properties.contexts.DataContextElement;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.AbstractModelElement;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.AbstractModelElementFactory;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
 
 public class MessageStyleElementFactory extends AbstractModelElementFactory<MessageStyleElementFactory.MessageStyleModelElement> {
 
@@ -64,14 +64,14 @@ public class MessageStyleElementFactory extends AbstractModelElementFactory<Mess
 		protected IObservable doGetObservable(String propertyPath) {
 			EditingDomain domain = AdapterFactoryEditingDomain.getEditingDomainFor(source);
 			Style style = null;
-			if (context.getName().equals("LineStyle")) {
+			if (context.getName().equals("LineStyle")) { //$NON-NLS-1$
 				style = source.getStyle(NotationPackage.Literals.LINE_STYLE);
-			} else if (context.getName().equals("FontStyle")) {
+			} else if (context.getName().equals("FontStyle")) { //$NON-NLS-1$
 				style = source.getStyle(NotationPackage.Literals.FONT_STYLE);
 			}
 			if (style != null) {
 				EStructuralFeature feature = style.eClass().getEStructuralFeature(propertyPath);
-				return new PapyrusObservableValue(style, feature, domain);
+				return new GMFObservableValue(style, feature, domain);
 			}
 			return null;
 		}

@@ -31,14 +31,9 @@
 		<ppe:EnumCombo input="{Binding}" property="UML:Parameter:direction"></ppe:EnumCombo>
 		<ppe:EnumCombo input="{Binding}" property="UML:Parameter:effect"></ppe:EnumCombo>
 		<ppe:EnumCombo input="{Binding}" property="UML:NamedElement:visibility"></ppe:EnumCombo>
-	</Composite>
-	<Composite>
-		<Composite.layout>
-			<ppel:PropertiesLayout numColumns="2"></ppel:PropertiesLayout>
-		</Composite.layout>
+		<ppe:ReferenceDialog input="{Binding}" property="UML:TypedElement:type"></ppe:ReferenceDialog>
+		<uml:MultiplicityDialog input="{Binding}" property="Multiplicity:multiplicity"></uml:MultiplicityDialog>
 		<ppe:ReferenceDialog input="{Binding}"
 			property="UML:Parameter:defaultValue"></ppe:ReferenceDialog>
-		<uml:MultiplicityDialog input="{Binding}" property="Multiplicity:multiplicity"></uml:MultiplicityDialog>
-		<ppe:ReferenceDialog input="{Binding}" property="UML:TypedElement:type"></ppe:ReferenceDialog>
 	</Composite>
 </Composite>

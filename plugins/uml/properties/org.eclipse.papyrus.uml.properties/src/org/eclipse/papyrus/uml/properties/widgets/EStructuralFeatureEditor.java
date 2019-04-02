@@ -39,6 +39,8 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.papyrus.infra.emf.utils.EMFHelper;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 import org.eclipse.papyrus.infra.ui.emf.providers.EMFEnumeratorContentProvider;
 import org.eclipse.papyrus.infra.widgets.creation.ReferenceValueFactory;
 import org.eclipse.papyrus.infra.widgets.editors.AbstractValueEditor;
@@ -59,8 +61,6 @@ import org.eclipse.papyrus.infra.widgets.editors.StringEditor;
 import org.eclipse.papyrus.infra.widgets.editors.TypedMultipleStringEditor;
 import org.eclipse.papyrus.infra.widgets.providers.IStaticContentProvider;
 import org.eclipse.papyrus.uml.properties.Activator;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
 import org.eclipse.papyrus.uml.tools.utils.DataTypeUtil;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -176,7 +176,7 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 				final EClassifier featureType = feature.getEType();
 				if (featureType instanceof EClass && DataTypeUtil.isDataTypeDefinition((EClass) featureType, element)) {
 					final EObjectContentsEditor editor = new EObjectContentsEditor(pageBook, style, (EReference) feature);
-					editor.setValue(new PapyrusObservableValue(element, feature, EMFHelper.resolveEditingDomain(element)));
+					editor.setValue(new GMFObservableValue(element, feature, EMFHelper.resolveEditingDomain(element)));
 					currentPage = editor;
 				} else {
 					final ReferenceDialog editor = new ReferenceDialog(pageBook, style);
@@ -228,7 +228,7 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 	}
 
 	protected void setValueEditorProperties(final AbstractValueEditor editor, final EObject stereotypeApplication, final String title, final EStructuralFeature feature) {
-		final PapyrusObservableValue observable = new PapyrusObservableValue(stereotypeApplication, feature, EMFHelper.resolveEditingDomain(stereotypeApplication));
+		final GMFObservableValue observable = new GMFObservableValue(stereotypeApplication, feature, EMFHelper.resolveEditingDomain(stereotypeApplication));
 		observable.addValueChangeListener(this);
 		editor.setLabel(title);
 		editor.setReadOnly(!isEditable(stereotypeApplication, feature));
@@ -236,7 +236,7 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 	}
 
 	protected void setMultipleValueEditorProperties(final MultipleValueEditor<?> editor, final List<?> initialList, final EObject stereotypeApplication, final String title, final EStructuralFeature feature) {
-		final PapyrusObservableList observable = new PapyrusObservableList(initialList, EMFHelper.resolveEditingDomain(stereotypeApplication), stereotypeApplication, feature);
+		final GMFObservableList observable = new GMFObservableList(initialList, EMFHelper.resolveEditingDomain(stereotypeApplication), stereotypeApplication, feature);
 		observable.addListChangeListener(this);
 		editor.setLabel(title);
 		editor.setUnique(feature.isUnique());

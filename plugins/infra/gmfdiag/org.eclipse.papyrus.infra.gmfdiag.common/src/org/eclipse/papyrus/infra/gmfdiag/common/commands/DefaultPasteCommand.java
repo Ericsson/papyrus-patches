@@ -79,7 +79,7 @@ public class DefaultPasteCommand extends AbstractCommand {
 			Map<EObject, EObject> duplicatedObjects = new HashMap<EObject, EObject>();
 			duplicatedObjects.putAll(copier);
 
-			// Inform the clipboard of the elment created (used by strategies)
+			// Inform the clipboard of the element created (used by strategies)
 			papyrusClipboard.addAllInternalToTargetCopy(duplicatedObjects);
 
 			// Prepare the move command to move UML element to their new owner

@@ -8,7 +8,7 @@
 	</Composite.layout>
 	<Composite>
 		<Composite.layout>
-			<ppel:PropertiesLayout numColumns="2"></ppel:PropertiesLayout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
 		</Composite.layout>
 		<ppe:StringEditor input="{Binding}" property="UML:NamedElement:name"></ppe:StringEditor>
 		<ppe:StringEditor input="{Binding}" property="UML:NamedElement:label"></ppe:StringEditor>
@@ -16,14 +16,9 @@
 	</Composite>
 	<Composite>
 		<Composite.layout>
-			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+			<ppel:PropertiesLayout numColumns="2"></ppel:PropertiesLayout>
 		</Composite.layout>
 		<ppe:EnumCombo input="{Binding}" property="UML:NamedElement:visibility"></ppe:EnumCombo>
-	</Composite>
-	<Composite>
-		<Composite.layout>
-			<ppel:PropertiesLayout></ppel:PropertiesLayout>
-		</Composite.layout>
 		<ppe:ReferenceDialog property="UML:TypedElement:type"
 			input="{Binding}"></ppe:ReferenceDialog>
 	</Composite>

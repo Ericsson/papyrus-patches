@@ -46,6 +46,6 @@ public class CustomIntStyleObservableValue extends AbstractCustomStyleObservable
 		if (value instanceof Integer) {
 			return super.getCommand(value);
 		}
-		throw new IllegalArgumentException("The value " + value + " is not a valid Integer Value");
+		throw new IllegalArgumentException(String.format("The value %s is not a valid Integer Value", value == null ? "null" : value.toString())); //$NON-NLS-1$ //$NON-NLS-2$ s
 	}
 }

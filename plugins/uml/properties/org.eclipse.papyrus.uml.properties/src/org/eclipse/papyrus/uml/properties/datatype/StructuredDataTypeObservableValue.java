@@ -18,14 +18,14 @@ import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.edit.domain.EditingDomain;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 
 /**
  * Allows the manipulation of a UML DataType from a static profile (Implemented by an EMF EDataType)
  *
  * @author Camille Letavernier
  */
-public class StructuredDataTypeObservableValue extends PapyrusObservableValue implements IAdaptable {
+public class StructuredDataTypeObservableValue extends GMFObservableValue implements IAdaptable {
 
 	protected EDataType type;
 
@@ -57,10 +57,11 @@ public class StructuredDataTypeObservableValue extends PapyrusObservableValue im
 
 	@Override
 	protected void doSetValue(Object value) { // value = dataType instance
-		super.doSetValue(value); // TODO : type réel de value ? compatibilité des types ?
+		super.doSetValue(value); // TODO : real type of the value ? type compatibility ?
 
 	}
 
+	@Override
 	public Object getAdapter(Class adapter) {
 		throw new UnsupportedOperationException();
 	}

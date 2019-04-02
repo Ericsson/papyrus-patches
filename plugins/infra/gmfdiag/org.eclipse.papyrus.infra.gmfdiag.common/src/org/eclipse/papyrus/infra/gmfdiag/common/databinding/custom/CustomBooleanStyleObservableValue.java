@@ -46,6 +46,6 @@ public class CustomBooleanStyleObservableValue extends AbstractCustomStyleObserv
 		if (value instanceof Boolean) {
 			return super.getCommand(value);
 		}
-		throw new IllegalArgumentException("The value " + value + " is not a valid Boolean Value");
+		throw new IllegalArgumentException(String.format("The value %s is not a valid Boolean Value", value == null ? "null" : value.toString())); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 }

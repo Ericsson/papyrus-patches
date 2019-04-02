@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Export-Package: org.eclipse.papyrus.uml.properties.constraints,
  org.eclipse.papyrus.uml.properties.creation,
  org.eclipse.papyrus.uml.properties.databinding,
+ org.eclipse.papyrus.uml.properties.databinding.helpers,
  org.eclipse.papyrus.uml.properties.datatype,
  org.eclipse.papyrus.uml.properties.editors,
  org.eclipse.papyrus.uml.properties.expression,

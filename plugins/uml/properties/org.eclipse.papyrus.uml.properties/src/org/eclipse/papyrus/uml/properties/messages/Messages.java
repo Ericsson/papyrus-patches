@@ -41,6 +41,8 @@ public class Messages extends NLS {
 
 	public static String ExpressionEditor_BodyLabel;
 
+	public static String ImportedPackageLocationObservableValue_Unknown;
+
 	public static String ProfileApplicationEditor_ApplyProfile;
 
 	public static String ProfileApplicationEditor_ApplyProfilesDialogDescription;

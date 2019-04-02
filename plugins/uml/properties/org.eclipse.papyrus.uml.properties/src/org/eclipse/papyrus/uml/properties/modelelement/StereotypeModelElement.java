@@ -29,6 +29,8 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.papyrus.infra.emf.gmf.command.GMFtoEMFCommandWrapper;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableList;
+import org.eclipse.papyrus.infra.gmfdiag.common.databinding.GMFObservableValue;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.EMFModelElement;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.EObjectStructuredValueFactory;
 import org.eclipse.papyrus.infra.properties.ui.modelelement.ILabeledModelElement;
@@ -37,8 +39,6 @@ import org.eclipse.papyrus.infra.widgets.providers.IStaticContentProvider;
 import org.eclipse.papyrus.uml.properties.Activator;
 import org.eclipse.papyrus.uml.properties.datatype.DataTypeProvider;
 import org.eclipse.papyrus.uml.properties.datatype.StructuredDataTypeObservableValue;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableList;
-import org.eclipse.papyrus.uml.tools.databinding.PapyrusObservableValue;
 import org.eclipse.papyrus.uml.tools.providers.UMLContentProvider;
 import org.eclipse.papyrus.uml.tools.utils.DataTypeUtil;
 import org.eclipse.papyrus.uml.tools.utils.StereotypeUtil;
@@ -103,10 +103,10 @@ public class StereotypeModelElement extends EMFModelElement implements ILabeledM
 
 
 		if (feature.getUpperBound() != 1) {
-			return new PapyrusObservableList(EMFProperties.list(featurePath).observe(source), domain, getSource(featurePath), feature);
+			return new GMFObservableList(EMFProperties.list(featurePath).observe(source), domain, getSource(featurePath), feature);
 		}
 
-		return new PapyrusObservableValue(getSource(featurePath), feature, domain);
+		return new GMFObservableValue(getSource(featurePath), feature, domain);
 	}
 
 	/**
@@ -162,7 +162,7 @@ public class StereotypeModelElement extends EMFModelElement implements ILabeledM
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.infra.properties.ui.modelelement.EMFModelElement#getValueFactory(java.lang.String)
 	 */
 	@Override
@@ -185,7 +185,7 @@ public class StereotypeModelElement extends EMFModelElement implements ILabeledM
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.eclipse.papyrus.infra.properties.ui.modelelement.ILabeledModelElement#getLabel(java.lang.String)
 	 */
 	@Override

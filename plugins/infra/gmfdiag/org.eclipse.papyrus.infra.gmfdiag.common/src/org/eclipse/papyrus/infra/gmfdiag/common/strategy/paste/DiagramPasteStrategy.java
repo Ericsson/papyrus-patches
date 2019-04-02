@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014 CEA LIST.
+ * Copyright (c) 2014, 2019 CEA LIST.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,8 @@
  *
  * Contributors:
  *  Benoit Maggi (CEA LIST) benoit.maggi@cea.fr - Initial API and implementation
+ *  Ansgar Radermacher (CEA LIST) ansgar.radermacher@cea.fr - bug 541686 (duplicated replationships)
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.strategy.paste;
 
@@ -152,7 +154,7 @@ public class DiagramPasteStrategy extends AbstractPasteStrategy implements IPast
 	 */
 	@Override
 	public void prepare(PapyrusClipboard<Object> papyrusClipboard, Collection<EObject> selection) {
-		Map<Object, IClipboardAdditionalData> mapCopyToClipboardAdditionalData = new HashMap<Object, IClipboardAdditionalData>();
+		Map<Object, IClipboardAdditionalData> mapCopyToClipboardAdditionalData = new HashMap<>();
 		Map sourceToInternalClipboard = papyrusClipboard.getSourceToInternalClipboard();
 		List<Diagram> extractSelectedWithoutOwner = extractDiagramWithoutOwner(selection);
 		if (extractSelectedWithoutOwner != null && !extractSelectedWithoutOwner.isEmpty()) {
@@ -182,7 +184,7 @@ public class DiagramPasteStrategy extends AbstractPasteStrategy implements IPast
 	 * @return
 	 */
 	protected List<Diagram> extractDiagramWithoutOwner(Collection<EObject> selection) {
-		List<Diagram> diagramWithoutOwnerInSelection = new ArrayList<Diagram>();
+		List<Diagram> diagramWithoutOwnerInSelection = new ArrayList<>();
 		if (selection != null) {
 			for (EObject eObject : selection) {
 				if (eObject instanceof Diagram) {
@@ -225,12 +227,12 @@ public class DiagramPasteStrategy extends AbstractPasteStrategy implements IPast
 		 * @return duplicated diagrams
 		 */
 		protected Collection<Diagram> duplicateDiagrams(Collection<Diagram> diagrams, Map<? extends EObject, ? extends EObject> alreadyCopied) {
-			Collection<Diagram> duplicatedDiagrams = new ArrayList<Diagram>();
+			Collection<Diagram> duplicatedDiagrams = new ArrayList<>();
 			EcoreUtil.Copier copier = new EcoreUtil.Copier();
 			copier.putAll(alreadyCopied);
 			for (Diagram diagram : diagrams) {
 				copier.copy(diagram);
-				copier.copyReferences();
+				// do not copy references (already done in default strategy), avoid duplicates
 				EObject copy = copier.get(diagram);
 				if (copy instanceof Diagram) {
 					duplicatedDiagrams.add((Diagram) copy);
