@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <description name="NWADSL R3A Update Site">
+   <description name="Papyrus Patches Update Site">
       Ericsson Papyrus patches update site.
    </description>
    <feature url="features/com.ericsson.papyrus.patches.feature_3.0.0.qualifier.jar" id="com.ericsson.papyrus.patches.feature" version="3.0.0.qualifier">
