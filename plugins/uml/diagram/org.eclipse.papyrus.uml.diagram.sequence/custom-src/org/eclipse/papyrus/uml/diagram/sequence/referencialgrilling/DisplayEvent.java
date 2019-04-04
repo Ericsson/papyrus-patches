@@ -10,6 +10,7 @@
  *
  * Contributors:
  *   CEA LIST - Initial API and implementation
+ *   Yoann Farre (CIL4Sys) <yoann.farre@cil4sys.com> - Bug 542434
  *
  *****************************************************************************/
 
@@ -22,16 +23,17 @@ import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.Ellipse;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.PrecisionRectangle;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gmf.runtime.draw2d.ui.figures.BaseSlidableAnchor;
 import org.eclipse.gmf.runtime.notation.Bounds;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.papyrus.infra.gmfdiag.common.editpart.NodeEditPart;
-import org.eclipse.papyrus.infra.gmfdiag.common.helper.IdentityAnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
@@ -285,7 +287,12 @@ public class DisplayEvent {
 	 * @return the y relative to it's node. (here is a lifeline)
 	 */
 	public int getYfromAnchor(Node node, IdentityAnchor anchor) {
-		double yPercent = IdentityAnchorHelper.getYPercentage(anchor);
+		PrecisionPoint point = BaseSlidableAnchor.parseTerminalString(anchor.getId());
+		if (point == null) {
+			return 0;
+		}
+
+		double yPercent = point.preciseY();
 
 		// calculate bounds from notation
 		int height = BoundForEditPart.getHeightFromView(node);
@@ -336,12 +343,8 @@ public class DisplayEvent {
 		} else {
 			anchor = (IdentityAnchor) edge.getTargetAnchor();
 		}
-		double yPercent = IdentityAnchorHelper.getYPercentage(anchor);
+		double posY = getYfromAnchor(node, anchor);
 
-		// calculate bounds from notation
-		double height = BoundForEditPart.getHeightFromView(node);
-
-		double posY = yPercent * height;
 		IFigure lifelineFigure = ((GraphicalEditPart) editpart).getFigure();
 		if (lifelineFigure.getBounds().y + (int) posY - EVENT_SELECTION_DELTA < currentPosition.y() && currentPosition.y() < lifelineFigure.getBounds().y + (int) posY + EVENT_SELECTION_DELTA) {
 			if ((edge.getElement() instanceof Message)) {
@@ -428,13 +431,8 @@ public class DisplayEvent {
 		}
 
 		if (null != anchor) {
-			double yPercent = IdentityAnchorHelper.getYPercentage(anchor);
+			double posY = getYfromAnchor(node, anchor);
 
-			// calculate bounds from notation
-			double height = 0;
-			height = BoundForEditPart.getHeightFromView(node);
-
-			double posY = yPercent * height;
 			addAnEvent(container.getFigure(), posY, ColorConstants.white, currentPosition);
 		}
 	}
