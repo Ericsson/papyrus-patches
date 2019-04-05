@@ -395,12 +395,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 					Row r = NodeUtilities.getRowAt(graph, srcAnchor.y);
 					if (r != null) {
-						graph.getRows().subList(r.getIndex(),graph.getRows().size()).forEach(d->((RowImpl)d).nudge(20));
+						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), 20);
 					}
 
 					r = NodeUtilities.getRowAt(graph, trgAnchor.y);
 					if (r != null) {
-						graph.getRows().subList(r.getIndex(),graph.getRows().size()).forEach(d->((RowImpl)d).nudge(20));
+						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), 20);
 					}
 
 					ClusterImpl sourceCluster = (ClusterImpl)getMessageEndOwnerCluster(msgEndSrc, source);
@@ -571,9 +571,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				graph.getRows().stream().filter(d -> (d.getIndex() >= source.getRow().getIndex() 
-						|| d.getIndex() >= target.getRow().getIndex()))
-						.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+				List<Row> nudgeRows = graph.getRows().stream().filter(
+						d -> (d.getIndex() >= source.getRow().getIndex() || 
+						d.getIndex() >= target.getRow().getIndex())).
+						collect(Collectors.toList());
+				NodeUtilities.nudgeRows(nudgeRows, delta.y);
 				graph.layout();
 				return true;
 			}
@@ -629,11 +631,14 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			public boolean apply(InteractionGraph graph) {
 				boolean isGate = NodeUtilities.isBorderNode(msgEndNode);
 				if (isRecvEvent) {
-					graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
-							.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.height));
+					List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
+							.collect(Collectors.toList());
+					NodeUtilities.nudgeRows(nudgeRows, delta.height);
+					
 					List<Node> ownRowNodes = msgEndNode.getRow().getNodes().stream().filter(d-> (d!=source && d!=target)).
 							collect(Collectors.toList());
 					NodeUtilities.nudgeNodes(ownRowNodes, isGate ? delta.width : 0, delta.height);
+					
 					graph.layout();
 				}
 				
@@ -930,8 +935,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 				@Override
 				public boolean apply(InteractionGraph graph) {
-					graph.getRows().stream().filter(d -> (d.getIndex() > occurrenceNode.getRow().getIndex()))
-							.map(RowImpl.class::cast).forEach(d -> d.nudge(-delta));
+					List<Row> rows = graph.getRows().stream().filter(d -> (d.getIndex() > occurrenceNode.getRow().getIndex()))
+							.collect(Collectors.toList());
+					NodeUtilities.nudgeRows(rows, -delta);
 					graph.layout();
 					return true;
 				}
@@ -1118,8 +1124,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			@Override
 			public boolean apply(InteractionGraph graph) {
 				Row r = startNodes.get(0).getRow();
-				graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
-						.map(RowImpl.class::cast).forEach(d -> d.nudge(delta.y));
+				List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
+					.collect(Collectors.toList());
+				NodeUtilities.nudgeRows(nudgeRows, delta.y);
 				graph.layout();
 				return true;
 			}

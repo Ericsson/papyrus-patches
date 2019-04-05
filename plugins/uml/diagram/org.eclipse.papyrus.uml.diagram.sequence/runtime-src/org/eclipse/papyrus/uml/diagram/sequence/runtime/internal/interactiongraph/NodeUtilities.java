@@ -490,11 +490,13 @@ public class NodeUtilities {
 			return new Dimension(xDelta,yDelta);
 		InteractionGraphImpl graph = ((InteractionGraphImpl)nodes.get(0).getInteractionGraph());
 		
-		int minYDelta = yDelta;
+		int newYDelta = yDelta;
 		Set<Cluster> parents = nodes.stream().map(Node::getParent).collect(Collectors.toSet());
 		// Check how much we can nudge without break parents minimum size.
 		for (Cluster c : parents) {
 			Dimension minSize = graph.getLayoutManager().getMinimumSize((ClusterImpl)c);
+			Dimension maxSize = graph.getLayoutManager().getMaximumSize((ClusterImpl)c);
+			
 			Node startNode = getStartNode(c);
 			Node endNode = getFinishNode(c);
 			if (startNode == null || endNode == null)
@@ -506,18 +508,26 @@ public class NodeUtilities {
 			int height = endNode.getBounds().y - startNode.getBounds().y;
 			if (nodes.contains(startNode)) {
 				if (height - yDelta < minSize.height) {
-					minYDelta = Math.min(minYDelta, Math.max(0, height - minSize.height));
+					newYDelta = Math.min(newYDelta, Math.max(0, height - minSize.height));
+				}
+
+				if (height - yDelta > maxSize.height) {
+					newYDelta = Math.max(newYDelta, Math.max(0, minSize.height - height));
 				}
 			}
 			
 			if (nodes.contains(endNode)) {
 				if (height + yDelta < minSize.height) {
-					minYDelta = Math.max(minYDelta, - Math.max(0, height - minSize.height));
+					newYDelta = Math.max(newYDelta, - Math.max(0, height - minSize.height));
 				}				
+
+				if (height + yDelta > maxSize.height) {
+					newYDelta = Math.min(newYDelta, Math.max(0, minSize.height - height));
+				}
 			}
 		}
 		
-		yDelta = minYDelta;
+		yDelta = newYDelta;
 		for (Node n : nodes) {
 			n.getBounds().x += xDelta;
 			n.getBounds().y += yDelta;
@@ -528,6 +538,31 @@ public class NodeUtilities {
 		return new Dimension(xDelta, yDelta);
 	}
 
+	public static void nudgeRows(List<? extends Row> rows, int yDelta) {
+		if (rows.isEmpty())
+			return;
+		InteractionGraphImpl graph = ((RowImpl)rows.get(0)).getInteractionGraph();
+		
+		((InteractionGraphImpl)graph).disableLayout();
+		List<Node> nodes = rows.stream().flatMap(d->d.getNodes().stream()).collect(Collectors.toList());
+		nudgeNodes(nodes, 0, yDelta);
+		((InteractionGraphImpl)graph).enableLayout();
+	}
+/*
+	public static void nudgeRows(List<? extends Row> rows, int yDelta) {
+		if (rows.isEmpty())
+			return;
+		InteractionGraphImpl graph = ((RowImpl)rows.get(0)).getInteractionGraph();
+		
+		((InteractionGraphImpl)graph).disableLayout();
+		for (Row r : rows) {
+			Dimension dim = nudgeNodes(r.getNodes(), 0, yDelta);
+			((RowImpl)r).setYPosition(r.getYPosition() + yDelta);
+			yDelta = dim.height;
+		}
+		((InteractionGraphImpl)graph).enableLayout();
+	}
+*/	
 	public static Rectangle getEmptyAreaAround(InteractionGraphImpl interactionGraph, List<Node> nodes) {
 		List<Node> allNodes = NodeUtilities.flatten(nodes);
 		int minRow = Integer.MAX_VALUE;

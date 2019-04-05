@@ -83,4 +83,10 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 		return new Dimension(0,0);
 	}
 
+	public Dimension getMaximumSize(NodeImpl node) {
+		if (node instanceof Cluster) {
+			return new Dimension(Integer.MAX_VALUE,60);
+		}
+		return new Dimension(Integer.MAX_VALUE,Integer.MAX_VALUE);
+	}
 }

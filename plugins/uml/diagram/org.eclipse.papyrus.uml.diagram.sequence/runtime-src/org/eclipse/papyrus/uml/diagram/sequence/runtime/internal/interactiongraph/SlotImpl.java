@@ -53,7 +53,7 @@ public abstract class SlotImpl {
 		attachNode(node);
 	}
 
-	protected abstract void nudge(int delta);
+	//protected abstract void nudge(int delta);
 
 	protected abstract void attachNode(NodeImpl n);
 
@@ -66,6 +66,10 @@ public abstract class SlotImpl {
 
 	public List<Node> getNodes() {
 		return Collections.unmodifiableList(nodes);
+	}
+
+	public InteractionGraphImpl getInteractionGraph() {
+		return interactionGraph;
 	}
 
 	Rectangle getBounds() {

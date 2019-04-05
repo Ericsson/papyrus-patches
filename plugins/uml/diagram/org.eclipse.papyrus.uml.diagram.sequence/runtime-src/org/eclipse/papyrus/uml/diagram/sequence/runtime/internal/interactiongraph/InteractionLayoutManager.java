@@ -98,6 +98,21 @@ public class InteractionLayoutManager implements InteractionNodeLayout {
 		return new Dimension(0,0);
 	}
 
+	@Override
+	public Dimension getMaximumSize(NodeImpl node) {
+		if (node instanceof ClusterImpl) {
+			InteractionNodeLayout layout = getClusterLayoutFor((ClusterImpl)node);
+			if (layout != null)
+				return layout.getMaximumSize(node);
+		} 
+
+		InteractionNodeLayout layout = getNodeLayoutFor(node);
+		if (layout != null)
+			return layout.getMaximumSize(node);
+		
+		return new Dimension(0,0);
+	}
+
 	private void layoutImp(NodeImpl node, InteractionNodeLayout layout) {
 		if (layout != null) {
 			layout.layout(node);

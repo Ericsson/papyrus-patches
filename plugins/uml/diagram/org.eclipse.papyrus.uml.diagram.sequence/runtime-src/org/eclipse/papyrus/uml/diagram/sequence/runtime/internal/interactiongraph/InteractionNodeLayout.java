@@ -40,4 +40,7 @@ public interface InteractionNodeLayout {
 		return new Dimension(0,0);
 	}
 
+	public default Dimension getMaximumSize(NodeImpl node) {
+		return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
+	}
 }

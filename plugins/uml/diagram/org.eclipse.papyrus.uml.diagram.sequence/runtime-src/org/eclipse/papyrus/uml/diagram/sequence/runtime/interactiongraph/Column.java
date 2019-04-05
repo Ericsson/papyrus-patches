@@ -77,4 +77,7 @@ public interface Column {
 	 * @return a list of points.
 	 */
 	public List<Point> getAnchorPoints();
+	
+	public void nudge(int delta);
+
 }

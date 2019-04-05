@@ -67,13 +67,6 @@ public class RowImpl extends SlotImpl implements Row {
 	}
 
 	@Override
-	public void nudge(int delta) {
-		this.ypos += delta;
-		getNodes().stream().map(NodeImpl.class::cast).forEach(interactionGraph.getLayoutManager()::layout);
-//		interactionGraph.getLayoutManager().layout();
-	}
-
-	@Override
 	public String toString() {
 		return String.format("Row[%d][y: %d]", index, ypos);
 	}
