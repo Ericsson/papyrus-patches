@@ -43,6 +43,7 @@ import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Gate;
+import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -875,9 +876,12 @@ public class NodeUtilities {
 			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList());
 			List<Node> execSpecs = vLimitNodes.stream().filter(d->d.getElement() instanceof ExecutionSpecification).
 					filter(d->nodesToNudge.contains(d.getParent().getConnectedByNode())).collect(Collectors.toList());
-			
+			List<Node> fragClusterNodes = nodesToNudge.stream().filter(d->d.getElement() instanceof Gate).
+					map(Node::getParent).filter(FragmentCluster.class::isInstance).map(FragmentClusterImpl.class::cast).
+					flatMap(d->NodeUtilities.flatten(d.getClusters()).stream()).collect(Collectors.toList());
 			vLimitNodes.removeAll(lifelines);
 			vLimitNodes.removeAll(execSpecs);
+			vLimitNodes.removeAll(fragClusterNodes);
 			for (Node n : lifelines) {
 				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
 				Rectangle headArea = n.getBounds().getCopy();
