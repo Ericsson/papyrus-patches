@@ -15,13 +15,14 @@ cache:
   directories:
   - "$HOME/.m2/repository"
 
-script: ./releng/script/deploy_pages.sh
+script: releng/scripts/deploy_pages.sh
   
 deploy:
   provider: pages
   skip_cleanup: true
   github_token: $GIT_HUB_TOKEN  # Set in the settings page of your repository, as a secure variable
   keep_history: false
+  local_dir: .gh-pages
   on:
     branch: master
-  local_dir: .gh-pages
+  
