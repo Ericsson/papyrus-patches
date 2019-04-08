@@ -1,0 +1,16 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+git:
+  depth: 1
+
+branches:
+  except:
+  - gh-pages
+  - master_papyrus
+  
+cache:
+  directories:
+  - "$HOME/.m2/repository"

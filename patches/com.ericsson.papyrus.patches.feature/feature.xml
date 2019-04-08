@@ -305,10 +305,6 @@ version(s), and exceptions or additional permissions here}.&quot;
    </license>
 
    <includes
-         id="org.eclipse.papyrus.uml.textedit.patch"
-         version="0.0.0"/>
-
-   <includes
          id="org.eclipse.papyrus.uml.diagram.css.patch"
          version="0.0.0"/>
 
