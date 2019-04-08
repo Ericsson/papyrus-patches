@@ -14,3 +14,13 @@ branches:
 cache:
   directories:
   - "$HOME/.m2/repository"
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GIT_HUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  keep_history: false
+  on:
+    branch: master
+  local_dir: .gh-pages
+  script: ./releng/script/deploy_pages.sh
