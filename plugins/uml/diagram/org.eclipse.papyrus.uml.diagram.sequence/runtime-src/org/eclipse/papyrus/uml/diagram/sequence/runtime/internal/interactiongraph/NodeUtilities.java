@@ -486,7 +486,7 @@ public class NodeUtilities {
 		nudgeNodes(Collections.singletonList(n), xDelta, yDelta);
 	}
 	
-	public static Dimension nudgeNodes(List<Node> nodes, int xDelta, int yDelta) {
+	public static Dimension nudgeNodes(List<? extends Node> nodes, int xDelta, int yDelta) {
 		if (nodes.isEmpty())
 			return new Dimension(xDelta,yDelta);
 		InteractionGraphImpl graph = ((InteractionGraphImpl)nodes.get(0).getInteractionGraph());
@@ -549,22 +549,8 @@ public class NodeUtilities {
 		nudgeNodes(nodes, 0, yDelta);
 		((InteractionGraphImpl)graph).enableLayout();
 	}
-/*
-	public static void nudgeRows(List<? extends Row> rows, int yDelta) {
-		if (rows.isEmpty())
-			return;
-		InteractionGraphImpl graph = ((RowImpl)rows.get(0)).getInteractionGraph();
-		
-		((InteractionGraphImpl)graph).disableLayout();
-		for (Row r : rows) {
-			Dimension dim = nudgeNodes(r.getNodes(), 0, yDelta);
-			((RowImpl)r).setYPosition(r.getYPosition() + yDelta);
-			yDelta = dim.height;
-		}
-		((InteractionGraphImpl)graph).enableLayout();
-	}
-*/	
-	public static Rectangle getEmptyAreaAround(InteractionGraphImpl interactionGraph, List<Node> nodes) {
+
+	public static Rectangle getEmptyAreaAround(InteractionGraphImpl interactionGraph, List<? extends Node> nodes) {
 		List<Node> allNodes = NodeUtilities.flatten(nodes);
 		int minRow = Integer.MAX_VALUE;
 		int maxRow = Integer.MIN_VALUE;
@@ -577,8 +563,16 @@ public class NodeUtilities {
 				minRow = Math.min(minRow, row.getIndex());
 				maxRow = Math.max(maxRow, row.getIndex());
 			}			
+
+			Column col = n.getColumn();
+			if (col != null) {				
+				minCol = Math.min(minCol, col.getIndex());
+				maxCol = Math.max(maxCol, col.getIndex());				
+			}
 		}
 		
+		int leftCol = Integer.MIN_VALUE;
+		int rightCol = Integer.MAX_VALUE;		
 		Column leftColumn = null;
 		Column rightColumn = null;
 		for (int r=minRow; r<=maxRow; r++) {
@@ -587,12 +581,12 @@ public class NodeUtilities {
 			for (Node n : otherNodes) {
 				Column col = n.getColumn();
 				if (col != null) {
-					if (minCol < col.getIndex()) {
-						minCol = col.getIndex();
+					if (col.getIndex() < minCol && col.getIndex() > leftCol) {
+						leftCol = col.getIndex();
 						leftColumn = col;
 					}
-					if (maxCol > col.getIndex()) {
-						minCol = col.getIndex();
+					if (col.getIndex() > maxCol && col.getIndex() < rightCol) {
+						rightCol = col.getIndex();
 						rightColumn = col;
 					}
 				}
@@ -676,7 +670,7 @@ public class NodeUtilities {
 		for (Node n : nodes) {
 			Rectangle b = n.getBounds();
 			if (r == null)
-				r = new Rectangle(b.x,b.y,0,0);
+				r = new Rectangle(b.x,b.y,b.width,b.height);
 			else
 				Draw2dUtils.union(r,b);
 		}
@@ -815,11 +809,11 @@ public class NodeUtilities {
 		return afters.get(0);
 	}
 
-	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical) {
+	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<? extends Node> nodesToNudge, boolean horizontal, boolean vertical) {
 		return getNudgeArea(graph, nodesToNudge, horizontal, vertical, null); 
 	}
 	
-	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<Node> nodesToNudge, boolean horizontal, boolean vertical, List<Node> excludeNodes) {
+	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<? extends Node> nodesToNudge, boolean horizontal, boolean vertical, List<Node> excludeNodes) {
 		Set<Node> vLimitNodes = null;
 		Set<Node> hLimitNodes = null;
 		for (Node n : nodesToNudge) {

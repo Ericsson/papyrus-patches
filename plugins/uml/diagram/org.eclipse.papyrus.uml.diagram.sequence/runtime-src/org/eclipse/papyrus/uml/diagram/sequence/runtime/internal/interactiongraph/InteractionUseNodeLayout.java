@@ -30,7 +30,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
  *
  */
 public class InteractionUseNodeLayout implements InteractionNodeLayout {
-	@SuppressWarnings("unchecked")
 	@Override
 	public void layout(NodeImpl node) {
 		if (node instanceof FragmentCluster) {
@@ -39,7 +38,7 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 			if (!clusters.isEmpty()) {				
 				Rectangle childRect = NodeUtilities.getArea(clusters);
 				r = childRect.getCopy();
-				r.height = 60;
+				//r.height = 60;
 				List<Cluster> lifelines = clusters.stream().map(NodeUtilities::getLifelineNode).filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
 				if (!lifelines.isEmpty()) {
 					int leftSide = lifelines.stream().map(Node::getBounds).map(Rectangle::x).collect(Collectors.minBy(Integer::compare)).get();
@@ -83,10 +82,4 @@ public class InteractionUseNodeLayout implements InteractionNodeLayout {
 		return new Dimension(0,0);
 	}
 
-	public Dimension getMaximumSize(NodeImpl node) {
-		if (node instanceof Cluster) {
-			return new Dimension(Integer.MAX_VALUE,60);
-		}
-		return new Dimension(Integer.MAX_VALUE,Integer.MAX_VALUE);
-	}
 }

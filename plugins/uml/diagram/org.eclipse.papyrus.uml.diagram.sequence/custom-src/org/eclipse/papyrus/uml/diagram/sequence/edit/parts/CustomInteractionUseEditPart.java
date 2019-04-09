@@ -71,15 +71,7 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		removeEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE);
-		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy() {
-			@Override
-			protected void createResizeHandle(List handles, int direction) {
-				if (direction != PositionConstants.EAST &&  direction != PositionConstants.WEST)
-					return;
-				super.createResizeHandle(handles, direction);
-			}			
-		};
-		resizableEditPolicy.setResizeDirections(PositionConstants.EAST |PositionConstants.WEST);
+		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy();
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new InteractionGraphGraphicalNodeEditPolicy());
 	}

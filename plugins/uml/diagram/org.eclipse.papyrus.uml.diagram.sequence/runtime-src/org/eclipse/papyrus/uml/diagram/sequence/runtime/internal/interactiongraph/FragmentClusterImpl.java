@@ -16,9 +16,13 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
 
@@ -120,6 +124,19 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 	@Override
 	public List<Node> getFloatingNodes() {
 		return Collections.unmodifiableList(floatingNodes);
+	}
+
+	public List<MarkNode> getMarkNodes(MarkNode.Kind kind) {
+		return clusters.stream().flatMap(d->d.getNodes().stream()).filter(MarkNode.class::isInstance).map(MarkNode.class::cast).
+				filter(d->d.getKind() == kind).collect(Collectors.toList());
+	}
+	
+	public List<MarkNode> getStartMarkNodes() {
+		return getMarkNodes(Kind.start);
+	}
+	
+	public List<MarkNode> getEndMarkNodes() {
+		return getMarkNodes(Kind.end);
 	}
 
 	private List<ClusterImpl> clusters = new ArrayList<ClusterImpl>();
