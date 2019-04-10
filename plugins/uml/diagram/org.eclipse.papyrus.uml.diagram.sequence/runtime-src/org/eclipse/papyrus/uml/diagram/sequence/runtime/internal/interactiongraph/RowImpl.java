@@ -106,7 +106,7 @@ public class RowImpl extends SlotImpl implements Row {
 				return 0;
 			int res = Integer.compare(r1.y,r2.y );
 			if (res == 0) {
-				res = Integer.compare(r1.x, r1.y);
+				res = Integer.compare(r1.x, r2.x);
 				if (res == 0) {					
 					return Integer.compare(o1.getParent().getNodes().indexOf(o1), o2.getParent().getNodes().indexOf(o2));
 				}				
@@ -128,9 +128,9 @@ public class RowImpl extends SlotImpl implements Row {
 			
 			res = MESSAGE_END_NODE_COMPARATOR.compare(o1, o2);			
 			if (res == 0)
-				res = Integer.compare(r1.x, r1.y);				
+				res = Integer.compare(r1.x, r2.x);				
 			if (res == 0) 
-				res = Integer.compare(r1.y,r2.y );
+				res = Integer.compare(r1.y, r2.y );
 			if (res == 0)
 				res = Integer.compare(o1.getParent().getNodes().indexOf(o1), o2.getParent().getNodes().indexOf(o2));
 			return res;

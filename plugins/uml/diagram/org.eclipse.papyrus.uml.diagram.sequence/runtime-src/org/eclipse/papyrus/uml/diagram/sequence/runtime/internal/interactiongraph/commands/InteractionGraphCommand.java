@@ -58,9 +58,7 @@ import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.DestroyElementRequest;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
-import org.eclipse.gmf.runtime.notation.RelativeBendpoints;
 import org.eclipse.gmf.runtime.notation.View;
-import org.eclipse.gmf.runtime.notation.datatype.RelativeBendpoint;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.SemanticElementAdapter;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.ActionExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.BehaviorExecutionSpecificationEditPart;
@@ -88,7 +86,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeOrderResolver;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.RowImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.CombinedFragment;
@@ -557,7 +554,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		Link link = interactionGraph.getLinkFor(msg);		
 		Node source = link.getSource();
 		Node target = link.getTarget();
-		
+
 		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);		
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
 		if (!validArea.contains(newMsgArea)) {
@@ -1599,27 +1596,33 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			return CommandResult.newCancelledCommandResult();
 		}
 
-		for (InteractionGraphEditAction action : actions) {
-			if (!action.apply(interactionGraph)) {
-				return CommandResult.newErrorCommandResult("Could not apply action.");
+		CommandResult res;
+		try {
+			for (InteractionGraphEditAction action : actions) {
+				if (!action.apply(interactionGraph)) {
+					return CommandResult.newErrorCommandResult("Could not apply action.");
+				}
 			}
-		}
 
-		ICommand cmd = buildDelegateCommands(getEditingDomain(), getLabel());
-		if (cmd == null || !cmd.canExecute()) {
-			return CommandResult.newCancelledCommandResult();
-		}
+			ICommand cmd = buildDelegateCommands(getEditingDomain(), getLabel());
+			if (cmd == null || !cmd.canExecute()) {
+				return CommandResult.newCancelledCommandResult();
+			}
 
-		cmd.execute(monitor, info);
-		CommandResult res = cmd.getCommandResult(); 
-		if (!res.getStatus().isOK()) {
-			if (res.getStatus().getException() != null)
-				throw new ExecutionException("Can not apply changes.", res.getStatus().getException());	
-			UMLDiagramEditorPlugin.log.log(res.getStatus());
-			return res;
-		}
-		for (InteractionGraphEditAction action : actions) {
-			action.handleResult(cmd.getCommandResult());
+			cmd.execute(monitor, info);
+			res = cmd.getCommandResult(); 
+			if (!res.getStatus().isOK()) {
+				if (res.getStatus().getException() != null)
+					throw new ExecutionException("Can not apply changes.", res.getStatus().getException());	
+				UMLDiagramEditorPlugin.log.log(res.getStatus());
+				return res;
+			}
+			for (InteractionGraphEditAction action : actions) {
+				action.handleResult(cmd.getCommandResult());
+			}
+		} catch (Exception e) {
+			UMLDiagramEditorPlugin.log.error(e.getMessage(), e);;
+			throw e;
 		}
 		
 		return res;
@@ -1872,12 +1875,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		// Here we can only handle the fragment order.
 		// Elements are created in the Actions and added here.
 		// Behavior specs delete and add itself to fragments.
-		// TODO: Messages Occurrence need to do that also.
-		
-//		Function<InteractionFragment, IUndoableOperation> addCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
-//				AddCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
-//		Function<InteractionFragment, IUndoableOperation> removeCommandFunction = (d) -> new EMFCommandOperation(editingDomain,
-//				RemoveCommand.create(editingDomain, interactionGraph.getInteraction(), UMLPackage.Literals.INTERACTION__FRAGMENT, d));
 
 		// Reorder fragments
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),

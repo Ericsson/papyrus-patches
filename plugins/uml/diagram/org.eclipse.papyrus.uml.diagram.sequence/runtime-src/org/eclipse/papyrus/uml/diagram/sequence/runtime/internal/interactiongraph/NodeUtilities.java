@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -814,68 +815,63 @@ public class NodeUtilities {
 	}
 	
 	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<? extends Node> nodesToNudge, boolean horizontal, boolean vertical, List<Node> excludeNodes) {
+		if (nodesToNudge == null || nodesToNudge.isEmpty())
+			return null;
+		
 		Set<Node> vLimitNodes = null;
 		Set<Node> hLimitNodes = null;
-		for (Node n : nodesToNudge) {
-			if (vertical) {
-				if (vLimitNodes == null)
-					vLimitNodes = new HashSet<Node>();
-				Row row = n.getRow();
-				vLimitNodes.addAll(row.getNodes());
-							
-				while (row.getIndex() > 0) {
-					Row prevRow = graph.getRows().get(row.getIndex()-1);
-					List<Node> rowNodes = prevRow.getNodes();
-					if (excludeNodes == null || !excludeNodes.containsAll(rowNodes)) {
-						vLimitNodes.addAll(rowNodes);
-						break;
-					}
-					row = prevRow;
-				}
-				
-				if (excludeNodes != null)
-					vLimitNodes.removeAll(excludeNodes);
-			}
+		
+		if (vertical) {
+			List<Node> verticalExcludingNodes = new ArrayList<Node>();
+			verticalExcludingNodes.addAll(nodesToNudge);
+			if (excludeNodes != null)
+				verticalExcludingNodes.addAll(excludeNodes);
 			
-			if (horizontal) {
-				if (hLimitNodes == null)
-					hLimitNodes = new HashSet<Node>();
-				Column col = n.getColumn();
-				hLimitNodes.addAll(col.getNodes());
-							
-				while (col.getIndex() > 0) {
-					Column prevCol = graph.getColumns().get(col.getIndex()-1);
-					List<Node> colNodes = prevCol.getNodes();
-					if (excludeNodes == null || !excludeNodes.containsAll(colNodes)) {
-						hLimitNodes.addAll(colNodes);
-						break;
-					}
-					col = prevCol;
-				}
-				
-				if (excludeNodes != null)
-					hLimitNodes.removeAll(excludeNodes);
-			}			
+			List<Node> execSpecs = nodesToNudge.stream().map(Node::getConnectedNode).filter(Predicate.isEqual(null).negate()).
+					filter(d->d.getElement() instanceof ExecutionSpecification).
+					filter(Cluster.class::isInstance).map(Cluster.class::cast).flatMap(d->d.getNodes().stream()). 
+					filter(d->d.getElement() instanceof ExecutionSpecification).collect(Collectors.toList());
+			verticalExcludingNodes.addAll(execSpecs);
+			
+			vLimitNodes = new HashSet<Node>();
+			Node node = nodesToNudge.stream().sorted(RowImpl.NODE_VPOSITION_COMPARATOR).findFirst().orElse(null);
+			Row row = node.getRow();
+			vLimitNodes.addAll(row.getNodes());			
+			vLimitNodes.removeAll(verticalExcludingNodes);
+			
+			while (vLimitNodes.isEmpty() && row.getIndex() > 0) {
+				Row prevRow = graph.getRows().get(row.getIndex()-1);
+				vLimitNodes.addAll(prevRow.getNodes());
+				vLimitNodes.removeAll(verticalExcludingNodes);
+				row = prevRow;				
+			}
 		}
 		
-		if (vertical && vLimitNodes != null)
-			vLimitNodes.removeAll(nodesToNudge);
-		if (horizontal && hLimitNodes != null)
-			hLimitNodes.removeAll(nodesToNudge);
-		
+		if (horizontal) {
+			List<Node> horizontalExcludingNodes = new ArrayList<Node>();
+			horizontalExcludingNodes.addAll(nodesToNudge);
+			if (excludeNodes != null)
+				horizontalExcludingNodes.addAll(excludeNodes);
+
+			hLimitNodes = new HashSet<Node>();
+			Node node = nodesToNudge.stream().sorted(ColumnImpl.NODE_HPOSITION_COMPARATOR).findFirst().orElse(null);
+			Column col = node.getColumn();
+			hLimitNodes.addAll(col.getNodes());
+			hLimitNodes.removeAll(horizontalExcludingNodes);
+			while (hLimitNodes.isEmpty() && col.getIndex() > 0) {
+				Column prevCol = graph.getColumns().get(col.getIndex()-1);
+				hLimitNodes.addAll(prevCol.getNodes());
+				hLimitNodes.removeAll(horizontalExcludingNodes);
+				col = prevCol;				
+			}
+		}			
+			
 		int minY = Integer.MIN_VALUE; 
 		if (vLimitNodes != null) {
+			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList());		
 			List<Node> createLifelines = nodesToNudge.stream().filter(NodeUtilities::isCreateOcurrenceSpecification)
 					.map(NodeUtilities::getLifelineNode).collect(Collectors.toList());
-			List<Node> lifelines = vLimitNodes.stream().filter(d->d.getElement() instanceof Lifeline).collect(Collectors.toList());
-			List<Node> execSpecs = vLimitNodes.stream().filter(d->d.getElement() instanceof ExecutionSpecification).
-					filter(d->nodesToNudge.contains(d.getParent().getConnectedByNode())).collect(Collectors.toList());
-			List<Node> fragClusterNodes = nodesToNudge.stream().filter(d->d.getElement() instanceof Gate).
-					map(Node::getParent).filter(FragmentCluster.class::isInstance).map(FragmentClusterImpl.class::cast).
-					flatMap(d->NodeUtilities.flatten(d.getClusters()).stream()).collect(Collectors.toList());
 			vLimitNodes.removeAll(lifelines);
-			vLimitNodes.removeAll(execSpecs);
-			vLimitNodes.removeAll(fragClusterNodes);
 			for (Node n : lifelines) {
 				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
 				Rectangle headArea = n.getBounds().getCopy();
