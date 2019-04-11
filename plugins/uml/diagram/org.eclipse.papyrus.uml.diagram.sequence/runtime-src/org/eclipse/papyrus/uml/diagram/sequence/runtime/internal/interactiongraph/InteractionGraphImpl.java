@@ -1064,9 +1064,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			}
 
 			if (nudgeOverlap) {				
-				for (int r = row.getIndex(); nudgeOverlap && r<rows.size(); r++) {		
-					NodeUtilities.nudgeRows(rows.subList(row.getIndex(), rows.size()), 20);
-				}
+				NodeUtilities.nudgeRows(rows.subList(row.getIndex(), rows.size()), 20);
 			}
 		}
 
