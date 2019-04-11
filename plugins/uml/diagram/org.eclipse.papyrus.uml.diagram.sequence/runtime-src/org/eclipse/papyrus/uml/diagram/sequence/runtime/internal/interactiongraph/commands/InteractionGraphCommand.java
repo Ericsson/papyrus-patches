@@ -30,6 +30,7 @@ import org.eclipse.core.commands.operations.IUndoableOperation;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Insets;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
@@ -80,6 +81,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.Draw2dUtils;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.FragmentClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.MarkNodeImpl;
@@ -580,6 +582,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
+	/*
+	 * Notes on MessageEnd (source) nudge:
+	 * - The source part does not nudge normally, 2 possibilities:
+	 * 		a) It does not nudge at all => Verify against the Empty area around it (Implemented)
+	 * 		b) Nudge opposite => delta < 0 -> Nudge everything down and / or delta > 0 -> Nudge allt under up 
+	 */
 	public void nudgeMessageEnd(MessageEnd msgEnd, Point location) {
 		if (msgEnd.getMessage() == null) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
@@ -592,7 +600,27 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		
 		Node source = link.getSource();
 		Node target = link.getTarget();		
-		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);
+		Rectangle validArea = null;
+		if (msgEndNode == source) {
+			validArea = NodeUtilities.getEmptyAreaAround(interactionGraph, 
+					NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
+							Arrays.asList(source,target) :
+							Collections.singletonList(msgEndNode));			
+			Insets ins = new Insets(Draw2dUtils.SHRINK_SIZE);
+			if (validArea.contains(target.getLocation())) {
+				ins.bottom = 0;
+			}
+			validArea.shrink(ins);
+		} else {		
+			validArea = NodeUtilities.getNudgeArea(interactionGraph, 
+				NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
+						Arrays.asList(source,target) :
+						Collections.singletonList(msgEndNode), false, true);
+			if (Draw2dUtils.outsideRectangle(validArea.getCopy()).contains(source.getLocation())) {
+				validArea.y -= Draw2dUtils.SHRINK_SIZE; validArea.height += Draw2dUtils.SHRINK_SIZE; 
+			}
+		}
+
 		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().setLocation(location);
 		Dimension delta = newMsgEndPos.getLocation().getDifference(msgEndNode.getBounds().getLocation());
 		if (NodeUtilities.isBorderNode(msgEndNode))
@@ -638,6 +666,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					NodeUtilities.nudgeNodes(ownRowNodes, isGate ? delta.width : 0, delta.height);
 					
 					graph.layout();
+				} else if (delta.height > 0){
+					
 				}
 				
 				Rectangle r = msgEndNode.getBounds();

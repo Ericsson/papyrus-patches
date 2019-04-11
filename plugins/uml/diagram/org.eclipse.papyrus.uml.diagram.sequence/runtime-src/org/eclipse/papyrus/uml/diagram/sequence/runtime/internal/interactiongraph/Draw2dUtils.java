@@ -22,6 +22,8 @@ import org.eclipse.draw2d.geometry.Rectangle;
  *
  */
 public class Draw2dUtils {
+	public static int SHRINK_SIZE = 2;
+	
 	public static Rectangle union(Rectangle r, int x, int y, int width, int height) {
 		int x1 = Math.min(r.x, x);
 		int x2 = Math.max(r.x + r.width, x + width);
@@ -48,4 +50,19 @@ public class Draw2dUtils {
 		return !(((x2 - x1) < 0) || ((y2 - y1) < 0));
 	}
 	
+	public static Rectangle insideRectangle(Rectangle rectangle) {
+		return rectangle.shrink(SHRINK_SIZE, SHRINK_SIZE);
+	}
+	
+	public static Rectangle insideRectangle(Rectangle rectangle, boolean horz, boolean vert) {
+		return rectangle.shrink(horz ? SHRINK_SIZE : 0, vert ? SHRINK_SIZE : 0);
+	}
+
+	public static Rectangle outsideRectangle(Rectangle rectangle) {
+		return rectangle.expand(SHRINK_SIZE, SHRINK_SIZE);		
+	}
+
+	public static Rectangle outsideRectangle(Rectangle rectangle, boolean horz, boolean vert) {
+		return rectangle.expand(horz ? SHRINK_SIZE : 0, vert ? SHRINK_SIZE : 0);
+	}
 }

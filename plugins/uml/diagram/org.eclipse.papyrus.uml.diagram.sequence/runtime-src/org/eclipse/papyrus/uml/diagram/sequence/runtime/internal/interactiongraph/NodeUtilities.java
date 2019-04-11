@@ -60,8 +60,8 @@ import org.eclipse.uml2.uml.OccurrenceSpecification;
 public class NodeUtilities {
 	public static final int THRESHOLD_HORIZONTAL_DEPS = 5; // Move it to LayoutPreferences...
 
-	public static boolean areNodesHorizontallyConnected(NodeImpl n1, NodeImpl n2) {
-		return Math.abs(getYPos(n1) - getYPos(n2)) < THRESHOLD_HORIZONTAL_DEPS; 
+	public static boolean areNodesHorizontallyConnected(Node n1, Node n2) {
+		return Math.abs(getYPos((NodeImpl)n1) - getYPos((NodeImpl)n2)) < THRESHOLD_HORIZONTAL_DEPS; 
 	}
 	
 	public static boolean isNodeConnectedTo(NodeImpl n1, NodeImpl n2) {
@@ -892,7 +892,7 @@ public class NodeUtilities {
 		if (vLimitNodes != null) {
 			validArea.y = Math.max(minY, validArea.y);
 		}
-		validArea.shrink(horizontal ? 3 : -3, vertical ? 3 : -3);
+		Draw2dUtils.insideRectangle(validArea, horizontal, vertical);
 		return validArea;
 	}
 	
