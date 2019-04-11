@@ -756,7 +756,7 @@ public class NodeUtilities {
 	}
 
 	public static boolean isNodeAt(Node n, Point p) {
-		return n.getBounds() != null && n.getBounds().contains(p);
+		return n.getBounds() != null && Draw2dUtils.contains(n.getBounds(),p);
 		
 	}
 	

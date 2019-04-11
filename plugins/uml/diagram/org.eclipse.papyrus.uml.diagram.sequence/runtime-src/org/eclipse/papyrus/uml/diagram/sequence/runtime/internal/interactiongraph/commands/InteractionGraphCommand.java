@@ -559,7 +559,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);		
 		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
-		if (!validArea.contains(newMsgArea)) {
+		if (!Draw2dUtils.contains(validArea,newMsgArea)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
@@ -607,7 +607,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							Arrays.asList(source,target) :
 							Collections.singletonList(msgEndNode));			
 			Insets ins = new Insets(Draw2dUtils.SHRINK_SIZE);
-			if (validArea.contains(target.getLocation())) {
+			if (Draw2dUtils.contains(validArea,target.getBounds())) {
 				ins.bottom = 0;
 			}
 			validArea.shrink(ins);
@@ -616,7 +616,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
 						Arrays.asList(source,target) :
 						Collections.singletonList(msgEndNode), false, true);
-			if (Draw2dUtils.outsideRectangle(validArea.getCopy()).contains(source.getLocation())) {
+			if (Draw2dUtils.contains(Draw2dUtils.outsideRectangle(validArea.getCopy()),source.getLocation())) {
 				validArea.y -= Draw2dUtils.SHRINK_SIZE; validArea.height += Draw2dUtils.SHRINK_SIZE; 
 			}
 		}
@@ -626,7 +626,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		if (NodeUtilities.isBorderNode(msgEndNode))
 			validArea.expand(10, 0);
 		
-		if (!validArea.contains(newMsgEndPos)) {
+		if (!Draw2dUtils.contains(validArea,newMsgEndPos)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}
@@ -1024,7 +1024,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		
 		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
 				NodeUtilities.getLifelineNode(lifelineNode).getView());
-		if (!lifelineArea.contains(point)) {
+		if (!Draw2dUtils.contains(lifelineArea,point)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;		
 		}
@@ -1139,7 +1139,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		List<Node> startNodes = fragmentCluster.getClusters().stream().map(d->d.getNodes().get(0)).collect(Collectors.toList());
 		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, startNodes, false, true);		
 		Rectangle newMsgArea = fragmentCluster.getBounds().getCopy().translate(delta);
-		if (!validArea.contains(newMsgArea)) {
+		if (!Draw2dUtils.contains(validArea,newMsgArea)) {
 			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
 			return;
 		}

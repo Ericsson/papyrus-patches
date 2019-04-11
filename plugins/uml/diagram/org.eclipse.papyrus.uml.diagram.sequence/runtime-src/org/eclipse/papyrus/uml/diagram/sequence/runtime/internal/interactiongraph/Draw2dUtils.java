@@ -18,6 +18,12 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 
 /**
+ * Functions to handle Rectangle operations to take in account Rectangles of width or height = 0.
+ * <br>
+ * The issue is right() and bottom() function return the x and y position that are outside the rectangle. 
+ * Based on how contains() is implemented, r.x+r.height is outside the rectangle. and that applies for 
+ * union and intersect functions.
+ *       
  * @author ETXACAM
  *
  */
@@ -50,6 +56,23 @@ public class Draw2dUtils {
 		return !(((x2 - x1) < 0) || ((y2 - y1) < 0));
 	}
 	
+	public static boolean contains(Rectangle r, int x, int y, int width, int height) {
+		return contains(r, new Rectangle(x,y,width,height));
+	}
+
+	public static boolean contains(Rectangle r, Rectangle o) {
+		return r.contains(o); // This seems to work as expected
+	}
+	
+	public static boolean contains(Rectangle r, Point p) {
+		return contains(r,p.x,p.y);
+	}
+
+	public static boolean contains(Rectangle r, int x, int y) {
+		return x >=  r.x && y >= r.y && x <= r.right() && y <= r.bottom();
+	}
+	
+
 	public static Rectangle insideRectangle(Rectangle rectangle) {
 		return rectangle.shrink(SHRINK_SIZE, SHRINK_SIZE);
 	}
