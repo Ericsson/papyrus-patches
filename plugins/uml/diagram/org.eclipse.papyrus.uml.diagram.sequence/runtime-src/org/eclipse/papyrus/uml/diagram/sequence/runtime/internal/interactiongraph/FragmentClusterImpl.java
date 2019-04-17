@@ -122,7 +122,7 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 	}
 
 	@Override
-	public List<Node> getFloatingNodes() {
+	public List<MarkNode> getFloatingNodes() {
 		return Collections.unmodifiableList(floatingNodes);
 	}
 
@@ -143,5 +143,5 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 	private List<FragmentClusterImpl> fragmentClusters = new ArrayList<FragmentClusterImpl>();
 	private List<NodeImpl> innerGates = new ArrayList<NodeImpl>();
 	private List<NodeImpl> outerGates = new ArrayList<NodeImpl>();
-	private List<NodeImpl> floatingNodes = new ArrayList<NodeImpl>();;
+	private List<MarkNodeImpl> floatingNodes = new ArrayList<MarkNodeImpl>();;
 }

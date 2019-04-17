@@ -46,6 +46,8 @@ public interface FragmentCluster extends Cluster {
 	public List<Node> getInnerGates(); // Actual Gates
 	public List<Node> getOuterGates(); // Actual Gates
 
-	public List<Node> getFloatingNodes();
+	public List<MarkNode> getFloatingNodes();
+	
+	//public List<Cluster> getLifelines();
 
 }

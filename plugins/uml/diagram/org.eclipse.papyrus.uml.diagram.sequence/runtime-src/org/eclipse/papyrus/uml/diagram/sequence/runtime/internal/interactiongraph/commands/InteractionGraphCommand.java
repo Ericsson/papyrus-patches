@@ -1211,7 +1211,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				}
 				
 				
-				// TODO: @etxacam Move to the graph highlevel API
 				// Remove old marks
 				List<Cluster> clusterToDelete = fragmentCluster.getClusters().stream().
 						filter(d->!lifelines.contains(NodeUtilities.getLifelineNode(d))).collect(Collectors.toList());

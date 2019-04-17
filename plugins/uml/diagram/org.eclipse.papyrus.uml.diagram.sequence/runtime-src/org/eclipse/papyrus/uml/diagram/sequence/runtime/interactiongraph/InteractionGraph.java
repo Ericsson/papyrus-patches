@@ -72,7 +72,7 @@ public interface InteractionGraph {
 	 *
 	 * @return a list with nodes
 	 */
-	public List<Node> getFloatingNodes();
+	public List<MarkNode> getFloatingNodes();
 
 	/**
 	 * Return a list with the clusters representing the lifelines defined in the interaction.<br>

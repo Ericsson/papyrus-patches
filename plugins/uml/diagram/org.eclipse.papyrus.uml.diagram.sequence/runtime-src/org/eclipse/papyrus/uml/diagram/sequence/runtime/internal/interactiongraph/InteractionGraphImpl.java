@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -382,7 +383,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 					filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
 			Rectangle fragmentBounds = ViewUtilities.getBounds(viewer, cluster.getView());
 			Column leftLifelineColumn = coveredLifelines.stream().map(Node::getColumn).min(Comparator.comparing(d->columns.indexOf(d))).orElse(null);
-			Column rightLifelineColumn = coveredLifelines.stream().map(Node::getColumn).max(Comparator.comparing(d->columns.indexOf(d))).orElse(null);;
+			Column rightLifelineColumn = coveredLifelines.stream().map(Node::getColumn).max(Comparator.comparing(d->columns.indexOf(d))).orElse(null);
+			if (leftLifelineColumn == null || rightLifelineColumn == null)
+				continue;
 			for (Node gate : cluster.getAllGates()) {
 				// TODO: Correlate in & out gates
 				Node opposite = gate.getConnectedByNode();

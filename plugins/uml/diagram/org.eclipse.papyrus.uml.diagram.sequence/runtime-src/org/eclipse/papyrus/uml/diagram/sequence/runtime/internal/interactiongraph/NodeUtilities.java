@@ -222,10 +222,11 @@ public class NodeUtilities {
 			Cluster c = (Cluster) source;
 			if (c instanceof FragmentCluster) {
 				FragmentCluster fc = (FragmentCluster)c;
-				nodes.remove(fc);				
+				nodes.addAll(fc.getAllGates());
 				for (Cluster nn : fc.getClusters()) {
 					getBlock(nn, nodes);
 				}				
+				nodes.remove(fc);				
 			} else {
 				if (c.getFragmentCluster() != null)
 					getBlock(c.getFragmentCluster(), nodes);

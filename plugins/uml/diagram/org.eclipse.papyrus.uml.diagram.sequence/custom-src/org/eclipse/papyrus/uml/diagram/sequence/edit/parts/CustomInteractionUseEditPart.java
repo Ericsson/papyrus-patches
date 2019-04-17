@@ -22,6 +22,7 @@ import java.util.List;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -34,9 +35,11 @@ import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.editpolicies.LayoutEditPolicy;
 import org.eclipse.gef.editpolicies.NonResizableEditPolicy;
+import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gef.requests.LocationRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
+import org.eclipse.gef.tools.ResizeTracker;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
@@ -71,7 +74,29 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		removeEditPolicy(AffixedNodeAlignmentEditPolicy.AFFIXED_CHILD_ALIGNMENT_ROLE);
-		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy();
+		PapyrusResizableShapeEditPolicy resizableEditPolicy = new PapyrusResizableShapeEditPolicy() {
+			@Override
+			protected ResizeTracker getResizeTracker(int direction) {
+				return new ResizeTracker((GraphicalEditPart) getHost(), direction) {
+					@Override
+					protected Request createSourceRequest() {
+						ChangeBoundsRequest request;
+						request = new ChangeBoundsRequest(REQ_RESIZE) {
+
+							@Override
+							public void setCenteredResize(boolean value) {
+								super.setCenteredResize(false);
+							}
+							
+						};
+						request.setResizeDirection(getResizeDirection());
+						return request;
+					}				
+				};
+			}
+			
+		};
+		
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);
 		installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new InteractionGraphGraphicalNodeEditPolicy());
 	}

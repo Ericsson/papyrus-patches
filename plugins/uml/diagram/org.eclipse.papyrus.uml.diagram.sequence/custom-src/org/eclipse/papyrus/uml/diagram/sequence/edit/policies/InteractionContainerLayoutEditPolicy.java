@@ -136,7 +136,7 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 			moveDelta.y -= orig.y;
 			
 			Dimension sizeDelta = request.getSizeDelta();
-			if (!KeyboardHandler.getKeyboardHandler().isAnyPressed() || request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+			if (!KeyboardHandler.getKeyboardHandler().isAnyPressed()) {
 				// No reordering. Resizing is never reordering
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
 				if (sizeDelta.width != 0 || sizeDelta.height != 0) {
@@ -149,7 +149,9 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 			} else {
 				// Reordering case.
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
-				if (moveDelta.x != 0 || moveDelta.y != 0) {
+				if (request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
+					cmd.moveInteractionUse((InteractionUse) element, rect);					
+				} else if (moveDelta.x != 0 || moveDelta.y != 0) {
 					cmd.moveInteractionUse((InteractionUse) element, rect);
 				}
 				return new ICommandProxy(cmd);
