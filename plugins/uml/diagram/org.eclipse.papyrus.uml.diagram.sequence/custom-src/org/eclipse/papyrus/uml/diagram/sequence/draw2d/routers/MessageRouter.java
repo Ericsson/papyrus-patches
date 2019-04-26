@@ -222,8 +222,11 @@ public class MessageRouter extends ObliqueRouter {
 		Point ptSource = conn.getSourceAnchor().getReferencePoint();
 		Point ptTarget = conn.getTargetAnchor().getReferencePoint();
 		Point pe1 = ptSource.getCopy();
+        conn.translateToRelative(pe1);
 		Point pe2 = ptTarget.getCopy();
-		Rectangle messageBounds = new Rectangle(ptSource, ptTarget);
+        conn.translateToRelative(pe2);
+
+		Rectangle messageBounds = new Rectangle(pe1, pe2);
 		messageBounds.expand(messageBounds.width == 0 ? 1 : 0,  messageBounds.height == 0 ? 1 : 0);
 		
 		IFigure srcFigure = getLifelineOrFragmentFigure(conn.getSourceAnchor().getOwner());
@@ -257,16 +260,20 @@ public class MessageRouter extends ObliqueRouter {
 		}
 		
 		newLine.removeAllPoints();
-		newLine.addPoint(conn.getSourceAnchor().getLocation(pe1));
+		Point pes = conn.getSourceAnchor().getLocation(pe1).getCopy();
+		conn.translateToRelative(pes);
+		Point pee = conn.getTargetAnchor().getLocation(pe2).getCopy();
+		conn.translateToRelative(pee);
+		newLine.addPoint(pes);
 		newLine.addPoint(pe1);
 		newLine.addPoint(pe2);
-		newLine.addPoint(conn.getTargetAnchor().getLocation(pe2));
+		newLine.addPoint(pee);
 	}
 	
 	@Override
 	protected boolean checkSelfRelConnection(Connection conn, PointList newLine) {
 		if (RouterKind.getKind(conn, newLine).equals(RouterKind.SELF)) {
-			getSelfRelVertices(conn, newLine);
+			//getSelfRelVertices(conn, newLine);
 			return true;
 		}
 		return false;

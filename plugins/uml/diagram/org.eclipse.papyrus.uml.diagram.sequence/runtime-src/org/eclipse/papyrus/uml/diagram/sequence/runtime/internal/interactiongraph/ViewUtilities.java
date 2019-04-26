@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.parts.DiagramGraphicalViewer;
 import org.eclipse.gmf.runtime.gef.ui.figures.SlidableAnchor;
@@ -36,9 +37,7 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.LayoutConstraint;
 import org.eclipse.gmf.runtime.notation.Location;
-import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
-import org.eclipse.gmf.runtime.notation.Shape;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.papyrus.infra.gmfdiag.common.model.NotationUtils;
@@ -46,6 +45,7 @@ import org.eclipse.papyrus.infra.gmfdiag.common.preferences.PreferencesConstants
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.LifelineFigure.LifelineHeaderFigure;
+import org.eclipse.papyrus.uml.diagram.sequence.util.CoordinateReferentialUtils;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Lifeline;
@@ -449,32 +449,50 @@ public class ViewUtilities {
 	}
 
 	public static Rectangle controlToViewer(EditPartViewer viewer, Rectangle rect) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(rect);
+		Point p1 = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(rect.getTopLeft(), (GraphicalViewer)viewer);
+		Point p2 = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(rect.getBottomRight(), (GraphicalViewer)viewer);
+		rect.setLocation(p1);
+		rect.setSize(p2.x - p1.x, p2.y - p1.y);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(rect);
 		return rect;
 	}
 	
 	public static Point controlToViewer(EditPartViewer viewer, Point point) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(point);
+		Point p1 = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(point, (GraphicalViewer)viewer);
+		point.setLocation(p1);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(point);
 		return point;
 	}
 	
 	public static Dimension controlToViewer(EditPartViewer viewer, Dimension dimension) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(dimension);
+		Point p1 = CoordinateReferentialUtils.transformPointFromScreenToDiagramReferential(
+				new Point(dimension.width, dimension.height), (GraphicalViewer)viewer);
+		dimension.setSize(p1.x,p1.y);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToRelative(dimension);
 		return dimension;
 	}
 
 	public static Rectangle viewerToControl(EditPartViewer viewer, Rectangle rect) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(rect);
+		Point p1 = CoordinateReferentialUtils.transformPointFromDiagramToScreenReferential(rect.getTopLeft(), (GraphicalViewer)viewer);
+		Point p2 = CoordinateReferentialUtils.transformPointFromDiagramToScreenReferential(rect.getBottomRight(), (GraphicalViewer)viewer);
+		rect.setLocation(p1);
+		rect.setSize(p2.x - p1.x, p2.y - p1.y);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(rect);
 		return rect;
 	}
 
 	public static Point viewerToControl(EditPartViewer viewer, Point point) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(point);
+		Point p1 = CoordinateReferentialUtils.transformPointFromDiagramToScreenReferential(point, (GraphicalViewer)viewer);
+		point.setLocation(p1);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(point);
 		return point;
 	}
 
 	public static Dimension viewerToControl(EditPartViewer viewer, Dimension dimension) {
-		((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(dimension);
+		Point p1 = CoordinateReferentialUtils.transformPointFromDiagramToScreenReferential(
+				new Point(dimension.width, dimension.height), (GraphicalViewer)viewer);
+		dimension.setSize(p1.x,p1.y);
+		//((GraphicalEditPart)viewer.getContents()).getFigure().translateToAbsolute(dimension);
 		return dimension;
 	}
 

@@ -131,7 +131,8 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 			originalFeedbackLoc = r.getLocation();*/
 		} 					
 
-		int deltaY = p.y - srcLoc.y;		
+		int deltaY = p.y - srcLoc.y;
+		deltaY = ViewUtilities.viewerToControl(getHost().getViewer(),new Rectangle(0,0,0,deltaY)).height;
 //		Rectangle r = feedbackFigure.getBounds();		
 //		feedbackFigure.setLocation(new Point(originalFeedbackLoc.x,originalFeedbackLoc.y + deltaY));
 		
