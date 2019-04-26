@@ -95,6 +95,8 @@ public class DebugDiagramRootEditPart extends DiagramRootEditPart {
 		 * @see FigureUtilities#paintGrid(Graphics, IFigure, Point, int, int)
 		 */
 		protected void paintGrid(Graphics g) {
+			if (getContents() == null)
+				return;
 			Diagram dia = (Diagram)getContents().getModel();
 			Interaction interaction = (Interaction)dia.getElement();
 			graph = InteractionGraphFactory.getInstance().createInteractionGraph(interaction, dia, getViewer());				
