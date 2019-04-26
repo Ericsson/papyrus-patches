@@ -240,9 +240,9 @@ public class MessageRouter extends ObliqueRouter {
 			
 			List<Rectangle> figuresOverlapping = Stream.concat(
 				FigureUtils.findChildFigureInstances(containerFigure, InteractionUseRectangleFigure.class).
-					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
+					stream().map(d->ViewUtilities.translateToAbsolute(conn, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
 				FigureUtils.findChildFigureInstances(containerFigure, ExecutionSpecificationNodePlate.class).
-					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
+					stream().map(d->ViewUtilities.translateToAbsolute(conn, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
 				collect(Collectors.toList());
 			minx = figuresOverlapping.stream().map(Rectangle::x).min(Integer::compare).orElse(pe1.x);
 			maxx = figuresOverlapping.stream().map(d->d.right()-1).max(Integer::compare).orElse(pe1.x);
@@ -260,9 +260,14 @@ public class MessageRouter extends ObliqueRouter {
 		}
 		
 		newLine.removeAllPoints();
-		Point pes = conn.getSourceAnchor().getLocation(pe1).getCopy();
+		Point pes = pe1.getCopy(); 
+		conn.translateToAbsolute(pes);
+		pes = conn.getSourceAnchor().getLocation(pes);
 		conn.translateToRelative(pes);
-		Point pee = conn.getTargetAnchor().getLocation(pe2).getCopy();
+
+		Point pee = pe2.getCopy();
+		conn.translateToAbsolute(pee);				
+		pee = conn.getTargetAnchor().getLocation(pee);
 		conn.translateToRelative(pee);
 		newLine.addPoint(pes);
 		newLine.addPoint(pe1);
