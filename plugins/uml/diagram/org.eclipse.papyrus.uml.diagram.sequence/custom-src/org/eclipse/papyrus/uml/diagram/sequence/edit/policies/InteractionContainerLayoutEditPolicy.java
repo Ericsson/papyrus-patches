@@ -140,7 +140,7 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 				// No reordering. Resizing is never reordering
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
 				if (sizeDelta.width != 0 || sizeDelta.height != 0) {
-					cmd.resizeInteractionUse((InteractionUse) element, rect);
+					cmd.nudgeResizeInteractionUse((InteractionUse) element, rect);
 				} else if (moveDelta.x != 0 || moveDelta.y != 0) {					
 					cmd.nudgeInteractionUse((InteractionUse) element, moveDelta);
 				}
@@ -150,7 +150,7 @@ public class InteractionContainerLayoutEditPolicy extends XYLayoutEditPolicy {
 				// Reordering case.
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), "move Lifeline", graph, null);
 				if (request.getSizeDelta().width != 0 || request.getSizeDelta().height != 0) {
-					cmd.moveInteractionUse((InteractionUse) element, rect);					
+					cmd.resizeInteractionUse((InteractionUse) element, rect);					
 				} else if (moveDelta.x != 0 || moveDelta.y != 0) {
 					cmd.moveInteractionUse((InteractionUse) element, rect);
 				}

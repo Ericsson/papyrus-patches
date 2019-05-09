@@ -40,6 +40,7 @@ import org.eclipse.emf.edit.command.MoveCommand;
 import org.eclipse.emf.edit.command.RemoveCommand;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
+import org.eclipse.emf.validation.internal.service.GetBatchConstraintsOperation;
 import org.eclipse.emf.workspace.EMFCommandOperation;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
@@ -1161,8 +1162,14 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		});
 	}
 
-	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
-		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
+	public void nudgeResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);
+		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
+		if (minSize.width > rect.width || minSize.height > rect.height) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return; 
+		}
+
 		List<Node> allNodes = NodeUtilities.flatten(fragmentCluster.getClusters()); 
 		allNodes.addAll(fragmentCluster.getAllGates());
 		Rectangle validArea = NodeUtilities.getEmptyAreaAround(interactionGraph, allNodes).shrink(2, 2);		
@@ -1190,6 +1197,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			}							
 		}
 		
+		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
+		if (lifelines.size() == 0) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;			
+		}
+		
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
 			public void handleResult(CommandResult result) {
@@ -1197,7 +1210,6 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(graph,rect);
 				List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
 						collect(Collectors.toList());
 				
@@ -1251,6 +1263,121 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	}
 	
+	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
+
+		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
+		if (minSize.width > rect.width || minSize.height > rect.height) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return; 
+		}
+
+		List<Node> allNodes = NodeUtilities.flatten(fragmentCluster.getClusters()); 
+		allNodes.addAll(fragmentCluster.getAllGates());
+
+		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
+		if (lifelines.size() == 0) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return;			
+		}
+
+		for (Cluster lf : lifelines) {
+			Node newStartParent = NodeUtilities.getClusterAtVerticalPos(lf, rect.y());
+			if (fragmentCluster.getClusters().contains(newStartParent))
+				newStartParent = newStartParent.getParent();
+			Node newEndParent = NodeUtilities.getClusterAtVerticalPos(lf, rect.bottom());			
+			if (fragmentCluster.getClusters().contains(newEndParent))
+				newEndParent = newEndParent.getParent();
+			
+			if (newStartParent != newEndParent) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return; 
+			}
+		}
+		
+		List<Node> nodes = NodeUtilities.getNodesAfterVerticalPos(interactionGraph, rect.y-2);
+		nodes.removeAll(allNodes);
+		nodes.removeAll(NodeUtilities.getNodesAfterVerticalPos(interactionGraph, rect.bottom()));
+		if (!nodes.isEmpty()) {
+			Node overlappingNode = nodes.stream().filter(d->lifelines.contains(NodeUtilities.getLifelineNode(d))).findFirst().orElse(null);
+			if (overlappingNode != null) {
+				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+				return; 
+			}
+		}		
+
+		List<Node> gates = fragmentCluster.getAllGates();
+		int maxY = gates.stream().map(d->d.getBounds().getCenter().y + 10).max(Integer::compareTo).orElse(minSize.height + fragmentCluster.getBounds().y);
+		int minY = gates.stream().map(d->d.getBounds().getCenter().y - 10).min(Integer::compareTo).orElse(fragmentCluster.getBounds().y);
+		if (rect.y > minY || rect.bottom() < maxY) {
+			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
+			return; 
+		}
+				
+		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
+			@Override
+			public void handleResult(CommandResult result) {
+			}
+
+			@Override
+			public boolean apply(InteractionGraph graph) {
+				List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
+						collect(Collectors.toList());
+				
+				int newBottom = rect.bottom();
+				int bottom = fragmentCluster.getBounds().bottom(); 
+				if ( bottom != newBottom) {
+					// Resize botton border
+					fragmentCluster.getClusters().forEach(d->resizeCluster((ClusterImpl)d, 0, newBottom-bottom));
+				}
+				
+				int newTop = rect.y();
+				int top = fragmentCluster.getBounds().y(); 
+				if ( newTop != top) {
+					// Resize top border
+					fragmentCluster.getClusters().forEach(d->resizeCluster((ClusterImpl)d, top - newTop, 0));
+				}
+				
+				// Remove old marks
+				List<Cluster> clusterToDelete = fragmentCluster.getClusters().stream().
+						filter(d->!lifelines.contains(NodeUtilities.getLifelineNode(d))).collect(Collectors.toList());
+				NodeUtilities.removeNodes((InteractionGraphImpl)graph, clusterToDelete);
+				clusterToDelete.forEach(fragmentCluster::removeCluster);
+				lifelines.removeAll(curLifelines);
+				int newPosY = rect.y; //fragmentCluster.getBounds().y;
+				int posY = fragmentCluster.getBounds().y;				
+				int height = rect.height;//fragmentCluster.getBounds().height;
+				
+				if (newPosY != posY) {
+					List<MarkNode> nudgeNodes = fragmentCluster.getStartMarkNodes();
+					NodeUtilities.nudgeNodes(nudgeNodes, 0, newPosY - posY);				
+				}
+				
+				for (Cluster lifeline : lifelines) {
+					Cluster parent = NodeUtilities.getClusterAtVerticalPos(lifeline, newPosY); 
+					Rectangle parentRect = parent.getBounds(); 
+					Node insertBefore = NodeUtilities.getNextVerticalNode(lifeline,newPosY);
+					while (insertBefore != null && NodeUtilities.isStartNode(insertBefore)) {
+						insertBefore = insertBefore.getParent();
+					}
+					ClusterImpl intUseLfCluster = new ClusterImpl(intUse);
+					intUseLfCluster.addNode(new MarkNodeImpl(Kind.start, intUse));
+					intUseLfCluster.addNode(new MarkNodeImpl(Kind.end, intUse));
+
+					((NodeImpl)intUseLfCluster.getNodes().get(0)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY, 0, 0));
+					((NodeImpl)intUseLfCluster.getNodes().get(1)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY + height, 0, 0));
+
+					((ClusterImpl)parent).addNode(intUseLfCluster, insertBefore);
+					((FragmentClusterImpl)fragmentCluster).addCluster(intUseLfCluster); // TODO: @etxacam reorder them...
+				}
+				
+				graph.layout();
+				return true;
+			}
+		});
+
+	}
+
 	public void moveInteractionUse(InteractionUse intUse, Rectangle rect) {
 		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
 		Rectangle currRect = fragmentCluster.getBounds();
@@ -1280,7 +1407,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			
 			@Override
 			public boolean apply(InteractionGraph graph) {
-				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y);
+				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y); // We moved to the 
 				return true;
 			}
 		});
@@ -1338,7 +1465,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		// Add nodes in parent between [top.y + topAmmount ... top.y)		
 		// Add nodes in parent between (bottomAmmount ... bottom.y + bottomAmmount]
 		int off = 0;
-		if (cluster.getNodes().size() > 1 && cluster.getNodes().get(1).getElement() == cluster.getElement())
+		if (cluster.getNodes().size() > 2 && cluster.getNodes().get(1).getElement() == cluster.getElement())
 			off = 1;
 		for (Node n : new ArrayList<>(parent.getNodes())) {
 			Rectangle b = n.getBounds();
@@ -1373,7 +1500,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		cluster.getBounds().y = startNode.getBounds().y;
 		cluster.getBounds().height = endNode.getBounds().y - startNode.getBounds().y;
 		
-		if (cluster.getNodes().get(1).getElement() == cluster.getElement()) {
+		if (cluster.getNodes().size() > 2 && cluster.getNodes().get(1).getElement() == cluster.getElement()) {
 			cluster.getNodes().get(1).getBounds().y = cluster.getBounds().y; 
 		}
 	}
@@ -1686,6 +1813,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		newValues.addAll(interactionGraph.getLifelineClusters().stream().collect(Collectors.toList()));
 		newValues.addAll(interactionGraph.getFragmentClusters().stream().collect(Collectors.toList()));
 		updateZOrder(command, containerView, oldValues, newValues);
+		
+		// TODO: Refresh diagram ??
+		
 		
 		return command;
 	}

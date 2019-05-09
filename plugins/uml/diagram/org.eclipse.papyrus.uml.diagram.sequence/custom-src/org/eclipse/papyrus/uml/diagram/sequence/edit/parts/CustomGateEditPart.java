@@ -62,6 +62,11 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		BorderItemResizableEditPolicy resizableEditPolicy = new BorderItemResizableEditPolicy() {
+			public void activate() {
+				super.activate();
+				KeyboardHandler.getKeyboardHandler(); // Force the keyboard handler to be active
+			}
+			
 			@Override
 			protected void createResizeHandle(List handles, int direction) {
 				return;

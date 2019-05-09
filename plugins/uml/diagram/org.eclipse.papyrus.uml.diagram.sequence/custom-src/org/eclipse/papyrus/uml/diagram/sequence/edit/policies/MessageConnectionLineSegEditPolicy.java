@@ -61,6 +61,11 @@ import org.eclipse.uml2.uml.Message;
 public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditPolicy {
 	private static final String CLICK_LOCATION_KEY = "clickLocation";
 	
+	public void activate() {
+		super.activate();
+		KeyboardHandler.getKeyboardHandler(); // Force the keyboard handler to be active
+	}
+
 	protected Command getBendpointsChangedCommand(BendpointRequest request) {
 		Point loc = SequenceUtil.getSnappedLocation(request.getSource(),request.getLocation().getCopy());
 		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer) &&

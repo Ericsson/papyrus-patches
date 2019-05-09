@@ -231,7 +231,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return getLinkFor(element);
 	}
 
-	InteractionLayoutManager getLayoutManager() {
+	public InteractionLayoutManager getLayoutManager() {
 		return layoutManager;
 	}
 

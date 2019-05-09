@@ -40,6 +40,7 @@ import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gef.requests.LocationRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.gef.tools.ResizeTracker;
+import org.eclipse.gmf.runtime.diagram.core.util.ViewUtil;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.IBorderItemLocator;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewRequest;
@@ -54,9 +55,14 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
 import org.eclipse.papyrus.uml.diagram.sequence.figures.InteractionUseRectangleFigure;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.GateLocator;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.FragmentClusterImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
@@ -94,7 +100,48 @@ public class CustomInteractionUseEditPart extends InteractionUseEditPart impleme
 					}				
 				};
 			}
-			
+
+			@Override
+			protected void showChangeBoundsFeedback(ChangeBoundsRequest request) {
+				// TODO: Issue when the size is under the min size. => Corner case to be solved 
+				InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
+				if (graph != null) {
+					View view = (View) getHost().getModel();
+					Element element = (Element) ViewUtil.resolveSemanticElement(view);
+					FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)graph.getClusterFor(element);
+					Dimension minSize = ((InteractionGraphImpl)graph).getLayoutManager().getMinimumSize(fragmentCluster);
+					Rectangle bounds = fragmentCluster.getBounds();
+					Rectangle rect = request.getTransformedRectangle(bounds);
+					Dimension deltaSize = request.getSizeDelta().getCopy();
+					Point delta = request.getMoveDelta().getCopy();
+					if (rect.width < minSize.width || rect.height < minSize.height) {
+						if (rect.width < minSize.width) {
+							deltaSize.width += (minSize.width - rect.width);
+							if (delta.x > 0) {
+								delta.x -= (minSize.width - rect.width);
+							}
+						}
+	
+						if (rect.height < minSize.height) {
+							deltaSize.height += (minSize.height - rect.height); 
+							if (delta.y > 0) {
+								delta.y -= minSize.height - rect.height;
+							}
+						}
+						
+						delta.y = Math.max(0, delta.y);
+						delta.y = Math.min(delta.y, bounds.height - minSize.height);
+						delta.x = Math.max(0, delta.x);
+						delta.x = Math.min(delta.x, bounds.width - minSize.width);
+						
+						request.setMoveDelta(delta);
+						request.setSizeDelta(deltaSize);
+						
+					}
+				}
+
+				super.showChangeBoundsFeedback(request);
+			}			
 		};
 		
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, resizableEditPolicy);

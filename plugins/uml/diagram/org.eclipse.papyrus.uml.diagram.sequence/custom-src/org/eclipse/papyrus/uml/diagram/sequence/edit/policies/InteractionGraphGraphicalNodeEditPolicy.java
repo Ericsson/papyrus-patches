@@ -85,6 +85,11 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 	/** the router to use for messages */
 	public static ConnectionRouter messageRouter = new MessageRouter();
 
+	public void activate() {
+		super.activate();
+		KeyboardHandler.getKeyboardHandler(); // Force the keyboard handler to be active
+	}
+
 	/**
 	 * @see org.eclipse.papyrus.infra.gmfdiag.common.editpolicies.DefaultGraphicalNodeEditPolicy#getConnectionCreateCommand(org.eclipse.gef.requests.CreateConnectionRequest)
 	 *
