@@ -70,7 +70,7 @@ Require-Bundle: org.eclipse.ui.navigator;visibility:=reexport;bundle-version="[3
  org.eclipse.papyrus.uml.service.validation;bundle-version="[2.1.0,3.0.0)",
  org.eclipse.papyrus.infra.services.validation;bundle-version="[3.0.0,4.0.0)"
 Bundle-Vendor: %providerName
-Bundle-Version: 5.1.100.qualifier
+Bundle-Version: 5.2.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-Activator: org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin
 Bundle-SymbolicName: org.eclipse.papyrus.uml.diagram.sequence; singleton:=true

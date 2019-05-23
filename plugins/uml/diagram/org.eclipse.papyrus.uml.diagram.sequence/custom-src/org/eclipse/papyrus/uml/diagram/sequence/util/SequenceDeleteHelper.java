@@ -1,6 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2010 CEA
- *
+ * Copyright (c) 2010, 2019 CEA LIST and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +10,7 @@
  *
  * Contributors:
  *   Atos Origin - Initial API and implementation
+ *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 542802
  *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.util;
@@ -125,7 +125,7 @@ public class SequenceDeleteHelper {
 						if (lifelineChild instanceof IBorderItemEditPart) {
 							final IBorderItemEditPart timePart = (IBorderItemEditPart) lifelineChild;
 							OccurrenceSpecification start = execution.getStart();
-							OccurrenceSpecification finish = execution.getStart();
+							OccurrenceSpecification finish = execution.getFinish();
 							int positionForStart = SequenceUtil.positionWhereEventIsLinkedToPart(start, timePart);
 							int positionForFinish = SequenceUtil.positionWhereEventIsLinkedToPart(finish, timePart);
 							if (positionForStart != PositionConstants.NONE || positionForFinish != PositionConstants.NONE) {
@@ -234,13 +234,24 @@ public class SequenceDeleteHelper {
 		}
 	}
 
-	static void destroyMessageEvent(CompoundCommand deleteElementsCommand, MessageEnd event, TransactionalEditingDomain transactionalEditingDomain) {
+	/**
+	 * This allows to destroy a message event.
+	 *
+	 * @param deleteElementsCommand
+	 *            The compound command to fill.
+	 * @param event
+	 *            The event to delete.
+	 * @param transactionalEditingDomain
+	 *            The editing domain.
+	 * @since 5.2
+	 */
+	public static void destroyMessageEvent(final CompoundCommand deleteElementsCommand, final MessageEnd event, final TransactionalEditingDomain transactionalEditingDomain) {
 		if (event != null) {
-			DestroyElementRequest myReq = new DestroyElementRequest(transactionalEditingDomain, event, false);
+			final DestroyElementRequest myReq = new DestroyElementRequest(transactionalEditingDomain, event, false);
 			// Sometimes, the message end is also the end of a execution.
-			RestoreExecutionEndAdvice provider = new RestoreExecutionEndAdvice();
+			final RestoreExecutionEndAdvice provider = new RestoreExecutionEndAdvice();
 			if (provider != null) {
-				ICommand editCommand = provider.getAfterEditCommand(myReq);
+				final ICommand editCommand = provider.getAfterEditCommand(myReq);
 				if (editCommand != null && editCommand.canExecute()) {
 					deleteElementsCommand.add(new ICommandProxy(editCommand));
 				}
