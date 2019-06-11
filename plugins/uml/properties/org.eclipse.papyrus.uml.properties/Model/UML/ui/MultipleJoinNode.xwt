@@ -9,6 +9,12 @@
 		<Composite.layout>
 			<ppel:PropertiesLayout></ppel:PropertiesLayout>
 		</Composite.layout>
+		<ppe:EnumCombo input="{Binding}" property="UML:NamedElement:visibility"></ppe:EnumCombo>
+	</Composite>
+	<Composite>
+		<Composite.layout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+		</Composite.layout>
 		<ppe:BooleanRadio input="{Binding}"
 			property="UML:JoinNode:isCombineDuplicate"></ppe:BooleanRadio>
 	</Composite>
