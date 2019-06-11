@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016, 2018 CEA LIST, ALL4TEC, Christian W. Damus, and others.
+ * Copyright (c) 2016, 2018, 2019 CEA LIST, ALL4TEC, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,7 @@
  *   Mickaël ADAM (ALL4TEC) mickael.adam@all4tec.net - Bug 519756
  *   Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - Bug 531936
  *   Christian W. Damus - bugs 533679, 530201
+ *   Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - Bug 548147
  *****************************************************************************/
 
 package org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling;
@@ -232,8 +233,14 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 			// Record for undo if possible, otherwise unprotected
 			execute(createGrillingStructureCommand);
 
+			// we need to do a refresh to create the GrillingEditpart for the created GrillingStructure view
+			// we bug 548147
+			host.refresh();
 
 		}
+
+		// we need to reset i to 0
+		i = 0;
 		while (gridCompartment == null && i < host.getChildren().size()) {
 			if (host.getChildren().get(i) instanceof GrillingEditpart) {
 				gridCompartment = (GrillingEditpart) (host.getChildren().get(i));
@@ -288,7 +295,7 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 			}
 
 		}
-		UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "--> there is " + lifelineList.size() + " lifelines");//$NON-NLS-1$
+		UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "--> there is " + lifelineList.size() + " lifelines");//$NON-NLS-1$ //$NON-NLS-2$
 
 		// for each lifeline recreat the list of covered element
 		for (Lifeline lifeline : lifelineList) {
@@ -311,10 +318,10 @@ public class GridManagementEditPolicy extends GraphicalEditPolicyEx implements A
 
 			// update the list of covered by taking account InteractionFragment
 			if (covered.size() == lifeline.getCoveredBys().size()) {
-				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "the list is equals" + covered.size() + ", we reorder");//$NON-NLS-1$
+				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "the list is equals" + covered.size() + ", we reorder");//$NON-NLS-1$ //$NON-NLS-2$
 				execute(new SetCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), lifeline, UMLPackage.eINSTANCE.getLifeline_CoveredBy(), covered));
 			} else if (covered.size() < lifeline.getCoveredBys().size()) {
-				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "More event detected! +" + (covered.size() - lifeline.getCoveredBys().size()) + "--> modify covered");//$NON-NLS-1$
+				UMLDiagramEditorPlugin.log.trace(LogOptions.SEQUENCE_DEBUG_REFERENCEGRID, "More event detected! +" + (covered.size() - lifeline.getCoveredBys().size()) + "--> modify covered");//$NON-NLS-1$ //$NON-NLS-2$
 				covered.addAll(lifeline.getCoveredBys());
 				execute(new SetCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), lifeline, UMLPackage.eINSTANCE.getLifeline_CoveredBy(), covered));
 			} else if (covered.size() > lifeline.getCoveredBys().size()) {
