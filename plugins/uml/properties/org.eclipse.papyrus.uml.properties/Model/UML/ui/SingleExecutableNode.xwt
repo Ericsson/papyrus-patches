@@ -19,4 +19,10 @@
 		</Composite.layout>
 		<ppe:EnumCombo input="{Binding}" property="UML:NamedElement:visibility"></ppe:EnumCombo>
 	</Composite>
+	<Composite>
+		<Composite.layout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+		</Composite.layout>
+		<ppe:MultiReference input="{Binding}" property="UML:ExecutableNode:handler"></ppe:MultiReference>
+	</Composite>
 </Composite>

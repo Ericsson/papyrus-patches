@@ -46,4 +46,10 @@
 		<ppe:MultiReference input="{Binding}"
 			property="UML:AcceptEventAction:trigger"></ppe:MultiReference>
 	</Composite>
+	<Composite>
+		<Composite.layout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+		</Composite.layout>
+		<ppe:MultiReference input="{Binding}" property="UML:ExecutableNode:handler"></ppe:MultiReference>
+	</Composite>
 </Composite>
