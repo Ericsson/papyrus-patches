@@ -125,11 +125,15 @@ public class CreateExecutionSpecificationWithMessage extends AbstractTransaction
 		// 2. retrieve preferences to apply
 		// according to the message sort
 		retrievePreferences();
-		if (type == null || CustomDiagramGeneralPreferencePage.CHOICE_NONE.equals(preference)) {
+		if (null == type && null == preference) {
 			throw new ExecutionException("undefined preference"); //$NON-NLS-1$
 		}
-		// 3. create execution specification at target
-		createExecutionSpecification();
+
+		// Create the ExecutionSpecification only if needed
+		if (null != type && !CustomDiagramGeneralPreferencePage.CHOICE_NONE.equals(preference)) {
+			// 3. create execution specification at target
+			createExecutionSpecification();
+		}
 		return CommandResult.newOKCommandResult();
 	}
 
