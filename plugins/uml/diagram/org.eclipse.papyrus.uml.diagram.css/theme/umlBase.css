@@ -246,6 +246,7 @@ ActivityDiagram ObjectFlow>Label[type=ObjectFlow_GuardLabel]
 ActivityDiagram AcceptCallAction,
 ActivityDiagram ClearStructuralFeatureAction,
 ActivityDiagram CreateLinkAction,
+ActivityDiagram CreateLinkObjectAction,
 ActivityDiagram DestroyLinkAction,
 ActivityDiagram ReadIsClassifiedObjectAction,
 ActivityDiagram ReadExtentAction,
