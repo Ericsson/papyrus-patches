@@ -126,13 +126,13 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		
 		if (msg.getSendEvent() == element) {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, EdgeSide.Source);
-			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+//			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 			node.setBounds(new Rectangle(p,new Dimension(0, 0)));
 		} else if (msg.getReceiveEvent() == element) {
 			Point p = ViewUtilities.getAnchorLocationForView(viewer, msgView, EdgeSide.Target);
-			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+//			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 
 			if (p != null) {
 				node.setBounds(new Rectangle(p,new Dimension(0, 0)));
@@ -144,10 +144,10 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 	@Override
 	public NodeImpl caseExecutionOccurrenceSpecification(ExecutionOccurrenceSpecification element) {
 		NodeImpl node = caseOccurrenceSpecification(element);
-		Point top = node.getParent().getBounds().getTop();
-		if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-			top = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), top);
-		node.setBounds(new Rectangle(top, new Dimension(0, 0)));
+//		Point top = node.getParent().getBounds().getTop();
+//		if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//			top = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), top);
+//		node.setBounds(new Rectangle(top, new Dimension(0, 0)));
 		return node;
 	}
 
@@ -171,13 +171,13 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
 		if (isStartExecutionSpecification) {
 			Point p = node.getParent().getBounds().getTop();
-			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);			
+//			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);			
 			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
 		} else if (isFinishExecutionSpecification) {
 			Point p = node.getParent().getBounds().getBottom();
-			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+//			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
 		}
 		cache(element, node);
@@ -265,8 +265,8 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		Rectangle r = node.getBounds();
 		if (r != null) {
 			Point p = r.getCenter();
-			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
+//			if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
+//				p = ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), p);
 			node.setBounds(new Rectangle(p, new Dimension(0, 0)));
 		}
 		cache(element, node);
