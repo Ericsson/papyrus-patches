@@ -11,16 +11,8 @@ branches:
 cache:
   directories:
     - "$HOME/.m2/repository"
-env:  
-  global:  
-    - DISPLAY=:99.0  
-  before_install:  
-    - sh -e /etc/init.d/xvfb start - sleep 10  
 
-script: 
-  - mvn clean verify
-  - releng/scripts/deploy_pages.sh
-      
+script: releng/scripts/deploy_pages.sh      
      
 deploy:
   provider: pages

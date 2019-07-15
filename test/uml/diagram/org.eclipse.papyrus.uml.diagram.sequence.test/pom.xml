@@ -23,11 +23,4 @@
 			</plugin>
 		</plugins>
 	</build>
-	<dependencies>
-		<dependency>
-			<groupId>com.ericsson.papyrus</groupId>
-			<artifactId>org.eclipse.papyrus.uml.diagram.sequence</artifactId>
-			<version>5.1.500-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
 </project>
