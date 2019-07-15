@@ -5,15 +5,23 @@ git:
 
 branches:
   except:
-  - gh-pages
-  - master_papyrus
+    - gh-pages
+    - master_papyrus
   
 cache:
   directories:
-  - "$HOME/.m2/repository"
+    - "$HOME/.m2/repository"
+env:  
+  global:  
+    - DISPLAY=:99.0  
+  before_install:  
+    - sh -e /etc/init.d/xvfb start - sleep 10  
 
-script: releng/scripts/deploy_pages.sh
-  
+script: 
+  - mvn clean verify
+  - releng/scripts/deploy_pages.sh
+      
+     
 deploy:
   provider: pages
   skip_cleanup: true
