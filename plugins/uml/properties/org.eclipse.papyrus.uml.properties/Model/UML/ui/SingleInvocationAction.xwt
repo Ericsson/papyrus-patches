@@ -36,5 +36,7 @@
 			property="UML:Action:localPostcondition"></ppe:MultiReference>
 		<ppe:MultiReference input="{Binding}"
 			property="UML:Action:localPrecondition"></ppe:MultiReference>
+		<ppe:MultiReference input="{Binding}"
+			property="UML:ExecutableNode:handler"></ppe:MultiReference>
 	</Composite>
 </Composite>

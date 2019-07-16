@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2013 CEA LIST.
+ * Copyright (c) 2013, 2019 CEA LIST.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -11,7 +11,7 @@
  *
  * Contributors:
  *  Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - Initial API and implementation
- *
+ *  Vincent Lorenzo (CEA LIST) vincent.lorenzo@cea.fr - bug 547950 (just fix the NPE)
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.figure.edge;
 
@@ -98,7 +98,7 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 	 */
 	@SuppressWarnings("unchecked")
 	public Collection<Point> getCommonBendpointsToDraw() {
-		final Collection<Point> commonBendpointsToDraw = new HashSet<Point>();
+		final Collection<Point> commonBendpointsToDraw = new HashSet<>();
 		final PointList bendPoints = getPoints();
 
 		final Map<?, ?> visualPartMap = getVisualPartMap(this);
@@ -117,7 +117,7 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 			if (currentEditPart instanceof ConnectionEditPart && eClass != null) {
 				final EditPart sourceEP = ((ConnectionEditPart) currentEditPart).getSource();
 				final EditPart targetEP = ((ConnectionEditPart) currentEditPart).getTarget();
-				final Set<Object> allConnectionsEP = new HashSet<Object>();
+				final Set<Object> allConnectionsEP = new HashSet<>();
 				// 2.1. get all potential editpart connections
 				if (sourceEP instanceof AbstractGraphicalEditPart && targetEP instanceof AbstractGraphicalEditPart) {
 					allConnectionsEP.addAll(((AbstractGraphicalEditPart) sourceEP).getSourceConnections());
@@ -128,7 +128,7 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 				}
 
 				// 2.2 get the figure for these connections and keep only figure when its editpart has the same kind than the current one
-				final Set<Connection> allConnections = new HashSet<Connection>();
+				final Set<Connection> allConnections = new HashSet<>();
 				if (allConnectionsEP.size() > 0) {
 					for (final Object current : allConnectionsEP) {
 						// the editpart be instance of the same class
@@ -146,7 +146,7 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 				}
 
 				// 3. Create the list of the LineSeg of the current figure
-				final List<LineSeg> refs = new ArrayList<LineSeg>();
+				final List<LineSeg> refs = new ArrayList<>();
 				for (int i = 0; i < bendPoints.size() - 1; i++) {
 					LineSeg seg = new LineSeg(bendPoints.getPoint(i), bendPoints.getPoint(i + 1));
 					refs.add(seg);
@@ -155,13 +155,13 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 
 				// 4. find common segments between the current figure and each others link
 				// we need to associate each common segment to the concerned link
-				final Map<Connection, Map<LineSeg, List<LineSeg>>> segs = new HashMap<Connection, Map<LineSeg, List<LineSeg>>>();
+				final Map<Connection, Map<LineSeg, List<LineSeg>>> segs = new HashMap<>();
 				for (Connection currentConn : allConnections) {
 					final PointList currentPoints = currentConn.getPoints();
-					final Map<LineSeg, List<LineSeg>> mapSegs = new HashMap<LineSeg, List<LineSeg>>();
+					final Map<LineSeg, List<LineSeg>> mapSegs = new HashMap<>();
 					segs.put(currentConn, mapSegs);
 					for (LineSeg refSeg : refs) {
-						final List<LineSeg> commonSubSegs = new ArrayList<LineSeg>();
+						final List<LineSeg> commonSubSegs = new ArrayList<>();
 						mapSegs.put(refSeg, commonSubSegs);
 						for (int i = 0; i < currentPoints.size() - 1; i++) {
 							LineSeg tmp = new LineSeg(currentPoints.getPoint(i), currentPoints.getPoint(i + 1));
@@ -361,10 +361,12 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 		if (part instanceof CoreMultiDiagramEditor) {
 			final List<IEditorPart> visibleEditors = ((CoreMultiDiagramEditor) part).getISashWindowsContainer().getVisibleIEditorParts();
 			for (final IEditorPart current : visibleEditors) {
-				final GraphicalViewer viewer = (GraphicalViewer) current.getAdapter(GraphicalViewer.class);
-				final Map<?, ?> visualPartMap = viewer.getVisualPartMap();
-				if (visualPartMap.containsKey(figure)) {
-					return visualPartMap;
+				final GraphicalViewer viewer = current.getAdapter(GraphicalViewer.class);
+				if (null != viewer) {
+					final Map<?, ?> visualPartMap = viewer.getVisualPartMap();
+					if (visualPartMap.containsKey(figure)) {
+						return visualPartMap;
+					}
 				}
 			}
 		} else {
@@ -380,9 +382,11 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 							if (editor instanceof IDiagramWorkbenchPart) {
 								final IDiagramWorkbenchPart de = (IDiagramWorkbenchPart) editor;
 								final GraphicalViewer viewer = de.getDiagramGraphicalViewer();
-								final Map<?, ?> visualPartMap = viewer.getVisualPartMap();
-								if (visualPartMap.containsKey(figure)) {
-									return visualPartMap;
+								if (null != viewer) {
+									final Map<?, ?> visualPartMap = viewer.getVisualPartMap();
+									if (visualPartMap.containsKey(figure)) {
+										return visualPartMap;
+									}
 								}
 							}
 						}
@@ -402,13 +406,13 @@ public abstract class PapyrusEdgeFigure extends PolylineConnectionEx {
 	 * @return
 	 */
 	public static final PointList getCommonSegment(final LineSeg seg1, final LineSeg seg2) {
-		final List<Point> list = new ArrayList<Point>();
+		final List<Point> list = new ArrayList<>();
 		list.add(seg1.getOrigin());
 		list.add(seg2.getOrigin());
 		list.add(seg1.getTerminus());
 		list.add(seg2.getTerminus());
 
-		List<Point> commonPoints = new ArrayList<Point>();
+		List<Point> commonPoints = new ArrayList<>();
 		for (Point point : list) {
 			if (!commonPoints.contains(point)) {
 				if (seg1.containsPoint(point, 0) && seg2.containsPoint(point, 0)) {

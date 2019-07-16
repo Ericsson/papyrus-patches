@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Shell;
 
 /**
  * Extended Palette Viewer, to have a new customize dialog
+ * 
  * @since 3.0
  */
 public class PapyrusPaletteViewer extends PaletteViewerEx {
@@ -53,7 +54,7 @@ public class PapyrusPaletteViewer extends PaletteViewerEx {
 			for (IConfigurationElement e : config) {
 				String customizerClassName = e.getAttribute(CUSTOMIZER_ATTRIBUTE);
 				try {
-					Class<? extends PaletteCustomizerDialog> advancedCustomizerDialogClass = ClassLoaderHelper.loadClass(customizerClassName).asSubclass(PaletteCustomizerDialog.class);
+					Class<? extends PaletteCustomizerDialog> advancedCustomizerDialogClass = ClassLoaderHelper.loadClass(customizerClassName, PaletteCustomizerDialog.class, e.getContributor().getName());
 					if (advancedCustomizerDialogClass != null) {
 						Constructor<? extends PaletteCustomizerDialog> constructor = advancedCustomizerDialogClass.getConstructor(Shell.class, PaletteCustomizer.class, PaletteRoot.class);
 						if (constructor != null) {

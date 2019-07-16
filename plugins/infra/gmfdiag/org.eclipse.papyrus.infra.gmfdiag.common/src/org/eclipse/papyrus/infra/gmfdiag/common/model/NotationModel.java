@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Copyright (c) 2011, 2016 LIFL, CEA LIST, Christian W. Damus, and others.
- * 
+ * Copyright (c) 2011, 2016, 2019 LIFL, CEA LIST, Christian W. Damus, and others.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@
  * Contributors:
  *   LIFL - Initial API and implementation
  *   Christian W. Damus - bugs 485220, 496299
- *   
+ *   Nicolas FAUVERGUE (CEA-LIST) nicolas.fauvergue@cea.fr - bug 549015
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.model;
 
@@ -19,8 +19,8 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.papyrus.infra.core.resource.AbstractModelWithSharedResource;
 import org.eclipse.papyrus.infra.core.resource.BadArgumentExcetion;
-import org.eclipse.papyrus.infra.core.resource.EMFLogicalModel;
 import org.eclipse.papyrus.infra.core.resource.IEMFModel;
 import org.eclipse.papyrus.infra.core.resource.IModel;
 import org.eclipse.papyrus.infra.core.resource.NotFoundException;
@@ -30,7 +30,7 @@ import org.eclipse.papyrus.infra.viewpoints.policy.ViewPrototype;
  * @author cedric dumoulin
  *
  */
-public class NotationModel extends EMFLogicalModel implements IModel {
+public class NotationModel extends AbstractModelWithSharedResource<Diagram> implements IModel {
 
 	/**
 	 * File extension used for notation.
@@ -171,5 +171,15 @@ public class NotationModel extends EMFLogicalModel implements IModel {
 	@Override
 	protected boolean isSupportedRoot(EObject object) {
 		return ViewPrototype.isViewObject(object);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.eclipse.papyrus.infra.core.resource.AbstractModelWithSharedResource#isModelRoot(org.eclipse.emf.ecore.EObject)
+	 */
+	@Override
+	protected boolean isModelRoot(EObject object) {
+		return object instanceof Diagram;
 	}
 }

@@ -28,6 +28,7 @@ import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.diagram.ui.parts.IDiagramGraphicalViewer;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.papyrus.infra.core.resource.BadStateException;
 import org.eclipse.papyrus.infra.core.resource.ModelSet;
 import org.eclipse.papyrus.infra.core.resource.sasheditor.DiModel;
 import org.eclipse.papyrus.infra.core.resource.sasheditor.SashModel;
@@ -218,8 +219,9 @@ public class WorkspaceAndPapyrusEditor implements TestRule {
 				modelSet.registerModel(new SashModel());
 				modelSet.registerModel(new DiModel());
 				UmlModel umlModel = new UmlModel();
-				modelSet.registerModel(umlModel);				
-				modelSet.registerModel(new CSSNotationModel());
+				modelSet.registerModel(umlModel);	
+				CSSNotationModel notationModel = new CSSNotationModel(); 
+				modelSet.registerModel(notationModel);
 				modelSet.getInternal().setPrimaryModelResourceURI(uri);
 				modelSet.createsModels(diFile);	
 				umlModel.initializeEmptyModel();
@@ -267,6 +269,12 @@ public class WorkspaceAndPapyrusEditor implements TestRule {
 		ModelSet modelSet = getResourceSet();
 		UmlModel uml = (UmlModel)modelSet.getModel(UmlModel.MODEL_ID);
 		NotationModel notation = (NotationModel)modelSet.getModel(NotationModel.MODEL_ID);
+		try {
+			modelSet.loadModel(uml.getIdentifier());
+			modelSet.loadModel(notation.getIdentifier());
+		} catch (BadStateException e) {
+			e.printStackTrace();
+		}
 		List<EObject> contents = uml.getResource().getContents();
 		if (contents.size() > 0) {
 			org.eclipse.uml2.uml.Package p = (org.eclipse.uml2.uml.Package)uml.getResource().getContents().get(0);

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2018 CEA LIST, Christian W. Damus, and others.
+ * Copyright (c) 2018-2019 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -10,6 +10,8 @@
  *
  * Contributors:
  *   Christian W. Damus - Initial API and implementation
+ *   Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 547864
+ *   Antonio Campesino Robles - New implementation
  *
  *****************************************************************************/
 

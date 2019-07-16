@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2008, 2016 CEA LIST, Christian W. Damus, and others.
+ * Copyright (c) 2008, 2016, 2019 CEA LIST, Christian W. Damus, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -13,6 +13,7 @@
  *  Christian W. Damus (CEA) - only calculate affected files for workspace resources (CDO)
  *  Laurent Wouters (CEA) - laurent.wouters@cea.fr - Refactoring for viewpoints
  *  Christian W. Damus - bug 485220
+ *  Ansgar Radermacher - Bug 482587 diagram creation does not mark model as dirty
  *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common;
@@ -29,7 +30,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -62,7 +62,7 @@ import org.eclipse.papyrus.infra.core.resource.ModelSet;
 import org.eclipse.papyrus.infra.core.resource.ReadOnlyAxis;
 import org.eclipse.papyrus.infra.core.resource.sasheditor.SashModelUtils;
 import org.eclipse.papyrus.infra.core.services.ServiceException;
-import org.eclipse.papyrus.infra.emf.gmf.command.CheckedOperationHistory;
+import org.eclipse.papyrus.infra.emf.gmf.command.GMFtoEMFCommandWrapper;
 import org.eclipse.papyrus.infra.emf.readonly.ReadOnlyManager;
 import org.eclipse.papyrus.infra.emf.utils.EMFHelper;
 import org.eclipse.papyrus.infra.gmfdiag.common.helper.DiagramPrototype;
@@ -354,26 +354,23 @@ public abstract class AbstractPapyrusGmfCreateDiagramCommandHandler extends Abst
 			cmd.add(new OpenDiagramCommand(dom, createCmd));
 		}
 
-		try {
+		CommandResult result = cmd.getCommandResult();
+		dom.getCommandStack().execute(GMFtoEMFCommandWrapper.wrap(cmd));
+		IStatus status = result.getStatus();
 
-			IStatus status = CheckedOperationHistory.getInstance().execute(cmd, new NullProgressMonitor(), null);
-			if (status.isOK()) {
-				CommandResult result = cmd.getCommandResult();
-				Object returnValue = result.getReturnValue();
+		if (status.isOK()) {
+			Object returnValue = result.getReturnValue();
 
-				// CompositeCommands should always return a collection
-				if (returnValue instanceof Collection<?>) {
-					for (Object returnElement : (Collection<?>) returnValue) {
-						if (returnElement instanceof Diagram) {
-							return (Diagram) returnElement;
-						}
+			// CompositeCommands should always return a collection
+			if (returnValue instanceof Collection<?>) {
+				for (Object returnElement : (Collection<?>) returnValue) {
+					if (returnElement instanceof Diagram) {
+						return (Diagram) returnElement;
 					}
 				}
-			} else if (status.getSeverity() != IStatus.CANCEL) {
-				StatusManager.getManager().handle(status, StatusManager.SHOW);
 			}
-		} catch (ExecutionException ex) {
-			Activator.log.error(ex);
+		} else if (status.getSeverity() != IStatus.CANCEL) {
+			StatusManager.getManager().handle(status, StatusManager.SHOW);
 		}
 
 		return null;
@@ -465,6 +462,8 @@ public abstract class AbstractPapyrusGmfCreateDiagramCommandHandler extends Abst
 				// DestroyElementPapyrusCommand depc = (diagram != null) ? new DestroyElementPapyrusCommand(new DestroyElementRequest(diagram, false)) : null;
 				IStatus status = super.doUndo(monitor, info);
 				diagram.setElement(null);
+				// reset owner, otherwise diagram remains in model explorer
+				DiagramUtils.setOwner(diagram, null);
 				return status;
 			}
 

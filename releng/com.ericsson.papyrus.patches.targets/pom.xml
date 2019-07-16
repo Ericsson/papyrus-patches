@@ -19,6 +19,7 @@
 		<module>com.ericsson.papyrus.patches.targets.2018-09</module>
 		<module>com.ericsson.papyrus.patches.targets.2018-12</module>
 		<module>com.ericsson.papyrus.patches.targets.2019-03</module>
+		<module>com.ericsson.papyrus.patches.targets.2019-06</module>
 		<module>com.ericsson.papyrus.patches.targets.nightly</module>
 	</modules>
 </project>

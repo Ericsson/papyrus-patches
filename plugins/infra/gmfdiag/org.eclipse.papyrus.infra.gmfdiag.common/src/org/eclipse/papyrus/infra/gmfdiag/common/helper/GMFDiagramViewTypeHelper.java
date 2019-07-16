@@ -17,6 +17,7 @@
 package org.eclipse.papyrus.infra.gmfdiag.common.helper;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.papyrus.infra.gmfdiag.common.AbstractPapyrusGmfCreateDiagramCommandHandler;
 import org.eclipse.papyrus.infra.gmfdiag.common.Activator;
@@ -55,12 +56,12 @@ public class GMFDiagramViewTypeHelper extends AbstractViewTypeHelper<PapyrusDiag
 	protected ViewPrototype doGetPrototypeFor(PapyrusDiagram diagramKind) {
 		String commandClassName = diagramKind.getCreationCommandClass();
 		if (commandClassName != null) {
-			Class<?> creationCommandClass = ClassLoaderHelper.loadClass(commandClassName);
+			Class<? extends AbstractPapyrusGmfCreateDiagramCommandHandler> creationCommandClass = ClassLoaderHelper.loadClass(commandClassName, AbstractPapyrusGmfCreateDiagramCommandHandler.class, EcoreUtil.getURI(diagramKind));
 
 			if (creationCommandClass != null) {
 				AbstractPapyrusGmfCreateDiagramCommandHandler command;
 				try {
-					command = (AbstractPapyrusGmfCreateDiagramCommandHandler) creationCommandClass.newInstance();
+					command = creationCommandClass.newInstance();
 				} catch (Exception e) {
 					Activator.log.error(e);
 					return null;

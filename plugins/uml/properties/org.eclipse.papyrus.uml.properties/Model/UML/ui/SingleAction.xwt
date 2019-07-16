@@ -28,4 +28,10 @@
 		<ppe:MultiReference input="{Binding}"
 			property="UML:Action:localPrecondition"></ppe:MultiReference>
 	</Composite>
+	<Composite>
+		<Composite.layout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+		</Composite.layout>
+		<ppe:MultiReference input="{Binding}" property="UML:ExecutableNode:handler"></ppe:MultiReference>
+	</Composite>
 </Composite>
