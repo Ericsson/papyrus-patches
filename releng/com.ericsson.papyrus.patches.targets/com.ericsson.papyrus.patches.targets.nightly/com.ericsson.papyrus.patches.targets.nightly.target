@@ -15,31 +15,46 @@
 </location>
 
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.emf.sdk.feature.group" version="0.0.0"/>
+<repository location="http://download.eclipse.org/modeling/emf/emf/builds/nightly/latest"/>
+</location>
+
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.ecf.core.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.ecf.filetransfer.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.ecf.filetransfer.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.ecf.filetransfer.httpclient4.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.ecf.filetransfer.httpclient4.ssl.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.ecf.filetransfer.ssl.feature.feature.group" version="0.0.0"/>
+<repository location="https://download.eclipse.org/rt/ecf/latest/site.p2/"/>
+</location>
+
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.e4.core.tools.feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.sdk.ide" version="0.0.0"/>
 <unit id="org.eclipse.rcp.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.equinox.p2.user.ui.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.equinox.executable.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.ide_feature.feature.group" version="0.0.0"/>
-<unit id="org.eclipse.emf.validation.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.pde_feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.gef.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.java_feature.feature.group" version="0.0.0"/>
-<unit id="org.eclipse.emf.transaction.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.wikitext_feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.bugzilla_feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.ocl.all.sdk.feature.group" version="0.0.0"/>
-<unit id="org.eclipse.emf.query.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn_feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.acceleo.feature.group" version="0.0.0"/>
-<unit id="org.eclipse.emf.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.mylyn.context_feature.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.xsd.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.gmf.runtime.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.epp.logging.aeri.feature.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.emf.validation.sdk.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.emf.query.sdk.feature.group" version="0.0.0"/>
+<unit id="org.eclipse.emf.transaction.sdk.feature.group" version="0.0.0"/>
 <unit id="org.eclipse.emf.mwe2.launcher.feature.group" version="0.0.0"/>
-<repository location="http://download.eclipse.org/releases/2018-12/"/>
+<repository location="https://download.eclipse.org/releases/2019-06/"/>
 </location>
+
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.egerrit.feature.feature.group" version="0.0.0"/>
 <repository location="http://download.eclipse.org/egerrit/updates/release"/>
@@ -50,11 +65,11 @@
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.uml2.sdk.feature.group" version="0.0.0"/>
-<repository location="https://download.eclipse.org/modeling/mdt/uml2/updates/5.6-I-builds"/>
+<repository location="https://download.eclipse.org/modeling/mdt/uml2/updates/interim/latest"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.egit.feature.group" version="0.0.0"/>
-<repository location="http://download.eclipse.org/egit/updates/"/>
+<repository location="https://download.eclipse.org/egit/updates-stable-nightly"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="javax.xml.bind" version="0.0.0"/>
