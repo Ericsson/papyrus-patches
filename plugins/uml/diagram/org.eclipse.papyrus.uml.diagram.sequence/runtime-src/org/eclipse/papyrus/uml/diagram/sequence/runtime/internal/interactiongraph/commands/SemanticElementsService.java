@@ -21,14 +21,16 @@ import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gmf.runtime.common.core.command.ICommand;
 import org.eclipse.gmf.runtime.emf.type.core.IClientContext;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
-import org.eclipse.gmf.runtime.emf.type.core.edithelper.IEditHelper;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.requests.CreateRelationshipRequest;
 import org.eclipse.papyrus.infra.core.services.ServiceException;
 import org.eclipse.papyrus.infra.services.edit.context.TypeContext;
 import org.eclipse.papyrus.infra.services.edit.service.ElementEditServiceUtils;
 import org.eclipse.papyrus.infra.services.edit.service.IElementEditService;
+import org.eclipse.papyrus.uml.service.types.utils.SequenceRequestConstant;
 import org.eclipse.uml2.uml.Message;
+import org.eclipse.uml2.uml.MessageEnd;
+import org.eclipse.uml2.uml.UMLFactory;
 
 /**
  * @author ETXACAM
@@ -58,8 +60,13 @@ public class SemanticElementsService {
 		}
 	}
 	
+	public static final MessageEnd FAKE_FOR_BUG542802 = UMLFactory.eINSTANCE.createMessageOccurrenceSpecification();
+	
 	public static final CreateElementRequest getCreateRelationshipRequest(TransactionalEditingDomain editingDomain, EObject container, EObject source, EObject target, IElementType elementType) {
-		return new CreateRelationshipRequest(editingDomain, container, source, target, elementType);					
+		CreateRelationshipRequest req = new CreateRelationshipRequest(editingDomain, container, source, target, elementType);
+		req.setParameter(SequenceRequestConstant.PREVIOUS_EVENT, FAKE_FOR_BUG542802);
+		req.setParameter(SequenceRequestConstant.SECOND_PREVIOUS_EVENT, FAKE_FOR_BUG542802);
+		return req;
 	}
 
 	public static final <T extends EObject> T createRelationship(TransactionalEditingDomain editingDomain, EObject container, EObject source, EObject target, IElementType elementType) {
