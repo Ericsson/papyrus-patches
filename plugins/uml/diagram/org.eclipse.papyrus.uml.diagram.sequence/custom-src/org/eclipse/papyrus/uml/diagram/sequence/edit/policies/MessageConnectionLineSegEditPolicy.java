@@ -17,38 +17,25 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.draw2d.Bendpoint;
 import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionAnchor;
-import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.GhostImageFigure;
-import org.eclipse.draw2d.Layer;
-import org.eclipse.draw2d.RelativeBendpoint;
 import org.eclipse.draw2d.XYAnchor;
 import org.eclipse.draw2d.geometry.Point;
-import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
-import org.eclipse.gef.editpolicies.ResizableEditPolicy;
 import org.eclipse.gef.requests.BendpointRequest;
-import org.eclipse.gef.ui.parts.ScrollingGraphicalViewer;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.ConnectionBendpointEditPolicy;
 import org.eclipse.gmf.runtime.diagram.ui.requests.SetAllBendpointRequest;
-import org.eclipse.gmf.runtime.diagram.ui.util.SelectInDiagramHelper;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphRequestHelper;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
-import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
-import org.eclipse.swt.graphics.RGB;
 import org.eclipse.uml2.uml.Message;
 
 /**
@@ -59,32 +46,21 @@ import org.eclipse.uml2.uml.Message;
  */
 @SuppressWarnings("restriction")
 public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditPolicy {
-	private static final String CLICK_LOCATION_KEY = "clickLocation";
-	
 	public void activate() {
 		super.activate();
 		KeyboardHandler.getKeyboardHandler(); // Force the keyboard handler to be active
 	}
 
 	protected Command getBendpointsChangedCommand(BendpointRequest request) {
-		Point loc = SequenceUtil.getSnappedLocation(request.getSource(),request.getLocation().getCopy());
-		if ((getHost().getViewer() instanceof ScrollingGraphicalViewer) &&
-			(getHost().getViewer().getControl() instanceof FigureCanvas)){
-			SelectInDiagramHelper.exposeLocation((FigureCanvas)getHost().getViewer().getControl(),loc);
-		}
-	
-		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
-		if (srcLoc == null) {
-			srcLoc = loc.getCopy();
-			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), srcLoc);
-			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
-		}
-		
 		
 		Connection connection = getConnection();
+		Point p = connection.getSourceAnchor().getReferencePoint();
+		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, request.getSource(), p);
+		delta.x = 0;
 		Edge connectionView = (Edge) request.getSource().getModel();
 		if (!(connectionView.getElement() instanceof Message))
 			return null;
+
 		Message message = (Message)connectionView.getElement(); 
 		InteractionGraph graph = InteractionGraphRequestHelper.getOrCreateInteractionGraph(request, (org.eclipse.gef.GraphicalEditPart) getHost());
 		if (graph == null)
@@ -92,13 +68,11 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		
 		InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
 				"Move Message", graph, null);
-		Point p = SequenceUtil.getSnappedLocation(request.getSource(),loc.getCopy());
-		p = ViewUtilities.controlToViewer(graph.getEditPartViewer(), p);				
-		
+
 		if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-			cmd.moveMessage(message, new Point(p.x - srcLoc.x, p.y - srcLoc.y));
+			cmd.moveMessage(message, delta);
 		} else {
-			cmd.nudgeMessage(message, new Point(p.x - srcLoc.x, p.y - srcLoc.y));
+			cmd.nudgeMessage(message, delta);
 		}
 		return new ICommandProxy(cmd);
 	}
@@ -111,17 +85,9 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 	@Override
 	protected void showCreateBendpointFeedback(BendpointRequest request) {
 		Connection con = getConnection();
-		Point loc = request.getLocation();		
-		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY); 
-		if (srcLoc == null) {
-			srcLoc = loc.getCopy();
-			srcLoc = SequenceUtil.getSnappedLocation(request.getSource(),srcLoc);
-			srcLoc = ViewUtilities.controlToViewer(getHost().getViewer(), srcLoc);
-			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
-		}
+		Point p = con.getSourceAnchor().getReferencePoint();
+		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, request.getSource(), p);
 		
-		Point p = SequenceUtil.getSnappedLocation(request.getSource(),loc.getCopy());
-		p = ViewUtilities.controlToViewer(getHost().getViewer(), p);				
 		if (originalSourceAnchor == null || originalTargetAnchor == null) {
 			originalSourceAnchor = con.getSourceAnchor();
 			originalTargetAnchor = con.getTargetAnchor();
@@ -136,15 +102,11 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 			originalFeedbackLoc = r.getLocation();*/
 		} 					
 
-		int deltaY = p.y - srcLoc.y;
-		deltaY = ViewUtilities.viewerToControl(getHost().getViewer(),new Rectangle(0,0,0,deltaY)).height;
-//		Rectangle r = feedbackFigure.getBounds();		
-//		feedbackFigure.setLocation(new Point(originalFeedbackLoc.x,originalFeedbackLoc.y + deltaY));
 		
 		Point a1 = originalSourceAnchor.getReferencePoint();
 		Point a2 = originalTargetAnchor.getReferencePoint();
-		con.setSourceAnchor(new XYAnchor(new Point(a1.x,a1.y+deltaY)));
-		con.setTargetAnchor(new XYAnchor(new Point(a2.x,a2.y+deltaY)));
+		con.setSourceAnchor(new XYAnchor(new Point(a1.x,a1.y+delta.y)));
+		con.setTargetAnchor(new XYAnchor(new Point(a2.x,a2.y+delta.y)));
 		
 //		super.showCreateBendpointFeedback(request);
 	}
