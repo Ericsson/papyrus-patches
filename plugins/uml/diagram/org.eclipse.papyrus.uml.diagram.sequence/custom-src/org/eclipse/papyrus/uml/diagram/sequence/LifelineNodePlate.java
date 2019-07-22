@@ -30,6 +30,9 @@ import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.Bounds;
 import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSVGNodePlateFigure;
+import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSlidableRoundedRectangleAnchor;
+import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.PapyrusSlidableSnapToGridAnchor;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.LifelineSlidableAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.BoundForEditPart;
 
 /**
@@ -41,6 +44,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.BoundForEdit
  */
 public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 
+	private org.eclipse.gef.GraphicalEditPart myHost;
 	/**
 	 * Constructor.
 	 *
@@ -54,7 +58,7 @@ public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 		super(hostEP, width, height);
 		withLinkLFEnabled();
 		followSVGPapyrusPath = true;
-
+		this.myHost = hostEP;
 	}
 
 	@Override
@@ -69,7 +73,10 @@ public class LifelineNodePlate extends LinkLFSVGNodePlateFigure {
 	@Override
 	protected ConnectionAnchor createAnchor(PrecisionPoint p) {
 		p.setPreciseX(0.5);// a changer
-		return super.createAnchor(p);
+
+		LifelineSlidableAnchor result = new LifelineSlidableAnchor(this, p);
+		result.setEditPart(myHost);
+		return result;
 	}
 
 	/**

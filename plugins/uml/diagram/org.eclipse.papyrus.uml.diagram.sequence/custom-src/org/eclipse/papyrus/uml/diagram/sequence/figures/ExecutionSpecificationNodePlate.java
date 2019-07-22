@@ -20,14 +20,12 @@ import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.TreeSearch;
-import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PrecisionPoint;
-import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.figures.BorderedNodeFigure;
 import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSVGNodePlateFigure;
-import org.eclipse.papyrus.infra.gmfdiag.common.figure.node.LinkLFSlidableRoundedRectangleAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.AnchorConstants;
+import org.eclipse.papyrus.uml.diagram.sequence.anchors.ExecutionSpecificationSlidableAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeBottomAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.anchors.NodeTopAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
@@ -37,6 +35,8 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper;
  *
  */
 public class ExecutionSpecificationNodePlate extends LinkLFSVGNodePlateFigure implements ILifelineInternalFigure {
+	
+	private GraphicalEditPart myHost;
 	/**
 	 * Constructor.
 	 *
@@ -46,6 +46,7 @@ public class ExecutionSpecificationNodePlate extends LinkLFSVGNodePlateFigure im
 	 */
 	public ExecutionSpecificationNodePlate(GraphicalEditPart hostEP, int width, int height) {
 		super(hostEP, width, height);
+		this.myHost = hostEP;
 	}
 
 	/**
@@ -71,24 +72,17 @@ public class ExecutionSpecificationNodePlate extends LinkLFSVGNodePlateFigure im
 				return new AnchorHelper.FixedAnchorEx(this, position);
 			}
 		}
+
 		return super.getConnectionAnchor(terminal);
 	}
 
 	@Override
 	protected ConnectionAnchor createAnchor(PrecisionPoint p) {
-		return new LinkLFSlidableRoundedRectangleAnchor(this, p) {			
-			@Override
-			public Point getLocation(Point refParent, Point refPort) {
-				Rectangle r = super.getOwner().getBounds().getCopy();
-				getOwner().translateToAbsolute(r);
-				Point loc = refParent.getCopy();
-				loc.x = r.x;
-				if (refParent.x < refPort.x) {
-					loc.x += r.width;					
-				}			
-				return loc;
-			}			
-		};
+		p.setPreciseX(0.5);// a changer
+
+		ExecutionSpecificationSlidableAnchor result = new ExecutionSpecificationSlidableAnchor(this, p);
+		result.setEditPart(myHost);
+		return result;
 	}
 
 	@Override
