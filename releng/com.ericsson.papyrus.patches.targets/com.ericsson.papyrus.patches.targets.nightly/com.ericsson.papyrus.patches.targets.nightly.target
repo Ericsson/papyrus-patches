@@ -16,7 +16,7 @@
 
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.emf.sdk.feature.group" version="0.0.0"/>
-<repository location="http://download.eclipse.org/modeling/emf/emf/builds/nightly/latest"/>
+<repository location="https://download.eclipse.org/modeling/emf/emf/builds/milestone/latest"/>
 </location>
 
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
@@ -61,7 +61,7 @@
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.papyrus.sdk.feature.feature.group" version="0.0.0"/>
-<repository location="http://download.eclipse.org/modeling/mdt/papyrus/updates/nightly/master"/>
+<repository location="https://download.eclipse.org/modeling/mdt/papyrus/updates/milestones/4.5"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.uml2.sdk.feature.group" version="0.0.0"/>
