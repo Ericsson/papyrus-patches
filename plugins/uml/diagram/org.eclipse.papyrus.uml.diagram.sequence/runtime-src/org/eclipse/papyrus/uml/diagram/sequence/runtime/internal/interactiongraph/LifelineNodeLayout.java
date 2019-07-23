@@ -39,7 +39,8 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 			Rectangle area = ViewUtilities.getClientAreaBounds(node.getInteractionGraph().getEditPartViewer(), containerContentPane);
 			Rectangle childrenArea = ((ClusterImpl)node).getChildrenBounds();
 			if (childrenArea != null) {
-				height = (childrenArea.height + (childrenArea.y - area.y) + 10) - (r != null ? r.y - area.y : 10 ) /*- 14*/ + 20;   
+				height = (childrenArea.height + (childrenArea.y - area.y) + 10) - (r != null ? r.y - area.y : 10 ) /*- 14*/ +
+						node.getInteractionGraph().getGridSpacing(20);   
 			} else {
 				height = area.y;
 			}

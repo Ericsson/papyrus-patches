@@ -91,13 +91,14 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 				Rectangle bounds = ViewUtilities.getBounds(getViewer(), ((IGraphicalEditPart)getHost()).getNotationView()).getCopy();
 				bounds = request.getTransformedRectangle(bounds);	
 				Rectangle beforeSnap = bounds.getCopy();
-				Point p = SequenceUtil.getSnappedLocation(getHost(),bounds.getCenter());
+				Point p = SequenceUtil.getSnappedLocation(getHost(),ViewUtilities.viewerToControl(getViewer(), bounds.getCenter()));
 				bounds.x += (p.x - bounds.getCenter().x);
 				bounds.y += (p.y - bounds.getCenter().y);
+				p = ViewUtilities.controlToViewer(getViewer(), bounds.getCenter());
 				if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-					cmd.moveGate(gate, (InteractionFragment)gate.getOwner(), bounds.getCenter());		
+					cmd.moveGate(gate, (InteractionFragment)gate.getOwner(), p);		
 				} else {
-					cmd.nudgeGate(gate, bounds.getCenter()); 
+					cmd.nudgeGate(gate, p); 
 				}
 				return new ICommandProxy(cmd);
 			}
@@ -107,7 +108,8 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 				Rectangle bounds = ViewUtilities.getBounds(getViewer(), ((IGraphicalEditPart)getHost()).getNotationView());
 				bounds = request.getTransformedRectangle(bounds);	
 				Rectangle beforeSnap = bounds.getCopy();
-				Point p = SequenceUtil.getSnappedLocation(getHost(),bounds.getCenter());
+				Point p = SequenceUtil.getSnappedLocation(getHost(),ViewUtilities.viewerToControl(getViewer(), bounds.getCenter()));
+				p = ViewUtilities.controlToViewer(getViewer(), p);
 				request.getMoveDelta().translate(p.getDifference(beforeSnap.getCenter()));
 				super.showChangeBoundsFeedback(request);
 			}

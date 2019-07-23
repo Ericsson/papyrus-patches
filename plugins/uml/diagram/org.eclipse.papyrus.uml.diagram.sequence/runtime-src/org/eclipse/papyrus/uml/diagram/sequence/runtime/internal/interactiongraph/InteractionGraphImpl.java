@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +25,10 @@ import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
-import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
@@ -61,8 +58,17 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		super(interaction);
 		this.diagram = diagram; 
 		this.diagramEditPart = editPart;
-		viewer = editPart == null ? null : editPart.getViewer();
+		viewer = editPart == null ? null : editPart.getViewer();		
+		this.gridEnabled = ViewUtilities.isSnapToGrid(viewer, diagram);
+		if (!gridEnabled)
+			this.gridSpacing = 20;
+		else
+			this.gridSpacing = (int)ViewUtilities.getGridSpacing(viewer, diagram);
 		
+		if (this.gridSpacing < 20) {
+			this.gridSpacing = 20;
+		}
+
 		setView(ViewUtilities.getViewForElement(diagram, interaction));		
 	}
 
@@ -92,6 +98,14 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	@Override
 	public EditPartViewer getEditPartViewer() {
 		return viewer;
+	}
+
+	public int getGridSpacing() {
+		return gridSpacing;
+	}
+	
+	public int getGridSpacing(int size) {
+		return ViewUtilities.getClosestGrid(gridSpacing,size);
 	}
 
 	@Override
@@ -450,15 +464,39 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		}
 		
 		// TODO: Columns & Rows for floating Nodes
+		// TODO: Layout Y Positions.
+		double grid = -1.0;
+		if (ViewUtilities.isSnapToGrid(viewer, diagram))
+			grid = ViewUtilities.getGridSpacing(viewer, diagram);
+		if (grid <= 5.0)
+			grid = -1.0;
+		
+		List<RowImpl> rowsToDelete = new ArrayList<RowImpl>();
+		prevRow = null;
+		for (RowImpl r : rows) {
+			int closestGrid = (int)(Math.round(((double)r.getYPosition() / (double)grid)) * (double)grid);
+			int diff = Math.abs(r.getYPosition() - closestGrid);
+			if (diff > 0 && diff <= 2) {
+				r.setYPosition(closestGrid);
+			}
 
+		}
+		
+		for (RowImpl r : rows) {			// Order nodes in each row.
+			r.nodes.sort(RowImpl.MESSAGE_END_NODE_COMPARATOR);
+			if (prevRow != null && r.getYPosition() - prevRow.getYPosition() <= 2) {
+				r.addNodes(new ArrayList(prevRow.getNodes()));
+				rowsToDelete.add(r);
+			}
+			prevRow = r;
+			
+		}
+		
+		rows.removeAll(rowsToDelete);		
+		rows.stream().forEach(d -> d.setIndex(rows.indexOf(d)));
 		rows.stream().forEach(d -> d.setIndex(rows.indexOf(d)));
 		columns.stream().forEach(d -> d.setIndex(columns.indexOf(d)));
 
-		// TODO: Layout Y Positions.
-		for (RowImpl r : rows) {
-			// Order nodes in each row.
-			r.nodes.sort(RowImpl.MESSAGE_END_NODE_COMPARATOR);
-		}
 
 
 		// TODO: Layout X Positions.
@@ -469,7 +507,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		layoutManager.layout();
 		
-		int lastY = Math.max(300,rows.get(rows.size()-1).getYPosition()+40);
+		int lastY = Math.max(300,rows.get(rows.size()-1).getYPosition()+getGridSpacing(40));
 		// Set lifelines size equal.
 		for (Cluster lifeline : lifelineClusters) {
 			boolean destroyed = lifeline.getAllNodes().stream().filter(d -> (d.getElement() instanceof DestructionOccurrenceSpecification)).
@@ -491,8 +529,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		lastX = Math.max(lastX,300);
 		
 		Rectangle r = ViewUtilities.getBounds(getViewer(), getView()).getCopy();		
-		r.height = lastY - r.y + 60;
-		r.width = lastX - r.x + 60;		
+		r.height = lastY - r.y + getGridSpacing(60);
+		r.width = lastX - r.x + getGridSpacing(60);		
 		setBounds(r);
 		
 		if (rightGatesColumn != null) {
@@ -1029,12 +1067,12 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			Rectangle nudgeArea = NodeUtilities.getNudgeArea(this, otherNodes, false, true, allNodes);
 			int maxNudgePrev = prev;
 			if (nudgeArea != null && otherArea != null)
-				maxNudgePrev = (otherArea.y - nudgeArea.y) / 20 * 20;
+				maxNudgePrev = (otherArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
 			
 			nudgeArea = NodeUtilities.getNudgeArea(this, nodesAfter, false, true, allNodes);
 			int maxNudgeAfter = nudge; 
 			if (nudgeArea != null && nodesAfterArea != null)
-				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / 20 * 20;
+				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
 
 			int nudgeUpOthers = otherArea == null ? 0 : Math.max(0, Math.min(prev, maxNudgePrev));
 			nudgeUpOthers = -NodeUtilities.nudgeNodes(otherNodes, 0, -nudgeUpOthers).height;			
@@ -1063,11 +1101,11 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 					nudgeOverlap = false;
 					break;
 				}
-//				NodeUtilities.nudgeNodes(Arrays.asList(n), 0,20);				
+//				NodeUtilities.nudgeNodes(Arrays.asList(n), 0,gridSpacing);				
 			}
 
 			if (nudgeOverlap) {				
-				NodeUtilities.nudgeRows(rows.subList(row.getIndex(), rows.size()), 20);
+				NodeUtilities.nudgeRows(rows.subList(row.getIndex(), rows.size()), gridSpacing);
 			}
 		}
 
@@ -1151,7 +1189,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			for (Node n : getOrderedNodes()) {
 				if (nudge == 0)
 				if (n == nextNode) {
-					nudge += 20;
+					nudge += gridSpacing;
 					nextNode = !it.hasNext() ? null : it.next();
 				} 
 				NodeUtilities.nudgeNodes(n, 0, nudge);
@@ -1167,7 +1205,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			Node nextNode = it.next();
 			for (Node n : getOrderedNodes()) {
 				if (n == nextNode) {
-					nudge -= 20;
+					nudge -= gridSpacing;
 					nextNode = !it.hasNext() ? null : it.next();
 				} 
 				NodeUtilities.nudgeNodes(n, 0, nudge);
@@ -1178,6 +1216,8 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	private Diagram diagram;
 	private DiagramEditPart diagramEditPart;
 	private int disabledLayout = 0; 
+	private boolean gridEnabled = true; 
+	private int gridSpacing = 20; 
 	private InteractionGraphBuilder builder;
 	private EditPartViewer viewer;
 	private List<ClusterImpl> lifelineClusters = new ArrayList<>();

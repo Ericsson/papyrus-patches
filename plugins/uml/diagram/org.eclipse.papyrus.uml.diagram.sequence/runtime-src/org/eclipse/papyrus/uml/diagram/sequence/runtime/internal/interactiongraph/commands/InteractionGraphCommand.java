@@ -120,7 +120,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph,
 			List affectedFiles) {
 		super(domain, label, affectedFiles);
-		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
+		init((InteractionGraphImpl) interactionGraph);
 	}
 
 	/**
@@ -133,10 +133,17 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	 */
 	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph,
 			Map options, List affectedFiles) {
-		super(domain, label, options, affectedFiles);
-		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
+		super(domain, label, options, affectedFiles);		
+		init((InteractionGraphImpl) interactionGraph);
 	}
 
+	private void init(InteractionGraphImpl interactionGraph) {
+		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
+		this.gridSpacing = this.interactionGraph.getGridSpacing();
+		this.gridSpacing_40 = this.interactionGraph.getGridSpacing(40);
+		this.gridSpacing_60 = this.interactionGraph.getGridSpacing(60);
+	}
+	
 	public void addLifeline(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
 		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
 			@Override
@@ -396,12 +403,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 					Row r = NodeUtilities.getRowAt(graph, srcAnchor.y);
 					if (r != null) {
-						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), 20);
+						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), gridSpacing);
 					}
 
 					r = NodeUtilities.getRowAt(graph, trgAnchor.y);
 					if (r != null) {
-						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), 20);
+						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), gridSpacing);
 					}
 
 					ClusterImpl sourceCluster = (ClusterImpl)getMessageEndOwnerCluster(msgEndSrc, source);
@@ -455,7 +462,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						boolean isSelf = NodeUtilities.isSelfLink(message);
 						interactionGraph.disableLayout();
 						try {
-							NodeUtilities.nudgeNodes(nodesAfter, 0, !isSelf ? 40 : 60);
+							NodeUtilities.nudgeNodes(nodesAfter, 0, !isSelf ? gridSpacing_40 : gridSpacing_60);
 						} finally {
 							interactionGraph.enableLayout();
 							interactionGraph.layout();
@@ -475,12 +482,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 						
 						Lifeline trgLifeline = (Lifeline)NodeUtilities.getLifelineNode(targetCluster).getElement();
 						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, repMosSrc, trgBeforeFrag);
-						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + 40);
+						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + gridSpacing_40);
 						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(0, 0)));
 						
 						Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
 						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, repMosTrg, srcBeforeFrag);				
-						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y + (isSelf ? 20 : 0));
+						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y + (isSelf ? gridSpacing : 0));
 						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(0, 0)));
 	
 						message = graph.connectMessageEnds(repMosSrc, repMosTrg);
@@ -616,7 +623,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			validArea = NodeUtilities.getNudgeArea(interactionGraph, 
 				NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
 						Arrays.asList(source,target) :
-						Collections.singletonList(msgEndNode), false, true);
+						Collections.singletonList(msgEndNode), false, true,
+						Collections.singletonList(target));
 			if (Draw2dUtils.contains(Draw2dUtils.outsideRectangle(validArea.getCopy()),source.getLocation())) {
 				validArea.y -= Draw2dUtils.SHRINK_SIZE; validArea.height += Draw2dUtils.SHRINK_SIZE; 
 			}
@@ -634,7 +642,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		int selfMsgSpace = 0;
 		if (NodeUtilities.isSelfLink(link))
-			selfMsgSpace = 20;
+			selfMsgSpace = gridSpacing;
 
 		if (isRecvEvent) {
 			if (newMsgEndPos.y < (link.getSource().getBounds().y + selfMsgSpace)) {
@@ -813,7 +821,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					if (!nodesAfter.isEmpty()) {
 						Node nextNode = nodesAfter.get(0);
 						if (nextNode.getBounds().y - newTrgPt.y < 3)
-							NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+							NodeUtilities.nudgeNodes(nodesAfter, 0, gridSpacing);
 					}
 					
 					// Move nodes [ Parent's next node...insert After node] into the parent.
@@ -865,7 +873,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		int selfMsgSpace = 0;
 		// TODO: @etxacam Handle Self messages to and from clusyter fragments.
 		if (NodeUtilities.isSelfLink(link) && !isChangingOwner)
-			selfMsgSpace = 20;
+			selfMsgSpace = gridSpacing;
 
 		Point newLoc = location.getCopy();
 		if (isRecvEvent) {
@@ -1042,7 +1050,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (!nodesAfter.isEmpty()) {
 					Node nextNode = nodesAfter.get(0);
 					if (nextNode.getBounds().y - point.y < 3)
-						NodeUtilities.nudgeNodes(nodesAfter, 0, 20);
+						NodeUtilities.nudgeNodes(nodesAfter, 0, gridSpacing);
 				}
 				
 				Rectangle r = node.getBounds();
@@ -1112,7 +1120,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				Rectangle newRect = rect.getCopy();
 				newRect.x = minX;
 				newRect.width = maxX - minX;
-				newRect.height = 40;
+				newRect.height = gridSpacing_40;
 				
 				Node nodeInsertBefore = NodeUtilities.getNodeAfterVerticalPos(graph, posY-3);
 				
@@ -1567,7 +1575,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		int selfMsgSpace = 0;
 		if (NodeUtilities.isSelfLink(link) && !isChangingLifeline)
-			selfMsgSpace = 20;
+			selfMsgSpace = gridSpacing;
 
 		Point newLoc = location.getCopy();
 		if (isRecvEvent) {
@@ -1636,7 +1644,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 		int selfMsgSpace = 0;
 		if (NodeUtilities.isSelfLink(link) && !isChangingOwner)
-			selfMsgSpace = 20;
+			selfMsgSpace = gridSpacing;
 
 		Point newLoc = location.getCopy();
 		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
@@ -1706,7 +1714,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					Map<Node, Cluster> otherMoveToLifelines = new HashMap<>();
 					otherMoveToLifelines.put(otherEndNode, toMsgEndOwnerCluster);					
 					boolean selfMsg = NodeUtilities.getLifelineNode(isRecvEvent ? otherLink.getTarget() : otherLink.getSource()) == toMsgEndOwnerCluster;
-					((InteractionGraphImpl)graph).moveNodeBlock(otherNodes, otherTotalArea.y + (selfMsg ? 20 : 0), otherMoveToLifelines);		
+					((InteractionGraphImpl)graph).moveNodeBlock(otherNodes, otherTotalArea.y + (selfMsg ? gridSpacing : 0), otherMoveToLifelines);		
 					
 					// Check if both ends has the same parent???
 					if (msgEndNode.getParent() != otherEndNode.getParent()) {
@@ -2099,8 +2107,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 					trgAnchorPoint = lk.getTarget().getBounds().getCenter();
 					trgView = lk.getTargetAnchoringNode().getView();
 					
-					if (isSelfLink && (trgAnchorPoint.y - srcAnchorPoint.y) < 20)
-						trgAnchorPoint.y = srcAnchorPoint.y + 20;
+					if (isSelfLink && (trgAnchorPoint.y - srcAnchorPoint.y) < gridSpacing)
+						trgAnchorPoint.y = srcAnchorPoint.y + gridSpacing;
 					
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.TARGET, 
 							trgView, trgAnchorPoint, "Set Target Link Anchor", null));
@@ -2343,5 +2351,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 	private InteractionGraphImpl interactionGraph;
+	private boolean gridEnabled;
+	private int gridSpacing;
+	private int gridSpacing_40;
+	private int gridSpacing_60;
 	private List<InteractionGraphEditAction> actions = new ArrayList<>();
 }

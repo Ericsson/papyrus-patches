@@ -388,8 +388,8 @@ public class ViewUtilities {
 		} else if (anchoringView.getElement() instanceof Lifeline) {
 
 		}
-		Point p = new Point((int) (rect.x + (rect.width * loc.preciseX())),
-				(int) (rect.y + (rect.height * loc.preciseY())));
+		Point p = new Point((int) (rect.x + (rect.width * loc.preciseX())+0.5),
+				(int) (rect.y + (rect.height * loc.preciseY())+0.5));
 		return p;
 	}
 
@@ -553,7 +553,7 @@ public class ViewUtilities {
 		return NotationUtils.getBooleanValue(diagram, PreferencesConstantsHelper.SNAP_TO_GRID_CONSTANT, snapToGrid);
 	}
 
-	private static double getGridSpacing(EditPartViewer viewer, Diagram diagram) {
+	public static double getGridSpacing(EditPartViewer viewer, Diagram diagram) {
 		double gridSpacing = 1.0;
 		if (viewer instanceof DiagramGraphicalViewer) {
 			String diagramType = diagram.getType();
@@ -562,6 +562,12 @@ public class ViewUtilities {
 		}
 		return NotationUtils.getDoubleValue(diagram, PreferencesConstantsHelper.GRID_SPACING_CONSTANT, gridSpacing);
 	}
+	
+	public static int getClosestGrid(int gridSpacing, int pos) {
+		return (int)(Math.round(40.0 / (double)gridSpacing) * (double)gridSpacing);	
+	}
+	
+	
 	
 	private static <T extends IFigure> T findFigure(IFigure container, Class<T> cls) {
 		for (IFigure ch : (List<IFigure>)container.getChildren()) {
