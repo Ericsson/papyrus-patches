@@ -56,6 +56,11 @@ public class MessageHelperAdvice extends org.eclipse.papyrus.uml.service.types.h
 		return cmd;
 	}
 
+	protected ICommand getConfigureCommand(ConfigureRequest request) {
+		return new ConfigureMessageEventCommand_UndoBugWorkAround(request);
+	}
+
+
 	protected ICommand getCreateGateMessageEndCommand(Message msg, boolean source, Element owner) {
 		if (owner instanceof Interaction) {
 			return new CreateGateMessageEndCommand(msg, source, new CreateElementRequest(owner,UMLElementTypes.GATE,UMLPackage.Literals.INTERACTION__FORMAL_GATE));
