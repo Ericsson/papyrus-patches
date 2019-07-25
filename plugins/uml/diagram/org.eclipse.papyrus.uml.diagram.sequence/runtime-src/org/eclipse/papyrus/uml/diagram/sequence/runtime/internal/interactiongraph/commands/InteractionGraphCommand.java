@@ -40,7 +40,6 @@ import org.eclipse.emf.edit.command.MoveCommand;
 import org.eclipse.emf.edit.command.RemoveCommand;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
-import org.eclipse.emf.validation.internal.service.GetBatchConstraintsOperation;
 import org.eclipse.emf.workspace.EMFCommandOperation;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
@@ -1124,6 +1123,15 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				
 				Node nodeInsertBefore = NodeUtilities.getNodeAfterVerticalPos(graph, posY-3);
 				
+				// Make place for it...
+				if (nodeInsertBefore != null) {
+					Row r = nodeInsertBefore.getRow();
+					List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
+						.collect(Collectors.toList());
+					NodeUtilities.nudgeRows(nudgeRows, newRect.height);
+					graph.layout();
+				}
+
 				FragmentClusterImpl interactionUseCluster = interactionGraph.addInteractionUse(
 						interactionUse, lifelines, nodeInsertBefore == null ? null : (InteractionFragment)nodeInsertBefore.getElement());
 				interactionUseCluster.setBounds(newRect);
