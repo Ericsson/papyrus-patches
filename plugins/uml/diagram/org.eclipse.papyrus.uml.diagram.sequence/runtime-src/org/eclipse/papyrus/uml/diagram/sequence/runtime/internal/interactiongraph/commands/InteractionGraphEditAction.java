@@ -18,9 +18,21 @@ import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 
 public interface InteractionGraphEditAction {
+	public static final InteractionGraphEditAction UNEXECUTABLE_ACTION = new AbstractInteractionGraphEditAction(null) {
+		@Override
+		public boolean prepare() {
+			return false;
+		};
+
+		@Override
+		public boolean apply(InteractionGraph graph) {
+			return false;
+		}
+
+	};
+
+
 	public boolean prepare();
-
 	public boolean apply(InteractionGraph graph);
-
 	public void handleResult(CommandResult result);
 }

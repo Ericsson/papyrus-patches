@@ -214,6 +214,9 @@ public interface InteractionGraph {
 	public FragmentCluster getInteractionUse(InteractionUse interactionUse);
 	public FragmentCluster addInteractionUse(InteractionUse interactionUse, List<Lifeline> lifelines, InteractionFragment beforeFragment);
 	public FragmentCluster addInteractionUseToLifeline(InteractionUse interactionUse, Lifeline lifeline);
-	public FragmentCluster removeInteractionUseFromLifeline(InteractionUse interactionUse, Lifeline lifeline);	
+	public FragmentCluster removeInteractionUseFromLifeline(InteractionUse interactionUse, Lifeline lifeline);
+
+	public int getGridSpacing();	
+	public int getGridSpacing(int size);	
 
 }

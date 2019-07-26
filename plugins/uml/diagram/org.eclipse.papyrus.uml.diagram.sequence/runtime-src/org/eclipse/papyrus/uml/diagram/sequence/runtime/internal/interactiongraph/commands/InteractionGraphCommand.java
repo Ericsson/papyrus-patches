@@ -15,14 +15,11 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.commands.ExecutionException;
@@ -30,7 +27,6 @@ import org.eclipse.core.commands.operations.IUndoableOperation;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.draw2d.geometry.Insets;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EObject;
@@ -71,34 +67,23 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ColumnImpl;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.Draw2dUtils;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.FragmentClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
-import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.MarkNodeImpl;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphService;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeOrderResolver;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
-import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Gate;
-import org.eclipse.uml2.uml.Interaction;
 import org.eclipse.uml2.uml.InteractionFragment;
-import org.eclipse.uml2.uml.InteractionOperand;
 import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
@@ -117,7 +102,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	 * @param affectedFiles
 	 */
 	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph,
-			List affectedFiles) {
+			List<?> affectedFiles) {
 		super(domain, label, affectedFiles);
 		init((InteractionGraphImpl) interactionGraph);
 	}
@@ -131,7 +116,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	 * @param affectedFiles
 	 */
 	public InteractionGraphCommand(TransactionalEditingDomain domain, String label, InteractionGraph interactionGraph,
-			Map options, List affectedFiles) {
+			Map<?,?> options, List<?> affectedFiles) {
 		super(domain, label, options, affectedFiles);		
 		init((InteractionGraphImpl) interactionGraph);
 	}
@@ -139,193 +124,48 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	private void init(InteractionGraphImpl interactionGraph) {
 		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
 		this.gridSpacing = this.interactionGraph.getGridSpacing();
-		this.gridSpacing_40 = this.interactionGraph.getGridSpacing(40);
-		this.gridSpacing_60 = this.interactionGraph.getGridSpacing(60);
+		this.interactionGraphService = new InteractionGraphService(this.interactionGraph);
+	}
+	
+	public InteractionGraphEditActionBuilder addAction() {
+		InteractionGraphEditActionBuilder builder = new InteractionGraphEditActionBuilder(interactionGraph);
+		actions.add(builder.action());
+		return builder;
 	}
 	
 	public void addLifeline(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-				if (!result.getStatus().isOK()) {
-					return;
-				}
-				elementAdapter.setNewElement(cluster.getElement());
-				descriptor.setView(cluster.getView());
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				int x = rect.x;
-				Cluster nextLifeline = graph.getLifelineClusters().stream()
-						.filter(d -> ((ClusterImpl) d).getBounds().x >= x).findFirst().orElse(null);
-				Lifeline lifeline = SemanticElementsService.createElement(
-						getEditingDomain(), interactionGraph.getInteraction(), 
-						UMLElementTypes.Lifeline_Shape);
-				lifeline.setName(NodeUtilities.getNewElementName(graph, lifeline));
-				cluster = graph.addLifeline(lifeline, nextLifeline);
-				Rectangle r = ((ClusterImpl) cluster).getBounds();
-				if (ViewUtilities.isSnapToGrid(graph.getEditPartViewer(), graph.getDiagram()))
-					ViewUtilities.snapToGrid(graph.getEditPartViewer(), graph.getDiagram(), rect);
-				r.x = x;				
-				int offset = r.width;
-				((ClusterImpl) cluster).setBounds(r);
-				graph.getColumns().stream().filter(d -> d.getXPosition() > x).map(ColumnImpl.class::cast)
-						.forEach(d -> d.nudge(offset));
-				graph.layout();
-				return true;
-			}
-
-			Cluster cluster;
-		});
+		addAction()
+			.prepare(()->interactionGraphService.canAddLifeline(elementAdapter, rect))
+			.apply(()->{return interactionGraphService.addLifeline(getEditingDomain(), rect);})
+			.handleResult(
+				(CommandResult r,Cluster cluster) -> {
+					elementAdapter.setNewElement(cluster.getElement());
+					descriptor.setView(cluster.getView());
+				});		
 	}
 
 	public void moveLifeline(Lifeline lifeline, Point moveDelta) {
-		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
-		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
-
-		Rectangle clientAreaBounds = ViewUtilities.getBounds(interactionGraph.getEditPartViewer(),
-				lifelineNode.getView());
-		final Rectangle newClientAreaBounds = clientAreaBounds.getCopy();
-		newClientAreaBounds.translate(moveDelta.x, 0);
-
-		Cluster nextLifeline = interactionGraph.getLifelineClusters().stream()
-				.filter(l -> l.getBounds().x > newClientAreaBounds.x).findFirst().orElse(null);
-		int newindex = nextLifeline == null ? interactionGraph.getLifelineClusters().size()
-				: interactionGraph.getLifelineClusters().indexOf(nextLifeline);
-		if (newindex < 0) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				// nudge all after by - size
-				// graph.getColumns().stream().filter(d -> d.getIndex() >
-				// lifelineNode.getColumn().getIndex()).map(ColumnImpl.class::cast).forEach(d ->
-				// d.nudge(-clientAreaBounds.width));
-				interactionGraph.moveLifeline(lifeline,
-						(Lifeline) (nextLifeline == null ? null : nextLifeline.getElement()));
-				// graph.getColumns().stream().filter(d -> d.getIndex() >
-				// lifelineNode.getColumn().getIndex()).map(ColumnImpl.class::cast).forEach(d ->
-				// d.nudge(clientAreaBounds.width));
-				lifelineNode.getBounds().x += moveDelta.x;
-				graph.layout();
-				return true;
-			}
-		});
+		addAction()
+			.prepare(()->interactionGraphService.canMoveLifeline(lifeline, moveDelta))
+			.apply(() -> interactionGraphService.moveLifeline(lifeline, moveDelta));
 	}
 
 	public void deleteLifeline(Lifeline lifeline) {
-		Cluster lifelineNode = (Cluster)interactionGraph.getNodeFor(lifeline);
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				List<List<Node>> blocksToDelete = NodeUtilities.getBlocks(lifelineNode.getNodes());
-				List<Node> flatBlocksToDelete = blocksToDelete.stream().flatMap(d->d.stream()).collect(Collectors.toList()); 
-				List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(flatBlocksToDelete).stream().map(Node::getConnectedByLink).
-						filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
-				try {
-					// Remove nodes & Messages
-					interactionGraph.disableLayout();
-					NodeUtilities.removeMessageLinks(graph, linksToDelete);
-				} finally {
-					interactionGraph.enableLayout();
-				}
-				
-				try {
-					((InteractionGraphImpl)graph).removeNodeBlocks(blocksToDelete);			
-					Column col = lifelineNode.getColumn();
-					Column prev = col.getIndex() == 0 ? null : interactionGraph.getColumns().get(col.getIndex()-1);
-					int prevSize = prev == null ? 0 : (lifelineNode.getBounds().x  - NodeUtilities.getArea(prev.getNodes()).right());
-					int horzNudge = lifelineNode.getBounds().width + prevSize;
-					interactionGraph.disableLayout();
-					NodeUtilities.removeNodes(graph, Collections.singletonList(lifelineNode));
-					graph.getColumns().stream().filter(d->d.getIndex() > col.getIndex()).forEach(d -> ((ColumnImpl)d).nudge(-horzNudge));
-				} finally {
-					interactionGraph.enableLayout();
-					interactionGraph.layout();					
-				}
-				return true;
-				
-			}
-		});
+		addAction()
+			.prepare(()->interactionGraphService.canDeleteLifeline(lifeline))
+			.apply(() -> interactionGraphService.deleteLifeline(lifeline));
 	}
 	
-	/**
-	 * @param moveDelta
-	 */
 	public void nudgeLifeline(Lifeline lifeline, Point moveDelta) {
-		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
-		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
-		Rectangle clientAreaBounds = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(),
-				(View) lifelineNode.getView().eContainer());
-		int minX = clientAreaBounds.x;
-		if (index > 0) {
-			Rectangle prevBounds = interactionGraph.getLifelineClusters().get(index - 1).getBounds();
-			minX = Math.max(prevBounds.x + prevBounds.width, minX);
-		}
-
-		Rectangle bounds = lifelineNode.getBounds();
-		if (bounds.x + moveDelta.x < minX) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				lifelineNode.getBounds().x += moveDelta.x;
-				graph.getColumns().stream().filter(d -> d.getIndex() > lifelineNode.getColumn().getIndex())
-						.map(ColumnImpl.class::cast).forEach(d -> d.nudge(moveDelta.x));
-				graph.layout();
-				return true;
-			}
-		});
-
+		addAction().
+			prepare(() -> interactionGraphService.canNudgeLifeline(lifeline, moveDelta)).
+			apply(	() -> interactionGraphService.nudgeLifeline(lifeline, moveDelta));
 	}
 
 	public void resizeLifeline(Lifeline lifeline, Dimension sizeDelta) {
-		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
-		int index = interactionGraph.getLifelineClusters().indexOf(lifelineNode);
-		Rectangle clientAreaBounds = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(),
-				(View) lifelineNode.getView().eContainer());
-
-		Rectangle bounds = lifelineNode.getBounds();
-		// TODO: Check size of label???
-		if (bounds.width + sizeDelta.width <= 1) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				lifelineNode.getBounds().width += sizeDelta.width;
-				graph.getColumns().stream().filter(d -> d.getIndex() > lifelineNode.getColumn().getIndex())
-						.map(ColumnImpl.class::cast).forEach(d -> d.nudge(sizeDelta.width));
-				graph.layout();
-				return true;
-			}
-		});
-
+		addAction().
+			prepare(() -> interactionGraphService.canResizeLifeline(lifeline, sizeDelta)).
+			apply(() -> interactionGraphService.resizeLifeline(lifeline, sizeDelta));
 	}
 
 	// TODO: @etxacam Reply messages
@@ -334,1424 +174,135 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addMessage(MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
-		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram())) {
-			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor);
-			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor);
-		}
-		
-		if (trgAnchor.y < srcAnchor.y) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;			
-		}
-		
-		Cluster	targetCluster = interactionGraph.getClusterFor(target);		
-		if (msgSort == MessageSort.CREATE_MESSAGE_LITERAL) {
-			if (!(target instanceof Lifeline) || NodeUtilities.isNodeLifelineStartByCreateMessage(targetCluster)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}	
-			
-			List<Node> nodes = targetCluster.getNodes();
-			if (!nodes.isEmpty() && nodes.get(0).getBounds().y <= trgAnchor.y) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}
-							
-		} else if (msgSort == MessageSort.DELETE_MESSAGE_LITERAL) {
-			if (!(target instanceof Lifeline) || NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(targetCluster)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}			
-			List<Node> nodes = targetCluster.getNodes();
-			if (!nodes.isEmpty() && nodes.get(nodes.size()-1).getBounds().y >= trgAnchor.y) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}
-		}
-		
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-				if (!result.getStatus().isOK()) {
-					return;
-				}
-				elementAdapter.setNewElement(message.getElement());
-				descriptor.setView(message.getView());
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {	
-				interactionGraph.disableLayout();
-				try {
-
-					Message msg = SemanticElementsService.createRelationship(getEditingDomain(), interactionGraph.getInteraction(), source, target, 
-							(IElementType)elementAdapter.getAdapter(IElementType.class)); 
-					msg.setName(NodeUtilities.getNewElementName(graph, msg));
-					
-					MessageEnd msgEndSrc = msg.getSendEvent();
-					if (msgEndSrc instanceof MessageOccurrenceSpecification) {
-						MessageOccurrenceSpecification mosSrc = (MessageOccurrenceSpecification)msgEndSrc;
-						mosSrc.setName("Send "+msg.getName());						
-					} 
-
-					MessageEnd msgEndTrg = msg.getReceiveEvent();
-					if (msgEndTrg instanceof MessageOccurrenceSpecification) {
-						MessageOccurrenceSpecification mosTrg = (MessageOccurrenceSpecification)msgEndTrg;
-						mosTrg.setName("Receive "+msg.getName());						
-					} 
-
-					Row r = NodeUtilities.getRowAt(graph, srcAnchor.y);
-					if (r != null) {
-						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), gridSpacing);
-					}
-
-					r = NodeUtilities.getRowAt(graph, trgAnchor.y);
-					if (r != null) {
-						NodeUtilities.nudgeRows(graph.getRows().subList(r.getIndex(),graph.getRows().size()), gridSpacing);
-					}
-
-					ClusterImpl sourceCluster = (ClusterImpl)getMessageEndOwnerCluster(msgEndSrc, source);
-					Node srcBeforeFrag = NodeUtilities.flatten(sourceCluster).stream().
-						filter(n -> n.getBounds() != null && srcAnchor.y < n.getBounds().y).findFirst().orElse(null);
-
-					ClusterImpl targetCluster = (ClusterImpl)getMessageEndOwnerCluster(msgEndTrg, target);
-					Node trgBeforeFrag = NodeUtilities.flatten(targetCluster).stream().
-							filter(n -> n.getBounds() != null && trgAnchor.y < n.getBounds().y).findFirst().orElse(null);
-					
-					NodeImpl srcNode = null;
-					if (msgEndSrc instanceof Gate) {					
-						if (source instanceof Interaction) {
-							srcNode = interactionGraph.addGate((Interaction)source, (Gate)msgEndSrc, srcBeforeFrag);
-						} else if (source instanceof InteractionUse) {
-							srcNode = interactionGraph.addGate((InteractionUse)source, (Gate)msgEndSrc, srcBeforeFrag);
-						}
-					} else {
-						Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
-						srcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, (MessageOccurrenceSpecification)msgEndSrc, srcBeforeFrag);
-					}
-					srcNode.setBounds(new Rectangle(srcAnchor,new Dimension(0, 0)));						
-					
-					NodeImpl trgNode = null;
-					if (msgEndTrg instanceof Gate) {					
-						if (target instanceof Interaction) {
-							trgNode = interactionGraph.addGate((Interaction)target, (Gate)msgEndTrg, trgBeforeFrag);
-						} else if (target instanceof InteractionUse) {
-							trgNode = interactionGraph.addGate((InteractionUse)target, (Gate)msgEndTrg, trgBeforeFrag);							
-						}
-					} else {
-						Lifeline trgLifeline = (Lifeline)NodeUtilities.getLifelineNode(targetCluster).getElement();
-						trgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, (MessageOccurrenceSpecification)msgEndTrg, trgBeforeFrag);				
-					}
-					trgNode.setBounds(new Rectangle(trgAnchor,new Dimension(0, 0)));
-					
-					message = graph.connectMessageEnds(msgEndSrc, msgEndTrg);
-					interactionGraph.enableLayout();
-					interactionGraph.layout();
-					
-					// TODO: @etxacam What about when there are gates involved??? Should create Reply message and / or reply gate??
-					if (msg.getMessageSort() == MessageSort.SYNCH_CALL_LITERAL 
-							&& msgEndSrc instanceof MessageOccurrenceSpecification 
-							&& msgEndTrg instanceof MessageOccurrenceSpecification) {
-						
-						int nudgeFrom = trgNode.getBounds().y;
-						final Node _srcNode = srcNode;
-						final Node _trgNode = trgNode;
-						List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().filter(
-								d-> d != _srcNode && d != _trgNode && d.getBounds().y >= nudgeFrom).collect(Collectors.toList());
-						boolean isSelf = NodeUtilities.isSelfLink(message);
-						interactionGraph.disableLayout();
-						try {
-							NodeUtilities.nudgeNodes(nodesAfter, 0, !isSelf ? gridSpacing_40 : gridSpacing_60);
-						} finally {
-							interactionGraph.enableLayout();
-							interactionGraph.layout();
-						}
-						
-						interactionGraph.disableLayout();
-
-						// Create reply message
-						Message replyMsg = SemanticElementsService.createRelationship(getEditingDomain(), interactionGraph.getInteraction(), 
-								source, target, UMLElementTypes.Message_ReplyEdge);
-						replyMsg.setName("Reply " + msg.getName());
-	
-						MessageOccurrenceSpecification repMosSrc = (MessageOccurrenceSpecification)replyMsg.getSendEvent();
-						repMosSrc.setName("Send "+replyMsg.getName());
-						MessageOccurrenceSpecification repMosTrg= (MessageOccurrenceSpecification)replyMsg.getReceiveEvent();
-						repMosTrg.setName("Receive "+replyMsg.getName());
-						
-						Lifeline trgLifeline = (Lifeline)NodeUtilities.getLifelineNode(targetCluster).getElement();
-						NodeImpl repSrcNode = (NodeImpl)graph.addMessageOccurrenceSpecification(trgLifeline, repMosSrc, trgBeforeFrag);
-						Point repSrcAnchor = new Point(trgAnchor.x, trgAnchor.y + gridSpacing_40);
-						repSrcNode.setBounds(new Rectangle(repSrcAnchor,new Dimension(0, 0)));
-						
-						Lifeline srcLifeline = (Lifeline)NodeUtilities.getLifelineNode(sourceCluster).getElement();
-						NodeImpl repTrgNode = (NodeImpl)graph.addMessageOccurrenceSpecification(srcLifeline, repMosTrg, srcBeforeFrag);				
-						Point repTrgAnchor = new Point(srcAnchor.x, repSrcAnchor.y + (isSelf ? gridSpacing : 0));
-						repTrgNode.setBounds(new Rectangle(repTrgAnchor,new Dimension(0, 0)));
-	
-						message = graph.connectMessageEnds(repMosSrc, repMosTrg);
-						
-						IElementType execElemType = descriptor.getElementAdapter().getAdapter(IElementType.class);
-						if (execElemType.getId().equals("org.eclipse.papyrus.uml.diagram.sequence.umldi.Message_SynchActionEdge"))
-							execElemType = UMLElementTypes.ActionExecutionSpecification_Shape;
-						else
-							execElemType = UMLElementTypes.BehaviorExecutionSpecification_Shape;
-						
-						ExecutionSpecification execSpec = SemanticElementsService.createElement(
-								getEditingDomain(), interactionGraph.getInteraction(), execElemType);
-						execSpec.setName(NodeUtilities.getNewElementName(graph, UMLPackage.Literals.EXECUTION_SPECIFICATION));
-						execSpec.setStart((MessageOccurrenceSpecification)msgEndTrg);
-						execSpec.setFinish(repMosSrc);
-						ClusterImpl execSpecCluster = (ClusterImpl)graph.addExecutionSpecification(trgLifeline, execSpec);
-						execSpecCluster.getBounds();
-						((InteractionGraphImpl)graph).enableLayout();
-						graph.layout();						
-					}
-					return true;
-				} finally {
-					((InteractionGraphImpl)graph).enableLayout();					
-				}
-			}
-
-			Link message;
-		});
-		
+		addAction().
+			prepare(() -> interactionGraphService.canAddMessage(getEditingDomain(), msgSort, elementAdapter, 
+					descriptor, source, srcAnchor, target, trgAnchor)).		
+			apply(()->interactionGraphService.addMessage(getEditingDomain(), msgSort, 
+						elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
+			handleResult(
+				(CommandResult r, Link message) -> {				
+					elementAdapter.setNewElement(message.getElement());
+					descriptor.setView(message.getView());
+			});
 	}
 	
-	private Cluster getMessageEndOwnerCluster(MessageEnd msgEnd, Element owner) {
-		if (msgEnd instanceof Gate) {
-			if (owner instanceof Interaction) {
-				return interactionGraph;
-			} else if (owner instanceof InteractionUse) {
-				return interactionGraph.getClusterFor(owner);
-			}
-		} 
-		return interactionGraph.getClusterFor(owner);
-	}
-
-	public void deleteMessage(Message msg) {
-		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message.
-		
-		if (msg.getMessageSort() == MessageSort.REPLY_LITERAL) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}			
-		
-		Link link = interactionGraph.getLinkFor(msg);		
-		Node source = link.getSource();
-		
-		List<Node> nodes = NodeUtilities.getBlock(source);
-		List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(nodes).stream().map(Node::getConnectedByLink).
-				filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-			
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				((InteractionGraphImpl)graph).removeNodeBlock(nodes);
-				NodeUtilities.removeMessageLinks(graph, linksToDelete);
-				return true;
-			}
-		});
+	public void deleteMessage(Message msg) {				
+		addAction().
+			prepare(()->interactionGraphService.canDeleteMessage(msg)).
+			apply(()->interactionGraphService.deleteMessage(msg));
 	}
 
 	public void nudgeMessage(Message msg, Point delta) {
-		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message. 
-		Link link = interactionGraph.getLinkFor(msg);		
-		Node source = link.getSource();
-		Node target = link.getTarget();
-
-		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, Arrays.asList(source,target), false, true);		
-		Rectangle newMsgArea = link.getBounds().getCopy().translate(delta);
-		if (!Draw2dUtils.contains(validArea,newMsgArea)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				List<Row> nudgeRows = graph.getRows().stream().filter(
-						d -> (d.getIndex() >= source.getRow().getIndex() || 
-						d.getIndex() >= target.getRow().getIndex())).
-						collect(Collectors.toList());
-				NodeUtilities.nudgeRows(nudgeRows, delta.y);
-				graph.layout();
-				return true;
-			}
-		});
+		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message.		
+		addAction().
+			prepare(()->interactionGraphService.canNudgeMessage(msg, delta)).
+			apply(()->interactionGraphService.nudgeMessage(msg, delta));
 	}
 
-	/*
-	 * Notes on MessageEnd (source) nudge:
-	 * - The source part does not nudge normally, 2 possibilities:
-	 * 		a) It does not nudge at all => Verify against the Empty area around it (Implemented)
-	 * 		b) Nudge opposite => delta < 0 -> Nudge everything down and / or delta > 0 -> Nudge allt under up 
-	 */
 	public void nudgeMessageEnd(MessageEnd msgEnd, Point location) {
-		if (msgEnd.getMessage() == null) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-
-		boolean isRecvEvent = msgEnd.getMessage().getReceiveEvent() == msgEnd; 
-		Link link = interactionGraph.getLinkFor(msgEnd.getMessage());
-		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);		
-		
-		Node source = link.getSource();
-		Node target = link.getTarget();		
-		Rectangle validArea = null;
-		if (msgEndNode == source) {
-			validArea = NodeUtilities.getEmptyAreaAround(interactionGraph, 
-					NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
-							Arrays.asList(source,target) :
-							Collections.singletonList(msgEndNode));			
-			Insets ins = new Insets(Draw2dUtils.SHRINK_SIZE);
-			if (Draw2dUtils.contains(validArea,target.getBounds())) {
-				ins.bottom = 0;
-			}
-			validArea.shrink(ins);
-		} else {		
-			validArea = NodeUtilities.getNudgeArea(interactionGraph, 
-				NodeUtilities.areNodesHorizontallyConnected(source, target) ?  
-						Arrays.asList(source,target) :
-						Collections.singletonList(msgEndNode), false, true,
-						Collections.singletonList(target));
-			if (Draw2dUtils.contains(Draw2dUtils.outsideRectangle(validArea.getCopy()),source.getLocation())) {
-				validArea.y -= Draw2dUtils.SHRINK_SIZE; validArea.height += Draw2dUtils.SHRINK_SIZE; 
-			}
-		}
-
-		Rectangle newMsgEndPos = msgEndNode.getBounds().getCopy().setLocation(location);
-		Dimension delta = newMsgEndPos.getLocation().getDifference(msgEndNode.getBounds().getLocation());
-		if (NodeUtilities.isBorderNode(msgEndNode))
-			validArea.expand(10, 0);
-		
-		if (!Draw2dUtils.contains(validArea,newMsgEndPos)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-
-		int selfMsgSpace = 0;
-		if (NodeUtilities.isSelfLink(link))
-			selfMsgSpace = gridSpacing;
-
-		if (isRecvEvent) {
-			if (newMsgEndPos.y < (link.getSource().getBounds().y + selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}				
-		} else {
-			if (newMsgEndPos.y > (link.getTarget().getBounds().y - selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}				
-			
-		}
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				boolean isGate = NodeUtilities.isBorderNode(msgEndNode);
-				if (isRecvEvent) {
-					List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() > msgEndNode.getRow().getIndex()))
-							.collect(Collectors.toList());
-					NodeUtilities.nudgeRows(nudgeRows, delta.height);
-					
-					List<Node> ownRowNodes = msgEndNode.getRow().getNodes().stream().filter(d-> (d!=source && d!=target)).
-							collect(Collectors.toList());
-					NodeUtilities.nudgeNodes(ownRowNodes, isGate ? delta.width : 0, delta.height);
-					
-					graph.layout();
-				} else if (delta.height > 0){
-					
-				}
-				
-				Rectangle r = msgEndNode.getBounds();
-				r.y = newMsgEndPos.y;
-				if (isGate)
-					r.x = newMsgEndPos.x;
-				graph.layout();
-				return true;
-			}
-		});
+		addAction().
+			prepare(()->interactionGraphService.canNudgeMessageEnd(msgEnd, location)).
+			apply(()->interactionGraphService.nudgeMessageEnd(msgEnd, location));
 	}
 	
 
 	// TODO: @etxacam Check self messages
 	public void moveMessage(Message msg, Point moveDelta) {
-		Link link = interactionGraph.getLinkFor(msg);
-		Node source = link.getSource();
-		Node target = link.getTarget();
-		
-		int minY = Integer.MIN_VALUE;
-		int maxY = Integer.MAX_VALUE;
-		Cluster sourceLifelineCluster = NodeUtilities.getLifelineNode(source);
-		Cluster targetLifelineCluster = NodeUtilities.getLifelineNode(source);
-		if (sourceLifelineCluster != null) {
-			Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-					sourceLifelineCluster.getView());
-			minY = lifelineArea.y;
-			if (targetLifelineCluster != null && msg.getMessageSort() != MessageSort.CREATE_MESSAGE_LITERAL) {
-				minY = Math.max(minY, ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-						targetLifelineCluster.getView()).y);
-			}
-
-			if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(source)) 
-				maxY = lifelineArea.y + lifelineArea.height - 1;
-		} else {
-			Rectangle gateOwnerBounds = source.getParent().getBounds();
-			minY = gateOwnerBounds.y;
-			maxY = gateOwnerBounds.bottom();
-		}
-
-		if (targetLifelineCluster != null) {
-			if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(target)) {
-				if (msg.getMessageSort() != MessageSort.DELETE_MESSAGE_LITERAL)	{			
-					Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-							targetLifelineCluster.getView());
-					maxY = Math.min(maxY, lifelineArea.y + lifelineArea.height - 1);
-				}
-			}
-		} else {
-			Rectangle gateOwnerBounds = source.getParent().getBounds();
-			minY = Math.max(gateOwnerBounds.y,minY);
-			maxY = Math.max(gateOwnerBounds.bottom(), maxY);			
-		}
-		
-		List<Node> nodes = NodeUtilities.getBlock(source);
-		Rectangle totalArea = NodeUtilities.getArea(nodes);
-		totalArea.translate(moveDelta);
-		if (totalArea.y <= minY || totalArea.y >= maxY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-				
-		if (msg.getMessageSort() == MessageSort.REPLY_LITERAL) {
-			if (moveReplyMessage(msg, moveDelta))
-				return;
-		}
-		
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-			
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				Point p = moveDelta;
-				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y);
-				return true;
-			}
-		});
+		addAction().
+			prepare(() -> interactionGraphService.canMoveMessage(msg, moveDelta)).
+			apply(() -> interactionGraphService.moveMessage(msg, moveDelta));
 	}
 	
-	private boolean moveReplyMessage(Message msg, Point moveDelta) {
-		Link link = interactionGraph.getLinkFor(msg);
-		Node source = link.getSource();		
-
-		Cluster parentSrc = source.getParent();
-		if (parentSrc == null || !(parentSrc.getElement() instanceof ExecutionSpecification))
-			return false;
-		
-		int newY = source.getBounds().y + moveDelta.y;
-		if (parentSrc.getBounds().y >= newY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return true;
-		}
-
-		// Resize the exec Spec to include or remove nodes.		
-		// Check new pos is inside the same parent's parent => Before a node inside parent's parent.
-		Point newSrcPt = source.getBounds().getCenter().getCopy();
-		newSrcPt.translate(moveDelta);
-		
-		Cluster srcParent = source.getParent();
-		Cluster srcLifelineNode = NodeUtilities.getLifelineNode(srcParent);
-		Cluster newSrcParent = NodeUtilities.getClusterAtVerticalPos(srcLifelineNode, newSrcPt.y);					
-		if (newSrcParent != srcParent.getParent() && moveDelta.y > 0) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return true;
-		}
-		
-		if (newSrcParent != srcParent && moveDelta.y <= 0) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return true;
-		}
-		
-		Node target = link.getTarget();
-		Point newTrgPt = target.getBounds().getCenter().getCopy();
-		newTrgPt.translate(moveDelta);
-		Cluster trgParent = target.getParent();
-		Cluster trgLifelineNode = NodeUtilities.getLifelineNode(trgParent);
-		Cluster newTrgParent = NodeUtilities.getClusterAtVerticalPos(trgLifelineNode, newTrgPt.y);
-		if (newTrgParent != trgParent) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return true;
-		}			
-		
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-			
-			@Override
-			public boolean apply(InteractionGraph graph) {							
-				try {
-					// Check for padding overlapping
-					
-					interactionGraph.disableLayout();
-					
-					// Default nudge if required.							
-					List<Node> nodesAfter= NodeUtilities.getNodesAfterVerticalPos(graph, newTrgPt.y-3);
-					nodesAfter.remove(link.getSource());
-					nodesAfter.remove(link.getTarget());
-					if (!nodesAfter.isEmpty()) {
-						Node nextNode = nodesAfter.get(0);
-						if (nextNode.getBounds().y - newTrgPt.y < 3)
-							NodeUtilities.nudgeNodes(nodesAfter, 0, gridSpacing);
-					}
-					
-					// Move nodes [ Parent's next node...insert After node] into the parent.
-					// TODO: @etxacam Nudge if link src overlapp and get overlapp in cluster
-					if (moveDelta.y > 0) {
-						expandCluster(srcParent,moveDelta.y);
-					} else if (moveDelta.y < 0){
-						shrinkCluster(srcParent, -moveDelta.y);
-					}
-
-					//Move target node
-					Node insertBeforeTrgNode = NodeUtilities.getNextVerticalNode(trgParent,  newTrgPt.y);
-					while (insertBeforeTrgNode != null && NodeUtilities.isStartNode(insertBeforeTrgNode)) {						
-						insertBeforeTrgNode = insertBeforeTrgNode.getParent();
-					}
-					NodeUtilities.moveNodes(graph, Collections.singletonList(target), trgParent, insertBeforeTrgNode, newTrgPt.y);
-											
-				} finally {
-					interactionGraph.enableLayout();
-					interactionGraph.layout();
-				}
-				return true;
-			}
-		});				
-		return true;
+	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
+		addAction().
+			prepare(()->interactionGraphService.canMoveMessageEnd(msgEnd, toLifeline, location)).
+			apply(()->interactionGraphService.moveMessageEnd(msgEnd, toLifeline, location));
 	}
+	
 	
 	public void nudgeGate(Gate gate, Point location) {		
-		nudgeMessageEnd(gate, location);
+		addAction().
+			prepare(() -> interactionGraphService.canNudgeGate(gate, location)).
+			apply(() -> interactionGraphService.nudgeGate(gate, location));
 	}
 	
 	public void moveGate(Gate gate, InteractionFragment intFragment, Point location) {
-		if (!CombinedFragment.class.isInstance(intFragment) && !InteractionOperand.class.isInstance(intFragment) &&
-			!Interaction.class.isInstance(intFragment) && !InteractionUse.class.isInstance(intFragment)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		
-		Message msg = gate.getMessage();
-		boolean isRecvEvent = msg.getReceiveEvent() == gate; 
-		Link link = interactionGraph.getLinkFor(msg);
-		Node msgEndNode = interactionGraph.getNodeFor(gate);
-		Cluster toGateOwnerNode = interactionGraph.getClusterFor(intFragment);
-		boolean isChangingOwner = msgEndNode.getParent() != toGateOwnerNode;
-				
-		Node target = link.getTarget();
-		Node source = link.getSource();
-
-		int selfMsgSpace = 0;
-		// TODO: @etxacam Handle Self messages to and from clusyter fragments.
-		if (NodeUtilities.isSelfLink(link) && !isChangingOwner)
-			selfMsgSpace = gridSpacing;
-
-		Point newLoc = location.getCopy();
-		if (isRecvEvent) {
-			if (newLoc.y < (source.getBounds().y + selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}				
-		} else {
-			if (newLoc.y > (target.getBounds().y - selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}							
-		}
-
-		if (isChangingOwner) {
-			if (!(toGateOwnerNode instanceof FragmentCluster)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;				
-			}			
-		}		
-		
-		Rectangle lifelineArea = toGateOwnerNode.getBounds();
-		int minY = lifelineArea.y;
-		int maxY = lifelineArea.y + lifelineArea.height - 1;
-		
-		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
-		if (isRecvEvent) {
-			nodes.remove(source);
-		} 
-		
-		Link l = NodeUtilities.getStartLink(link);
-		if ( l != null && l != link) {
-			minY = l.getTarget().getBounds().y;
-		}
-		l = NodeUtilities.getFinishLink(link);
-		if ( l != null && l != link) {
-			maxY = l.getSource().getBounds().y;
-		}
-
-		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
-		totalArea.setLocation(newLoc);
-		if (totalArea.y <= minY || totalArea.y >= maxY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		
-		moveMessageEndImpl(gate, toGateOwnerNode, location);
-		
-		Rectangle r = msgEndNode.getBounds();
-		if (r.x != newLoc.x) {
-			actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {				
-				@Override
-				public boolean apply(InteractionGraph graph) {
-					msgEndNode.getBounds().x = newLoc.x;
-					graph.layout();
-					return true;
-				}
-			});
-		}
+		addAction().
+			prepare(() -> interactionGraphService.canMoveGate(gate, intFragment, location)).
+			apply(() -> interactionGraphService.moveGate(gate, intFragment, location));
 	}
 
 	public void nudgeExecutionSpecification(ExecutionSpecification execSpec, int delta) {
-		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
-		Node occurrenceNode = execSpecNode.getNodes().get(0);
-		Element occSpec = occurrenceNode.getElement();
-		if (occSpec instanceof MessageEnd) {
-			nudgeMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta));
-		} else {
-			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
-		}		
+		addAction().
+			prepare(() -> interactionGraphService.canNudgeExecutionSpecification(execSpec, delta)).
+			apply(() -> interactionGraphService.nudgeExecutionSpecification(execSpec, delta));
 	}
 	
 	public void resizeExecutionSpecification(ExecutionSpecification execSpec, boolean topSide, int delta) {
-		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
-		Node occurrenceNode = topSide ? execSpecNode.getNodes().get(0) : execSpecNode.getNodes().get(execSpecNode.getNodes().size()-1);
-		Element occSpec = occurrenceNode.getElement();
-		if (occSpec instanceof MessageEnd) {
-			nudgeMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta));
-		} else {
-			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
-		}					
+		addAction().
+			prepare(() -> interactionGraphService.canResizeExecutionSpecification(execSpec, topSide, delta)).
+			apply(() -> interactionGraphService.resizeExecutionSpecification(execSpec, topSide, delta));
 
-		if (topSide) {
-			// Nudge all efter
-			Node after = NodeUtilities.getNodesAfter(interactionGraph,Collections.singletonList(occurrenceNode)).
-					stream().filter(d->d.getElement() != execSpec).findFirst().orElse(null);
-			if (after == null || occurrenceNode.getBounds().y+delta >= after.getBounds().y) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}
-			
-			actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-				@Override
-				public void handleResult(CommandResult result) {
-				}
-
-				@Override
-				public boolean apply(InteractionGraph graph) {
-					List<Row> rows = graph.getRows().stream().filter(d -> (d.getIndex() > occurrenceNode.getRow().getIndex()))
-							.collect(Collectors.toList());
-					NodeUtilities.nudgeRows(rows, -delta);
-					graph.layout();
-					return true;
-				}
-			});
-		}
 	}
 
 	public void moveExecutionSpecification(ExecutionSpecification execSpec, Lifeline lifeline, Point point) {
-		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
-		Node occurrenceNode = execSpecNode.getNodes().get(0);
-		Element occSpec = occurrenceNode.getElement();
-		if (occSpec instanceof MessageEnd) {
-			if (lifeline == NodeUtilities.getLifelineNode(execSpecNode).getElement()) {
-				Dimension delta = point.getDifference(occurrenceNode.getBounds().getTopLeft());
-				moveMessage(((MessageEnd) occSpec).getMessage(), new Point(0,delta.height));
-			} else {
-				moveMessageEnd((MessageEnd)occSpec, lifeline, point);
-			}
-		} else {
-			throw new UnsupportedOperationException("Need to implement Nudge for ExecSpecOcurrence");
-		}				
+		addAction().
+			prepare(() -> interactionGraphService.canMoveExecutionSpecification(execSpec, lifeline, point)).
+			apply(() -> interactionGraphService.moveExecutionSpecification(execSpec, lifeline, point));
 	}
 
 	public void moveExecutionSpecificationOccurrence(ExecutionSpecification execSpec, OccurrenceSpecification occurrenceSpec, Point point) {
-		if (execSpec.getStart() != occurrenceSpec && execSpec.getFinish() != occurrenceSpec) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;		
-		}	
-		
-		// Check limit to move to the parent / lifeline bounds 
-		Node occurSpecNode = interactionGraph.getNodeFor(occurrenceSpec);
-		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
-		Node execSpecParentNode = execSpecNode.getParent();
-		Rectangle parentLimits = execSpecParentNode.getBounds();
-		if (point.y <= parentLimits.y || point.y >= parentLimits.y + parentLimits.height) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;		
-		}			
-		
-		boolean startOccur = execSpec.getStart() == occurrenceSpec;
-		OccurrenceSpecification other = startOccur ? execSpec.getFinish() : execSpec.getStart();
-		Node otherNode = interactionGraph.getNodeFor(other);
-		Rectangle otherBounds = otherNode.getBounds();
-		if ((startOccur && point.y >= otherBounds.y) || (!startOccur && point.y <= otherBounds.y)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;		
-		}			
-		// Start & End will have same parent
-		Cluster lifelineNode = NodeUtilities.getLifelineNode(occurSpecNode);
-		Cluster newParent = NodeUtilities.getClusterAtVerticalPos(lifelineNode, point.y);
-		if (newParent != execSpecNode.getParent() && newParent != execSpecNode) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;		
-		}
-
-		
-		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-				NodeUtilities.getLifelineNode(lifelineNode).getView());
-		if (!Draw2dUtils.contains(lifelineArea,point)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;		
-		}
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				NodeImpl node = (NodeImpl)occurSpecNode; 
-				List<Node> nodesAfter= NodeUtilities.getNodesAfterVerticalPos(graph, point.y-3);
-				if (!nodesAfter.isEmpty()) {
-					Node nextNode = nodesAfter.get(0);
-					if (nextNode.getBounds().y - point.y < 3)
-						NodeUtilities.nudgeNodes(nodesAfter, 0, gridSpacing);
-				}
-				
-				Rectangle r = node.getBounds();
-				if (startOccur) {
-					resizeCluster((ClusterImpl)execSpecNode, r.y - point.y, 0);
-				} else {
-					resizeCluster((ClusterImpl)execSpecNode, 0, point.y - (r.y + r.height));
-				}
-				return true;
-			}
-		});
-		
-		if (occurrenceSpec instanceof MessageEnd) {
-			Node sendMessageNode = startOccur ? occurSpecNode.getParent().getConnectedByLink().getSource() : occurSpecNode.getConnectedByLink().getTarget();
-			MessageEnd msgEnd = (MessageEnd)sendMessageNode.getElement();
-			Lifeline lifeline = msgEnd instanceof MessageOccurrenceSpecification ? 
-					((MessageOccurrenceSpecification)msgEnd).getCovered() : null;
-			Point newPos = sendMessageNode.getLocation().getCopy();
-			newPos.y = point.y;
-			// TODO: @ etxacam Needs to nudge on overlap
-			moveMessageEndImpl(msgEnd, NodeUtilities.getLifelineNode(sendMessageNode), newPos);
-		}
-
+		addAction().
+			prepare(() -> interactionGraphService.canMoveExecutionSpecificationOccurrence(execSpec, occurrenceSpec, point)).
+			apply(() -> interactionGraphService.moveExecutionSpecificationOccurrence(execSpec, occurrenceSpec, point));
 	}
 
 	public void deleteExecutionSpecification(ExecutionSpecification execSpec) {
-		Cluster execSpecNode = interactionGraph.getClusterFor(execSpec);
-		Node occurrenceNode = execSpecNode.getNodes().get(0);
-		Element occSpec = occurrenceNode.getElement();
-		if (occSpec instanceof MessageEnd) {
-			deleteMessage(((MessageEnd) occSpec).getMessage());
-		} else {
-			throw new UnsupportedOperationException("Need to implement delete of ExecSpec when is not attached to a message");
-		}			
+		addAction().
+			prepare(()->interactionGraphService.canDeleteExecutionSpecification(execSpec)).
+			apply(() -> interactionGraphService.deleteExecutionSpecification(execSpec));
 	}
 	
 	public void addInteractionUse(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-				if (!result.getStatus().isOK()) {
-					return;
-				}
+		addAction().
+			prepare(() -> interactionGraphService.canAddInteractionUse(elementAdapter, descriptor, rect)).
+			apply(() -> interactionGraphService.addInteractionUse(getEditingDomain(), elementAdapter, descriptor, rect)).
+			handleResult((ClusterImpl cluster) -> {
 				elementAdapter.setNewElement(cluster.getElement());
 				descriptor.setView(cluster.getView());
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				InteractionUse interactionUse = SemanticElementsService.createElement(
-						getEditingDomain(), interactionGraph.getInteraction(), 
-						UMLElementTypes.InteractionUse_Shape);
-				
-				int posY = rect.y;				
-				List<Lifeline> lifelines = new ArrayList<>(); 
-				int minX = Integer.MAX_VALUE;
-				int maxX = Integer.MIN_VALUE;
-				for (Cluster lifelineCluster : graph.getLifelineClusters()) {
-					Rectangle r = lifelineCluster.getBounds();
-					if (rect.intersects(r)) {
-						minX = Math.min(minX, r.getLeft().x);
-						maxX = Math.max(maxX, r.getRight().x);
-						lifelines.add((Lifeline)lifelineCluster.getElement());
-					}				
-				}
-				
-				Rectangle newRect = rect.getCopy();
-				newRect.x = minX;
-				newRect.width = maxX - minX;
-				newRect.height = gridSpacing_40;
-				
-				Node nodeInsertBefore = NodeUtilities.getNodeAfterVerticalPos(graph, posY-3);
-				
-				// Make place for it...
-				if (nodeInsertBefore != null) {
-					Row r = nodeInsertBefore.getRow();
-					List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
-						.collect(Collectors.toList());
-					NodeUtilities.nudgeRows(nudgeRows, newRect.height);
-					graph.layout();
-				}
-
-				FragmentClusterImpl interactionUseCluster = interactionGraph.addInteractionUse(
-						interactionUse, lifelines, nodeInsertBefore == null ? null : (InteractionFragment)nodeInsertBefore.getElement());
-				interactionUseCluster.setBounds(newRect);
-				for (Cluster subCluster : interactionUseCluster.getClusters()) {
-					ClusterImpl c = (ClusterImpl)subCluster; 
-					ClusterImpl parent = c.getParent();
-					Rectangle parentRect = parent.getBounds();
-					((NodeImpl)c.getNodes().get(0)).setBounds(new Rectangle(parentRect.x , newRect.y, 0, 0));;
-					((NodeImpl)c.getNodes().get(1)).setBounds(new Rectangle(parentRect.x , newRect.y+newRect.height, 0, 0));
-				}
-				graph.layout();
-				cluster = interactionUseCluster;
-				return true;
-			}
-
-			Cluster cluster;
-		});
+			});
 	}
 
 	public void nudgeInteractionUse(InteractionUse intUse, Point delta) {
-		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
-		List<Node> startNodes = fragmentCluster.getClusters().stream().map(d->d.getNodes().get(0)).collect(Collectors.toList());
-		Rectangle validArea = NodeUtilities.getNudgeArea(interactionGraph, startNodes, false, true);		
-		Rectangle newMsgArea = fragmentCluster.getBounds().getCopy().translate(delta);
-		if (!Draw2dUtils.contains(validArea,newMsgArea)) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				Row r = startNodes.get(0).getRow();
-				List<Row> nudgeRows = graph.getRows().stream().filter(d -> (d.getIndex() >= r.getIndex()))
-					.collect(Collectors.toList());
-				NodeUtilities.nudgeRows(nudgeRows, delta.y);
-				graph.layout();
-				return true;
-			}
-		});
+		addAction().
+			prepare(()->interactionGraphService.canNudgeInteractionUse(intUse,delta)).
+			apply(()->interactionGraphService.nudgeInteractionUse(intUse,delta));
 	}
 
 	public void nudgeResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
-		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);
-		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
-		if (minSize.width > rect.width || minSize.height > rect.height) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return; 
-		}
-
-		List<Node> allNodes = NodeUtilities.flatten(fragmentCluster.getClusters()); 
-		allNodes.addAll(fragmentCluster.getAllGates());
-		Rectangle validArea = NodeUtilities.getEmptyAreaAround(interactionGraph, allNodes).shrink(2, 2);		
-		if (rect.x < validArea.x || rect.right() > validArea.right()) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;			
-		}
-
-		Rectangle currentRect = fragmentCluster.getBounds();
-		if (currentRect.y != rect.y) {
-			Rectangle nudgeArea = NodeUtilities.getEmptyAreaAround(interactionGraph, fragmentCluster.getStartMarkNodes());
-			// Check top borders
-			if (nudgeArea.y >= rect.y || rect.y >= nudgeArea.bottom()) {  
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}				
-		}
-		
-		if (currentRect.bottom() != rect.bottom()) {
-			Rectangle nudgeArea = NodeUtilities.getNudgeArea(interactionGraph, fragmentCluster.getEndMarkNodes(), false, true);
-			// Check top borders
-			if (nudgeArea.y >= rect.bottom() || rect.bottom() >= nudgeArea.bottom()) {  
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}							
-		}
-		
-		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
-		if (lifelines.size() == 0) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;			
-		}
-		
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
-						collect(Collectors.toList());
-				
-				int newBottom = rect.bottom();
-				int bottom = fragmentCluster.getBounds().bottom(); 
-				if ( bottom != newBottom) {
-					// Nudge nodes if bottom position change.
-					List<Node> nudgeNodes = NodeUtilities.getNodesAfterVerticalPos(graph, bottom);
-					nudgeNodes.addAll(fragmentCluster.getEndMarkNodes());
-					NodeUtilities.nudgeNodes(nudgeNodes, 0, newBottom - bottom);
-				}
-				
-				
-				// Remove old marks
-				List<Cluster> clusterToDelete = fragmentCluster.getClusters().stream().
-						filter(d->!lifelines.contains(NodeUtilities.getLifelineNode(d))).collect(Collectors.toList());
-				NodeUtilities.removeNodes((InteractionGraphImpl)graph, clusterToDelete);
-				clusterToDelete.forEach(fragmentCluster::removeCluster);
-				lifelines.removeAll(curLifelines);
-				int newPosY = rect.y; //fragmentCluster.getBounds().y;
-				int posY = fragmentCluster.getBounds().y;				
-				int height = rect.height;//fragmentCluster.getBounds().height;
-				
-				if (newPosY != posY) {
-					List<MarkNode> nudgeNodes = fragmentCluster.getStartMarkNodes();
-					NodeUtilities.nudgeNodes(nudgeNodes, 0, newPosY - posY);				
-				}
-				
-				for (Cluster lifeline : lifelines) {
-					Cluster parent = NodeUtilities.getClusterAtVerticalPos(lifeline, newPosY); 
-					Rectangle parentRect = parent.getBounds(); 
-					Node insertBefore = NodeUtilities.getNextVerticalNode(lifeline,newPosY);
-					while (insertBefore != null && NodeUtilities.isStartNode(insertBefore)) {
-						insertBefore = insertBefore.getParent();
-					}
-					ClusterImpl intUseLfCluster = new ClusterImpl(intUse);
-					intUseLfCluster.addNode(new MarkNodeImpl(Kind.start, intUse));
-					intUseLfCluster.addNode(new MarkNodeImpl(Kind.end, intUse));
-
-					((NodeImpl)intUseLfCluster.getNodes().get(0)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY, 0, 0));
-					((NodeImpl)intUseLfCluster.getNodes().get(1)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY + height, 0, 0));
-
-					((ClusterImpl)parent).addNode(intUseLfCluster, insertBefore);
-					((FragmentClusterImpl)fragmentCluster).addCluster(intUseLfCluster); // TODO: @etxacam reorder them...
-				}
-				
-				graph.layout();
-				return true;
-			}
-		});
-
+		addAction().
+			prepare(()->interactionGraphService.canNudgeResizeInteractionUse(intUse,rect)).
+			apply(()->interactionGraphService.nudgeResizeInteractionUse(intUse,rect));
 	}
 	
 	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
-		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
-
-		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
-		if (minSize.width > rect.width || minSize.height > rect.height) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return; 
-		}
-
-		List<Node> allNodes = NodeUtilities.flatten(fragmentCluster.getClusters()); 
-		allNodes.addAll(fragmentCluster.getAllGates());
-
-		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
-		if (lifelines.size() == 0) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;			
-		}
-
-		for (Cluster lf : lifelines) {
-			Node newStartParent = NodeUtilities.getClusterAtVerticalPos(lf, rect.y());
-			if (fragmentCluster.getClusters().contains(newStartParent))
-				newStartParent = newStartParent.getParent();
-			Node newEndParent = NodeUtilities.getClusterAtVerticalPos(lf, rect.bottom());			
-			if (fragmentCluster.getClusters().contains(newEndParent))
-				newEndParent = newEndParent.getParent();
-			
-			if (newStartParent != newEndParent) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return; 
-			}
-		}
-		
-		List<Node> nodes = NodeUtilities.getNodesAfterVerticalPos(interactionGraph, rect.y-2);
-		nodes.removeAll(allNodes);
-		nodes.removeAll(NodeUtilities.getNodesAfterVerticalPos(interactionGraph, rect.bottom()));
-		if (!nodes.isEmpty()) {
-			Node overlappingNode = nodes.stream().filter(d->lifelines.contains(NodeUtilities.getLifelineNode(d))).findFirst().orElse(null);
-			if (overlappingNode != null) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return; 
-			}
-		}		
-
-		List<Node> gates = fragmentCluster.getAllGates();
-		int maxY = gates.stream().map(d->d.getBounds().getCenter().y + 10).max(Integer::compareTo).orElse(minSize.height + fragmentCluster.getBounds().y);
-		int minY = gates.stream().map(d->d.getBounds().getCenter().y - 10).min(Integer::compareTo).orElse(fragmentCluster.getBounds().y);
-		if (rect.y > minY || rect.bottom() < maxY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return; 
-		}
-				
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
-						collect(Collectors.toList());
-				
-				int newBottom = rect.bottom();
-				int bottom = fragmentCluster.getBounds().bottom(); 
-				if ( bottom != newBottom) {
-					// Resize botton border
-					fragmentCluster.getClusters().forEach(d->resizeCluster((ClusterImpl)d, 0, newBottom-bottom));
-				}
-				
-				int newTop = rect.y();
-				int top = fragmentCluster.getBounds().y(); 
-				if ( newTop != top) {
-					// Resize top border
-					fragmentCluster.getClusters().forEach(d->resizeCluster((ClusterImpl)d, top - newTop, 0));
-				}
-				
-				// Remove old marks
-				List<Cluster> clusterToDelete = fragmentCluster.getClusters().stream().
-						filter(d->!lifelines.contains(NodeUtilities.getLifelineNode(d))).collect(Collectors.toList());
-				NodeUtilities.removeNodes((InteractionGraphImpl)graph, clusterToDelete);
-				clusterToDelete.forEach(fragmentCluster::removeCluster);
-				lifelines.removeAll(curLifelines);
-				int newPosY = rect.y; //fragmentCluster.getBounds().y;
-				int posY = fragmentCluster.getBounds().y;				
-				int height = rect.height;//fragmentCluster.getBounds().height;
-				
-				if (newPosY != posY) {
-					List<MarkNode> nudgeNodes = fragmentCluster.getStartMarkNodes();
-					NodeUtilities.nudgeNodes(nudgeNodes, 0, newPosY - posY);				
-				}
-				
-				for (Cluster lifeline : lifelines) {
-					Cluster parent = NodeUtilities.getClusterAtVerticalPos(lifeline, newPosY); 
-					Rectangle parentRect = parent.getBounds(); 
-					Node insertBefore = NodeUtilities.getNextVerticalNode(lifeline,newPosY);
-					while (insertBefore != null && NodeUtilities.isStartNode(insertBefore)) {
-						insertBefore = insertBefore.getParent();
-					}
-					ClusterImpl intUseLfCluster = new ClusterImpl(intUse);
-					intUseLfCluster.addNode(new MarkNodeImpl(Kind.start, intUse));
-					intUseLfCluster.addNode(new MarkNodeImpl(Kind.end, intUse));
-
-					((NodeImpl)intUseLfCluster.getNodes().get(0)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY, 0, 0));
-					((NodeImpl)intUseLfCluster.getNodes().get(1)).setBounds(new Rectangle(parentRect.getCenter().x , newPosY + height, 0, 0));
-
-					((ClusterImpl)parent).addNode(intUseLfCluster, insertBefore);
-					((FragmentClusterImpl)fragmentCluster).addCluster(intUseLfCluster); // TODO: @etxacam reorder them...
-				}
-				
-				graph.layout();
-				return true;
-			}
-		});
-
+		addAction().
+			prepare(()->interactionGraphService.canResizeInteractionUse(intUse,rect)).
+			apply(()->interactionGraphService.resizeInteractionUse(intUse,rect));
 	}
 
 	public void moveInteractionUse(InteractionUse intUse, Rectangle rect) {
-		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
-		Rectangle currRect = fragmentCluster.getBounds();
-		Dimension moveDelta = rect.getTopLeft().getDifference(currRect.getTopLeft());
-		
-		int minY = Integer.MAX_VALUE;
-		int maxY = Integer.MIN_VALUE;
-		for (Cluster n : fragmentCluster.getClusters()) {
-			Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-					NodeUtilities.getLifelineNode(n).getView());
-			minY = Math.min(minY,lifelineArea.y);
-			maxY = Math.max(maxY,lifelineArea.y+lifelineArea.height);
-		}
-		
-		List<Node> nodes = NodeUtilities.getBlock(fragmentCluster);
-		Rectangle totalArea = NodeUtilities.getArea(nodes);
-		totalArea.translate(moveDelta.width, moveDelta.height);
-		if (totalArea.y <= minY || totalArea.y >= maxY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-				
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-			
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y); // We moved to the 
-				return true;
-			}
-		});
-		
+		addAction().
+			prepare(()->interactionGraphService.canMoveInteractionUse(intUse,rect)).
+			apply(()->interactionGraphService.moveInteractionUse(intUse,rect));		
 	}
 
 	public void deleteInteractionUse(InteractionUse intUse) {
-		FragmentCluster intUseNode = (FragmentCluster)interactionGraph.getClusterFor(intUse);
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				// TODO: It needs to handle gates.
-				List<Node> blockToDelete = NodeUtilities.getBlock(intUseNode);
-				List<Link> linksToDelete = new ArrayList<Link>(NodeUtilities.flattenKeepClusters(blockToDelete).stream().map(Node::getConnectedByLink).
-						filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));
-				try {
-					// Remove nodes & Messages
-					interactionGraph.disableLayout();
-					NodeUtilities.removeMessageLinks(graph, linksToDelete);
-				} finally {
-					interactionGraph.enableLayout();
-				}
-				
-				try {
-					((InteractionGraphImpl)graph).removeNodeBlock(blockToDelete);		
-					((InteractionGraphImpl)graph).removeFragmentCluster(intUseNode);
-					interactionGraph.disableLayout();
-					NodeUtilities.removeNodes(graph, intUseNode.getClusters());
-				} finally {
-					interactionGraph.enableLayout();
-					interactionGraph.layout();					
-				}
-				return true;
-				
-			}
-		});
+		addAction().
+			prepare(()->interactionGraphService.canDeleteInteractionUse(intUse)).
+			apply(()->interactionGraphService.deleteInteractionUse(intUse));		
 	}
 		
-	private void resizeCluster(ClusterImpl cluster, int topAmmount, int bottomAmmount) {
-		Rectangle clusterBounds = cluster.getBounds(); 
-		ClusterImpl parent = (ClusterImpl)cluster.getParent();
-		Node startNode = cluster.getNodes().get(0);
-		Node endNode = cluster.getNodes().get(cluster.getNodes().size()-1);
-		
-		int startPos = clusterBounds.y - topAmmount;
-		int endPos = clusterBounds.y + clusterBounds.height + bottomAmmount;
-		
-		// TODO: @etxacam nudge if overlapp
-
-		
-		// Add nodes in parent between [top.y + topAmmount ... top.y)		
-		// Add nodes in parent between (bottomAmmount ... bottom.y + bottomAmmount]
-		int off = 0;
-		if (cluster.getNodes().size() > 2 && cluster.getNodes().get(1).getElement() == cluster.getElement())
-			off = 1;
-		for (Node n : new ArrayList<>(parent.getNodes())) {
-			Rectangle b = n.getBounds();
-			if (b.y >= startPos && b.y < clusterBounds.y) {
-				parent.removeNode((NodeImpl)n);
-				cluster.addNode(1+off, (NodeImpl)n);
-				off++;
-			} else if (b.y > clusterBounds.y && b.y <= endPos) {
-				parent.removeNode((NodeImpl)n);
-				cluster.addNode(cluster.getNodes().size()-1, (NodeImpl)n);				
-			}
-		}
-		
-		// Remove nodes in cluster between [top.y ... top.y + topAmmount]
-		// Remove nodes in cluster between [bottom.y + bottomAmmount ... bottom.y]
-		for (Node n : new ArrayList<>(cluster.getNodes().subList(1, cluster.getNodes().size()-1))) {
-			if (n.getElement() == cluster.getElement())
-				continue;
-			Rectangle b = n.getBounds();
-			if (b.y < startPos) {
-				cluster.removeNode((NodeImpl)n);
-				parent.addNode((NodeImpl)n,cluster);
-			} else if (b.y > endPos) {
-				cluster.removeNode((NodeImpl)n);
-				parent.addNode(parent.getNodes().indexOf(cluster)+1,(NodeImpl)n);
-			}
-		}
-		
-		startNode.getBounds().y-=topAmmount;
-		endNode.getBounds().y+=bottomAmmount;		
-		
-		cluster.getBounds().y = startNode.getBounds().y;
-		cluster.getBounds().height = endNode.getBounds().y - startNode.getBounds().y;
-		
-		if (cluster.getNodes().size() > 2 && cluster.getNodes().get(1).getElement() == cluster.getElement()) {
-			cluster.getNodes().get(1).getBounds().y = cluster.getBounds().y; 
-		}
-	}
-	
-	private void shrinkCluster(Cluster cluster, int ammount) {
-		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
-
-		Cluster parent = cluster.getParent();
-		Rectangle bounds = cluster.getBounds();
-		int newPosY = bounds.y + bounds.height - ammount;
-
-		Node fromNode = NodeUtilities.getNextVerticalNode(cluster, newPosY);
-		while (fromNode != null && fromNode.getParent() != cluster)
-			fromNode = fromNode.getParent();
-		List<Node> nodesToMoveIn = cluster.getNodes().subList(cluster.getNodes().indexOf(fromNode), cluster.getNodes().size()-1);														
-		if (!nodesToMoveIn.isEmpty()) {
-			int idx = parent.getNodes().indexOf(cluster)+1;
-			Node insertBefore = null; 
-			if (idx < parent.getNodes().size())
-				insertBefore = parent.getNodes().get(idx);						
-			NodeUtilities.moveNodes(interactionGraph, nodesToMoveIn, parent, insertBefore, NodeUtilities.getArea(nodesToMoveIn).y);
-		}
-		lastNode.getBounds().y -= ammount;
-		cluster.getBounds().height -= ammount;
-
-	}
-
-	private void expandCluster(Cluster cluster, int ammount) {
-		Node lastNode = cluster.getNodes().get(cluster.getNodes().size()-1);
-		
-		Cluster parent = cluster.getParent();
-		Rectangle bounds = cluster.getBounds();
-		int newPosY = bounds.y + bounds.height + ammount;
-		Node untilNode = NodeUtilities.getNextVerticalNode(parent,  newPosY);
-		while (untilNode != null && untilNode.getParent() != parent)
-			untilNode = untilNode.getParent();
-
-		int curIndx = parent.getNodes().indexOf(cluster);
-		int lastIdx = parent.getNodes().indexOf(untilNode);
-		List<Node> nodesToMoveIn = parent.getNodes().subList(curIndx+1, lastIdx == -1 ? parent.getNodes().size() : lastIdx);
-		if (!nodesToMoveIn.isEmpty()) {
-			NodeUtilities.moveNodes(interactionGraph, nodesToMoveIn, cluster, lastNode, NodeUtilities.getArea(nodesToMoveIn).y);
-		}		
-		
-		lastNode.getBounds().y += ammount;
-		cluster.getBounds().height += ammount;
-	}
-
-	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
-		if (!(msgEnd instanceof MessageOccurrenceSpecification)) {
-			// TODO @etxacam We need to handle Gates
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		Message msg = msgEnd.getMessage();
-		boolean isRecvEvent = msg.getReceiveEvent() == msgEnd; 
-		Link link = interactionGraph.getLinkFor(msg);
-		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
-		Cluster toLifelineNode = interactionGraph.getLifeline(toLifeline);
-		boolean isChangingLifeline = NodeUtilities.getLifelineNode(msgEndNode) != toLifelineNode;
-				
-		Node target = link.getTarget();
-		Node source = link.getSource();
-
-		int selfMsgSpace = 0;
-		if (NodeUtilities.isSelfLink(link) && !isChangingLifeline)
-			selfMsgSpace = gridSpacing;
-
-		Point newLoc = location.getCopy();
-		if (isRecvEvent) {
-			if (newLoc.y < (source.getBounds().y + selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}				
-		} else {
-			if (newLoc.y > (target.getBounds().y - selfMsgSpace)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;
-			}							
-		}
-
-		if (isRecvEvent && isChangingLifeline) {
-			if (NodeUtilities.isNodeLifelineStartByCreateMessage(toLifelineNode) && NodeUtilities.isCreateOcurrenceSpecification(msgEndNode)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;				
-			}
-			
-			if (NodeUtilities.isNodeLifelineEndsWithDestroyOcurrenceSpecification(toLifelineNode) && NodeUtilities.isDestroyOcurrenceSpecification(msgEndNode)) {
-				actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-				return;				
-			}			
-		}		
-		
-		Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
-				NodeUtilities.getLifelineNode(toLifelineNode).getView());
-		int minY = lifelineArea.y;
-		int maxY = lifelineArea.y + lifelineArea.height - 1;
-		
-		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
-		if (isRecvEvent) {
-			nodes.remove(source);
-		} 
-		
-		Link l = NodeUtilities.getStartLink(link);
-		if ( l != null && l != link) {
-			minY = l.getTarget().getBounds().y;
-		}
-		l = NodeUtilities.getFinishLink(link);
-		if ( l != null && l != link) {
-			maxY = l.getSource().getBounds().y;
-		}
-
-		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
-		totalArea.setLocation(newLoc);
-		if (totalArea.y <= minY || totalArea.y >= maxY) {
-			actions.add(AbstractInteractionGraphEditAction.UNEXECUTABLE_ACTION);
-			return;
-		}
-		
-		moveMessageEndImpl(msgEnd, toLifelineNode, location);
-	}
-	
-	private void moveMessageEndImpl(MessageEnd msgEnd, Cluster toMsgEndOwnerCluster, Point location) {		
-		Message msg = msgEnd.getMessage();
-		boolean isRecvEvent = msg.getReceiveEvent() == msgEnd; 
-		Link link = interactionGraph.getLinkFor(msg);
-		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
-		Cluster lifelineCluster = NodeUtilities.getLifelineNode(msgEndNode);
-		boolean isChangingOwner = lifelineCluster != null && lifelineCluster != toMsgEndOwnerCluster;
-				
-		Node target = link.getTarget();
-		Node source = link.getSource();
-
-		int selfMsgSpace = 0;
-		if (NodeUtilities.isSelfLink(link) && !isChangingOwner)
-			selfMsgSpace = gridSpacing;
-
-		Point newLoc = location.getCopy();
-		List<Node> nodes = isRecvEvent ? NodeUtilities.getBlock(source) : Arrays.asList(source);
-		if (isRecvEvent) {
-			nodes.remove(source);
-		} 
-		
-		Rectangle totalArea = NodeUtilities.getArea(Arrays.asList(msgEndNode));
-		totalArea.setLocation(newLoc);
-		Link otherLink = isRecvEvent ? NodeUtilities.getStartLink(link) : NodeUtilities.getFinishLink(link);		
-		
-
-		actions.add(new AbstractInteractionGraphEditAction(interactionGraph) {
-			@Override
-			public void handleResult(CommandResult result) {
-			}
-
-			@Override
-			public boolean apply(InteractionGraph graph) {
-				Map<Node, Cluster> moveToLifelines = new HashMap<>();
-				if (isChangingOwner) {
-					moveToLifelines.put(msgEndNode, toMsgEndOwnerCluster);
-					// Flatting ExecSpec in any case. Only relevant when isRecEvent and changing lifeline.
-					if (source.getConnectedNode() != null && source.getConnectedNode().getElement() instanceof ExecutionSpecification) {
-						Cluster c = (Cluster)source.getConnectedNode();
-						moveToLifelines.put(c, toMsgEndOwnerCluster);
-						c.getAllNodes().forEach(d -> moveToLifelines.put(d, toMsgEndOwnerCluster));
-					}
-				}
-				
-				List<Link> previousSelfLinks = new ArrayList<>(nodes.stream().map(Node::getConnectedByLink).filter(Predicate.isEqual(null).negate()).
-					filter(NodeUtilities::isSelfLink).collect(Collectors.toSet()));
-				
-				ClusterImpl finishingBlock = null;
-				if (!isRecvEvent && NodeUtilities.isFinishNode(msgEndNode)){
-					finishingBlock = (ClusterImpl)msgEndNode.getParent();
-				}
-				
-				((InteractionGraphImpl)graph).moveNodeBlock(nodes, totalArea.y, moveToLifelines);
-
-				if (finishingBlock != null) {
-					if (finishingBlock != msgEndNode.getParent() && finishingBlock.getParent() != msgEndNode.getParent()) {
-						// TODO: @etxacam Make a it a constrain when providing command instead...
-						// The finish mark end up in a different parent OR IMPLEMENT IT!				
-						return false;
-					}
-					
-					if (finishingBlock.getParent() == msgEndNode.getParent()) {
-						// Re-add node to the block
-						ClusterImpl parent = (ClusterImpl)finishingBlock.getParent();
-						int clIndex = parent.getNodes().indexOf(finishingBlock);
-						int index = parent.getNodes().indexOf(msgEndNode);
-						
-						for (int i= clIndex+1; i<=index; i++) {
-							NodeImpl n = parent.removeNode(clIndex+1);
-							finishingBlock.addNode(n);
-						}
-					}
-					graph.layout();
-				}
-				
-				// Re-target reply msg.
-				if (otherLink != null) {
-					Node otherEndNode = isRecvEvent ? otherLink.getSource() : otherLink.getTarget();
-					List<Node> otherNodes = Arrays.asList(otherEndNode);
-					Rectangle otherTotalArea = NodeUtilities.getArea(otherNodes);
-					Map<Node, Cluster> otherMoveToLifelines = new HashMap<>();
-					otherMoveToLifelines.put(otherEndNode, toMsgEndOwnerCluster);					
-					boolean selfMsg = NodeUtilities.getLifelineNode(isRecvEvent ? otherLink.getTarget() : otherLink.getSource()) == toMsgEndOwnerCluster;
-					((InteractionGraphImpl)graph).moveNodeBlock(otherNodes, otherTotalArea.y + (selfMsg ? gridSpacing : 0), otherMoveToLifelines);		
-					
-					// Check if both ends has the same parent???
-					if (msgEndNode.getParent() != otherEndNode.getParent()) {
-						// TODO: @etxacam Make a it a constrain when providing command instead...
-						// We undo as one of the ends has a different parent.
-						return false;
-					}
-					
-					if (previousSelfLinks.contains(link))
-						previousSelfLinks.add(otherLink);
-					
-				}
-				
-				// Nudge & "unnudge" self messages ends.
-				List<Link> selfLinks = new ArrayList<>(nodes.stream().map(Node::getConnectedByLink).filter(Predicate.isEqual(null).negate()).
-						filter(NodeUtilities::isSelfLink).collect(Collectors.toSet()));
-				((InteractionGraphImpl)graph).disableLayout();
-				try {
-					((InteractionGraphImpl)graph).reArrangeSelfMessages(previousSelfLinks, selfLinks);
-				} finally {
-					((InteractionGraphImpl)graph).enableLayout();					
-					((InteractionGraphImpl)graph).layout();
-				}
-				
-				return true;
-			}
-		});
-	}
-	
 	@Override
 	public boolean canExecute() {
 		for (InteractionGraphEditAction action : actions) {
@@ -2359,9 +910,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 	private InteractionGraphImpl interactionGraph;
-	private boolean gridEnabled;
+	private InteractionGraphService interactionGraphService; 
 	private int gridSpacing;
-	private int gridSpacing_40;
-	private int gridSpacing_60;
 	private List<InteractionGraphEditAction> actions = new ArrayList<>();
 }
