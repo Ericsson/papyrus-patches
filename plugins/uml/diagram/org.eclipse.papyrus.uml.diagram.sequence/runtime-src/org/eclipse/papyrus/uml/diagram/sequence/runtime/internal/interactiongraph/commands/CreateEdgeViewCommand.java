@@ -14,6 +14,8 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
+import java.util.Map;
+
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -27,6 +29,8 @@ import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewRequest.ViewDescrip
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
+import org.eclipse.gmf.runtime.notation.NotationPackage;
+import org.eclipse.gmf.runtime.notation.StringValueStyle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.infra.gmfdiag.common.commands.CreateViewCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
@@ -58,6 +62,17 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 		this.targetAnchor = targetAnchor;
 	}
 
+	public CreateEdgeViewCommand(TransactionalEditingDomain editingDomain, Link interactionGraphLink, ViewDescriptor viewDescriptor, View containerView, 
+			Node source, Point sourceAnchor, Node target, Point targetAnchor, Map<String,Object> styles) {
+		super(editingDomain, viewDescriptor, containerView);
+		this.interactionGraphNode = (LinkImpl)interactionGraphLink;
+		this.source = source;
+		this.sourceAnchor = sourceAnchor;
+		this.target = target;
+		this.targetAnchor = targetAnchor;
+		this.styles = styles;
+	}
+
 	@Override
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		CommandResult res = super.doExecuteWithResult(monitor, info);
@@ -70,7 +85,18 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 			
 			edge.setTarget(target.getView());
 			edge.setTargetAnchor(createAnchor(source, target, targetAnchor, false));			
+
+			if (styles != null) {
+				for (Map.Entry<String,Object> style : styles.entrySet()) {
+					if (!(style.getValue() instanceof String))
+						continue;
+					StringValueStyle s = (StringValueStyle)edge.createStyle(NotationPackage.Literals.STRING_VALUE_STYLE);
+					s.setName(style.getKey());
+					s.setStringValue((String)style.getValue());
+				}				
+			}
 		}
+		
 		return res;
 	}
 
@@ -95,4 +121,5 @@ public class CreateEdgeViewCommand extends CreateViewCommand {
 	private Point sourceAnchor;
 	private Node target;
 	private Point targetAnchor;
+	private Map<String,Object> styles;
 }

@@ -17,9 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -409,7 +407,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 					opposite = gate.getConnectedNode();
 				}
 
-				Rectangle r = opposite.getBounds();
+				Rectangle r = (opposite == null ? gate.getBounds() : opposite.getBounds());
 				// Force gate to fall in left or right side				
 				if (r != null) {
 					ColumnImpl col;
@@ -435,7 +433,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 						}
 					}
 					col.addNode((NodeImpl)gate);						
-				}
+				} 
 				
 			}
 		}
@@ -655,6 +653,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return node;
 	}
 
+	@Override
+	public NodeImpl getGate(InteractionFragment interaction, Gate gate) {
+		if (interaction instanceof Interaction) {
+			return getGate((Interaction)interaction, gate);
+		} else if (interaction instanceof InteractionUse) {
+			return getGate((InteractionUse)interaction, gate);
+		}
+		throw new IllegalArgumentException("InteractionFragment type cannot have gates.");
+	}
+
 	public NodeImpl getGate(Gate gate) {
 		return (NodeImpl)NodeUtilities.flatten(this).stream().filter(d -> d.getElement() == gate).findFirst().orElse(null);
 	}
@@ -674,6 +682,16 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return (NodeImpl)intUseCluster.getOuterGates().stream().filter(d -> d.getElement() == gate).findFirst().orElse(null);
 	}
 
+	@Override
+	public NodeImpl addGate(InteractionFragment interaction, Gate gate, Node insertBefore) {
+		if (interaction instanceof Interaction) {
+			return addGate((Interaction)interaction, gate, insertBefore);
+		} else if (interaction instanceof InteractionUse) {
+			return addGate((InteractionUse)interaction, gate, insertBefore);
+		}
+		throw new IllegalArgumentException("InteractionFragment type cannot have gates.");
+	}
+	
 	@Override
 	public NodeImpl addGate(Interaction interaction, Gate gate, Node insertBefore) {
 		if (interaction != getInteraction())
@@ -743,6 +761,9 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			link.setInteractionGraph(this);
 			addMessage(link, null);
 			builder.nodeCache.put(msg, link);			
+		} else {
+			link.setSource(sendNode);
+			link.setTarget(recvNode);					
 		}
 		
 		sendNode.connectNode(recvNode,link);

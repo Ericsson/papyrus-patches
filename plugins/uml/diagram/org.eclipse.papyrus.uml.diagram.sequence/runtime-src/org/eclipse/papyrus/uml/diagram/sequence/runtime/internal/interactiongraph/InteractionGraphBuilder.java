@@ -28,6 +28,8 @@ import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
+import org.eclipse.gmf.runtime.notation.NotationPackage;
+import org.eclipse.gmf.runtime.notation.StringValueStyle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
@@ -287,9 +289,16 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		link.setSource(sendNode);
 		link.setTarget(recvNode);		
 		graph.addMessage(link, null);
-		link.setEdge((Edge)ViewUtilities.getViewForElement(graph.getDiagram(), element));		
+		Edge edge = (Edge)ViewUtilities.getViewForElement(graph.getDiagram(), element);
+		StringValueStyle synchTypeStyle = (StringValueStyle)edge.getNamedStyle(
+				NotationPackage.Literals.STRING_VALUE_STYLE, LinkImpl.SYNCH_TYPE_PROPERTY);
+		if (synchTypeStyle != null)
+			link.setProperty(LinkImpl.SYNCH_TYPE_PROPERTY, synchTypeStyle.getStringValue());
+		link.setEdge(edge);		
 		sendNode.connectNode(isExecutionSpecification ? recvNode.getParent() : recvNode, link);
 		nodeCache.put(element, link);
+		
+		
 		return sendNode; // return not null to avoid continue case processing
 	}
 
@@ -314,9 +323,5 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 
 	private void cache(EObject obj, GraphItem n) {
 		nodeCache.put(obj, n);
-	}
-
-	private RowImpl getRowFor(NodeImpl node) {
-		return node != null ? node.getRow() : null;
 	}
 }

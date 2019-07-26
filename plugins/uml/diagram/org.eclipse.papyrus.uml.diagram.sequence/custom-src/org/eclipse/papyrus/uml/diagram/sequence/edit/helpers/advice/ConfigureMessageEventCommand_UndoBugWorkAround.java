@@ -343,7 +343,7 @@ public class ConfigureMessageEventCommand_UndoBugWorkAround extends ConfigureEle
 	 * {@inheritDoc}
 	 *
 	 * @see org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand#doUndo(org.eclipse.core.runtime.IProgressMonitor, org.eclipse.core.runtime.IAdaptable)
-	 */
+	 *//*
 	@Override
 	protected IStatus doUndo(final IProgressMonitor monitor, final IAdaptable info) throws ExecutionException {
 		final Message message = (Message) request.getElementToConfigure();
@@ -422,12 +422,13 @@ public class ConfigureMessageEventCommand_UndoBugWorkAround extends ConfigureEle
 		setResult(new CommandResult(Status.OK_STATUS));
 		return Status.OK_STATUS;
 	}
-
+*/
 	/**
 	 * {@inheritDoc}
 	 *
 	 * @see org.eclipse.gmf.runtime.emf.commands.core.command.AbstractTransactionalCommand#doRedo(org.eclipse.core.runtime.IProgressMonitor, org.eclipse.core.runtime.IAdaptable)
 	 */
+	/*
 	@Override
 	protected IStatus doRedo(final IProgressMonitor monitor, final IAdaptable info) throws ExecutionException {
 		// Only re-execute the initial process
@@ -436,7 +437,7 @@ public class ConfigureMessageEventCommand_UndoBugWorkAround extends ConfigureEle
 		setResult(result);
 		return result.getStatus();
 	}
-
+*/
 	/**
 	 * This allows to create the destroy receive event.
 	 *

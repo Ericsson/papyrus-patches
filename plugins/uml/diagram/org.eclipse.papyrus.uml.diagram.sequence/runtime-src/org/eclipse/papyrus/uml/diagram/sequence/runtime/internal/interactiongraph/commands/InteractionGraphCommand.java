@@ -65,6 +65,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractio
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionUseEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.LifelineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
+import org.eclipse.papyrus.uml.diagram.sequence.providers.SequenceDiagramElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
@@ -73,6 +74,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphService;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.LinkImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeOrderResolver;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
@@ -124,7 +126,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	private void init(InteractionGraphImpl interactionGraph) {
 		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
 		this.gridSpacing = this.interactionGraph.getGridSpacing();
-		this.interactionGraphService = new InteractionGraphService(this.interactionGraph);
+		this.interactionGraphService = new InteractionGraphService(this.interactionGraph,getEditingDomain());
 	}
 	
 	public InteractionGraphEditActionBuilder addAction() {
@@ -136,7 +138,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addLifeline(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
 		addAction()
 			.prepare(()->interactionGraphService.canAddLifeline(elementAdapter, rect))
-			.apply(()->{return interactionGraphService.addLifeline(getEditingDomain(), rect);})
+			.apply(()->{return interactionGraphService.addLifeline(rect);})
 			.handleResult(
 				(CommandResult r,Cluster cluster) -> {
 					elementAdapter.setNewElement(cluster.getElement());
@@ -175,10 +177,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
 		addAction().
-			prepare(() -> interactionGraphService.canAddMessage(getEditingDomain(), msgSort, elementAdapter, 
-					descriptor, source, srcAnchor, target, trgAnchor)).		
-			apply(()->interactionGraphService.addMessage(getEditingDomain(), msgSort, 
-						elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
+			prepare(() -> interactionGraphService.canAddMessage(msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).		
+			apply(()->interactionGraphService.addMessage(msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
 			handleResult(
 				(CommandResult r, Link message) -> {				
 					elementAdapter.setNewElement(message.getElement());
@@ -220,6 +220,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 	
+	public void moveMessageEnd(MessageEnd msgEnd, InteractionFragment intFragment, Point location) {		
+		addAction().
+			prepare(()->interactionGraphService.canMoveMessageEnd(msgEnd, intFragment, location)).
+			apply(()->interactionGraphService.moveMessageEnd(msgEnd, intFragment, location));
+	}
+
 	public void nudgeGate(Gate gate, Point location) {		
 		addAction().
 			prepare(() -> interactionGraphService.canNudgeGate(gate, location)).
@@ -266,7 +272,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addInteractionUse(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
 		addAction().
 			prepare(() -> interactionGraphService.canAddInteractionUse(elementAdapter, descriptor, rect)).
-			apply(() -> interactionGraphService.addInteractionUse(getEditingDomain(), elementAdapter, descriptor, rect)).
+			apply(() -> interactionGraphService.addInteractionUse(elementAdapter, descriptor, rect)).
 			handleResult((ClusterImpl cluster) -> {
 				elementAdapter.setNewElement(cluster.getElement());
 				descriptor.setView(cluster.getView());
@@ -357,6 +363,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		calculateInteractionUseEditingCommand(editingDomain, command);
 		calculateExecutionSpecificationEditingCommand(editingDomain, command);
 		calculateMessagesChanges(editingDomain, command);
+		calculateRemoveMessagesChanges(editingDomain, command);
 		calculateFragmentsChanges(editingDomain, command);
 		calculateGateChanges(editingDomain, command);
 
@@ -417,7 +424,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand createLifelinesEditingCommand(TransactionalEditingDomain editingDomain, Lifeline lifeline) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create Lifeline");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create Lifeline " + lifeline.getName());
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain,
 				interactionGraph.getInteraction(), UMLElementTypes.Lifeline_Shape);
 		cmd.add(new CreateNodeElementCommand(createReq, lifeline));
@@ -433,7 +440,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand deleteLifelinesEditingCommand(TransactionalEditingDomain editingDomain, Lifeline lifeline) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline " + lifeline.getName());
 		cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), lifeline)));
 		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, lifeline, false)));
 		return cmd;
@@ -460,7 +467,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 	private ICommand createInteractionUseEditingCommand(TransactionalEditingDomain editingDomain, InteractionUse interactionUse) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create ExecutionSpecification");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create ExecutionSpecification " + interactionUse.getName());
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
 				UMLElementTypes.InteractionUse_Shape);
 		cmd.add(new CreateNodeElementCommand(createReq, interactionUse));
@@ -479,7 +486,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand deleteInteractionUseEditingCommand(TransactionalEditingDomain editingDomain, InteractionUse interactionUse) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete InteractionUse " + interactionUse.getName());
 		cmd.add(new DeleteCommand(editingDomain, interactionGraph.getClusterFor(interactionUse).getView()));
 		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, interactionUse, false)));
 		return cmd;
@@ -552,7 +559,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand createExecutionSpecificationEditingCommand(TransactionalEditingDomain editingDomain, ExecutionSpecification executionSpecification) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create ExecutionSpecification");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create ExecutionSpecification " + executionSpecification.getName());
 		boolean isActionExecSpec = executionSpecification instanceof ActionExecutionSpecification; 
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
 				isActionExecSpec ? UMLElementTypes.ActionExecutionSpecification_Shape : 
@@ -580,7 +587,14 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	private ICommand deleteExecutionSpecificationEditingCommand(TransactionalEditingDomain editingDomain, ExecutionSpecification executionSpecification) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Lifeline");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete ExecutionSpecification " + executionSpecification.getName());
+		
+		View view = interactionGraph.getNodeFor(executionSpecification).getView();
+		cmd.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+				editingDomain, view, NotationPackage.Literals.VIEW__SOURCE_EDGES, SetCommand.UNSET_VALUE)));					
+		cmd.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+				editingDomain, view, NotationPackage.Literals.VIEW__TARGET_EDGES, SetCommand.UNSET_VALUE)));					
+
 		cmd.add(new DeleteCommand(editingDomain, interactionGraph.getNodeFor(executionSpecification).getView()));
 		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, executionSpecification, false)));
 		return cmd;
@@ -618,40 +632,52 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				.map(Message.class::cast).collect(Collectors.toList());
 		
 		Function<Message, IUndoableOperation> addCommandFunction = (d) -> createMessageEditingCommand(editingDomain, d);
-		Function<Message, IUndoableOperation> removeCommandFunction = (d) -> deleteMessageEditingCommand(editingDomain, d);
 
 		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
 				UMLPackage.Literals.INTERACTION__MESSAGE, messages, graphMessages, addCommandFunction,
-				removeCommandFunction, false, false);		
-		
+				null, false, false);		
+
 		EditPartViewer viewer = interactionGraph.getEditPartViewer();
 		for (Link lk : interactionGraph.getMessageLinks()) {
 			Message msg = (Message)lk.getElement();
 			if (lk.getSource() == null) {
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, SetCommand.UNSET_VALUE)));				
-			} else if (msg.getSendEvent() != lk.getSource().getElement()) {
+						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, SetCommand.UNSET_VALUE)));
+			} else {
+				MessageEnd msgEnd = (MessageEnd)lk.getSource().getElement();
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, lk.getSource().getElement())));
+						editingDomain, msg, UMLPackage.Literals.MESSAGE__SEND_EVENT, msgEnd)));
+				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, msgEnd, UMLPackage.Literals.MESSAGE_END__MESSAGE, lk.getElement())));
+				if (msg.getSendEvent() != lk.getSource().getElement()) {			
+					command.add(createMessageEndEditingCommand(editingDomain, lk.getSource(), msgEnd));
+					command.add(deleteMessageEndEditingCommand(editingDomain, msg.getSendEvent()));
+				}
 			}
 
 			if (lk.getTarget() == null) {
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, SetCommand.UNSET_VALUE)));
-			} else if (msg.getReceiveEvent() != lk.getTarget().getElement()) {
+			} else { 
+				MessageEnd msgEnd = (MessageEnd)lk.getTarget().getElement();
 				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
-						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, lk.getTarget().getElement())));
+						editingDomain, msg, UMLPackage.Literals.MESSAGE__RECEIVE_EVENT, msgEnd)));
+				command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, msgEnd, UMLPackage.Literals.MESSAGE_END__MESSAGE, lk.getElement())));
+				if (msg.getReceiveEvent() != lk.getTarget().getElement()) {			
+					command.add(createMessageEndEditingCommand(editingDomain, lk.getTarget(), msgEnd));
+					command.add(deleteMessageEndEditingCommand(editingDomain, msg.getReceiveEvent()));
+				}
 			}
 			
 			Edge edge = lk.getEdge();
 			if (edge != null) {
-				View srcView = null;
 				Point srcAnchorPoint = null;
 				if (lk.getSource() != null) {
 					srcAnchorPoint = lk.getSource().getBounds().getCenter();
-					srcView = lk.getSourceAnchoringNode().getView();
+					Node srcNode = lk.getSourceAnchoringNode();
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.SOURCE, 
-							srcView, srcAnchorPoint, "Set Source Link Anchor", null));
+							srcNode, srcAnchorPoint, "Set Source Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE, SetCommand.UNSET_VALUE)));					
@@ -659,18 +685,17 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__SOURCE_ANCHOR, SetCommand.UNSET_VALUE)));					
 				}
 			
-				View trgView = null;
 				Point trgAnchorPoint = null;
 				boolean isSelfLink = NodeUtilities.isSelfLink(lk);
 				if (lk.getTarget() != null) {
 					trgAnchorPoint = lk.getTarget().getBounds().getCenter();
-					trgView = lk.getTargetAnchoringNode().getView();
+					Node trgNode = lk.getTargetAnchoringNode();
 					
 					if (isSelfLink && (trgAnchorPoint.y - srcAnchorPoint.y) < gridSpacing)
 						trgAnchorPoint.y = srcAnchorPoint.y + gridSpacing;
 					
 					command.add(new SetLinkViewAnchorCommand(editingDomain, lk, SetLinkViewAnchorCommand.Anchor.TARGET, 
-							trgView, trgAnchorPoint, "Set Target Link Anchor", null));
+							trgNode, trgAnchorPoint, "Set Target Link Anchor", null));
 				} else {
 					command.add(new EMFCommandOperation(editingDomain, SetCommand.create(
 							editingDomain, lk.getEdge(), NotationPackage.Literals.EDGE__TARGET, SetCommand.UNSET_VALUE)));					
@@ -709,11 +734,24 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			}
 		}
 	}	
-	
+
+	private void calculateRemoveMessagesChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
+		List<Message> messages = interactionGraph.getInteraction().getMessages();
+		List<Message> graphMessages = interactionGraph.getMessageLinks().stream().map(Link::getElement)
+				.map(Message.class::cast).collect(Collectors.toList());
+		
+		Function<Message, IUndoableOperation> removeCommandFunction = (d) -> deleteMessageEditingCommand(editingDomain, d);
+
+		createCommandsForCollectionChanges(command, interactionGraph.getInteraction(),
+				UMLPackage.Literals.INTERACTION__MESSAGE, messages, graphMessages, null,
+				removeCommandFunction, false, false);		
+		
+	}	
+
 	private ICommand createMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
 		// MessageOcurrenceSpecifications are created by the MessageEditHelper
 		Link link = interactionGraph.getLinkFor(message);
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create Message");
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create Message " + message.getName());
 		// TODO: @etxacam Check the message to get the Element Type 
 		IElementType type = UMLElementTypes.Message_AsynchEdge;
 		switch (message.getMessageSort()) {
@@ -721,7 +759,11 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			case ASYNCH_SIGNAL_LITERAL:
 				type = UMLElementTypes.Message_AsynchEdge; break;
 			case SYNCH_CALL_LITERAL:
-				type = UMLElementTypes.Message_SynchEdge; break;
+				if (LinkImpl.SYNCH_TYPE_ACTION.equals(link.getProperty(LinkImpl.SYNCH_TYPE_PROPERTY)))
+					type = SequenceDiagramElementTypes.Message_SynchActionEdge; 
+				else
+					type = SequenceDiagramElementTypes.Message_SynchBehaviorEdge;
+				break;
 			case CREATE_MESSAGE_LITERAL:
 				type = UMLElementTypes.Message_CreateEdge; break;
 			case DELETE_MESSAGE_LITERAL:
@@ -731,42 +773,12 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 
 		MessageEnd sendEvent = message.getSendEvent();
-		if (sendEvent instanceof MessageOccurrenceSpecification) {
-			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
-					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.MESSAGE_OCCURRENCE_SPECIFICATION), 
-					sendEvent));
-		} else if (sendEvent instanceof Gate) {
-			Element gateOwner = link.getSource().getParent().getElement();
-			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, gateOwner, 
-					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.GATE), 
-					sendEvent));		
-			cmd.add(new CreateNodeViewCommand(editingDomain, link.getSource(),
-					new ViewDescriptor(
-							new SemanticElementAdapter(sendEvent,UMLElementTypes.getElementType(GateEditPart.VISUAL_ID)),
-							org.eclipse.gmf.runtime.notation.Node.class, GateEditPart.VISUAL_ID,
-							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
-							link.getSource().getParent().getView()));			
-		}
+		Node sendMsgEnd = link.getSource();
+		cmd.add(createMessageEndEditingCommand(editingDomain, sendMsgEnd, sendEvent));
 		
 		MessageEnd receiveEvent = message.getReceiveEvent();
-		if (receiveEvent instanceof MessageOccurrenceSpecification) {
-			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
-					receiveEvent instanceof DestructionOccurrenceSpecification ? 
-						UMLElementTypes.DestructionOccurrenceSpecification_Shape : 	
-						org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.MESSAGE_OCCURRENCE_SPECIFICATION), 
-					receiveEvent));
-		} else if (receiveEvent instanceof Gate) {
-			Element gateOwner = link.getTarget().getParent().getElement();
-			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, gateOwner, 
-					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.GATE), 
-					receiveEvent));	
-			cmd.add(new CreateNodeViewCommand(editingDomain, link.getTarget(),
-					new ViewDescriptor(
-							new SemanticElementAdapter(receiveEvent,UMLElementTypes.getElementType(GateEditPart.VISUAL_ID)),
-							org.eclipse.gmf.runtime.notation.Node.class, GateEditPart.VISUAL_ID,
-							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
-							link.getTarget().getParent().getView()));
-		}
+		Node recvMsgEnd = link.getTarget();
+		cmd.add(createMessageEndEditingCommand(editingDomain, recvMsgEnd, receiveEvent));
 		
 		final CreateElementRequest createReq = new CreateElementRequest(editingDomain,
 				interactionGraph.getInteraction(), type);
@@ -794,21 +806,13 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
 						interactionGraph.getDiagram(), 
 						link.getSourceAnchoringNode(), link.getSourceLocation(), 
-						link.getTargetAnchoringNode(), link.getTargetLocation()));
+						link.getTargetAnchoringNode(), link.getTargetLocation(),
+						link.getProperties()));
 		return cmd;
-	}
-
-	private void calculateGateChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
-		// Interaction Gates
-		List<Node> allGates = NodeUtilities.flatten(interactionGraph).stream().flatMap(d->d.getAllGates().stream()).
-				collect(Collectors.toList());
-		
-		updateBoundsChanges(command, allGates, false);
-		
 	}
 	
 	private ICommand deleteMessageEditingCommand(TransactionalEditingDomain editingDomain, Message message) {
-		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Message");		
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete Message " + message.getName());		
 		cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message)));
 		if (message.getSendEvent() instanceof Gate) {
 			cmd.add(new DeleteCommand(editingDomain, ViewUtilities.getViewForElement(interactionGraph.getDiagram(), message.getSendEvent())));			
@@ -866,6 +870,55 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		}
 	}
 
+	private ICommand createMessageEndEditingCommand(TransactionalEditingDomain editingDomain, Node msgEndNode, MessageEnd msgEnd) {
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Create MessageEnd " + msgEnd.getName());
+
+		if (msgEnd instanceof MessageOccurrenceSpecification) {
+			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, interactionGraph.getInteraction(), 
+					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.MESSAGE_OCCURRENCE_SPECIFICATION), 
+					msgEnd));
+		} else if (msgEnd instanceof Gate) {
+			Element gateOwner = msgEndNode.getParent().getElement();
+			cmd.add(new CreateNodeElementCommand(new CreateElementRequest(editingDomain, gateOwner, 
+					org.eclipse.papyrus.uml.service.types.element.UMLElementTypes.GATE), 
+					msgEnd));		
+			cmd.add(new CreateNodeViewCommand(editingDomain, msgEndNode,
+					new ViewDescriptor(
+							new SemanticElementAdapter(msgEnd,UMLElementTypes.getElementType(GateEditPart.VISUAL_ID)),
+							org.eclipse.gmf.runtime.notation.Node.class, GateEditPart.VISUAL_ID,
+							((GraphicalEditPart) interactionGraph.getEditPart()).getDiagramPreferencesHint()),
+							msgEndNode.getParent().getView()));			
+		}
+		return cmd;
+	}
+	
+	private ICommand deleteMessageEndEditingCommand(TransactionalEditingDomain editingDomain, MessageEnd msgEnd) {
+		ICompositeCommand cmd = new CompositeTransactionalCommand(editingDomain, "Delete MessageEnd " + msgEnd.getName());
+		cmd.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+				editingDomain, msgEnd, UMLPackage.Literals.MESSAGE_END__MESSAGE, SetCommand.UNSET_VALUE)));					
+		if (msgEnd instanceof Gate) {
+			View gateView = ViewUtilities.getViewForElement(interactionGraph.getDiagram(), msgEnd);
+			if (gateView != null) {
+				cmd.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, gateView, NotationPackage.Literals.VIEW__SOURCE_EDGES, SetCommand.UNSET_VALUE)));								
+				cmd.add(new EMFCommandOperation(editingDomain, SetCommand.create(
+						editingDomain, gateView, NotationPackage.Literals.VIEW__TARGET_EDGES, SetCommand.UNSET_VALUE)));								
+				cmd.add(new DeleteCommand(editingDomain, gateView));
+			}
+		}
+		cmd.add(new DestroyElementCommand(new DestroyElementRequest(editingDomain, msgEnd, false)));
+		return cmd;
+	}
+
+	private void calculateGateChanges(TransactionalEditingDomain editingDomain, ICompositeCommand command) {
+		// Interaction Gates
+		List<Node> allGates = NodeUtilities.flatten(interactionGraph).stream().flatMap(d->d.getAllGates().stream()).
+				collect(Collectors.toList());
+		
+		updateBoundsChanges(command, allGates, false);
+		
+	}
+	
 	private <T extends EObject> void createCommandsForCollectionChanges(ICompositeCommand cmd, EObject container,
 			EStructuralFeature feature, List<T> oldList, List<T> newList, Function<T, IUndoableOperation> addCommand,
 			Function<T, IUndoableOperation> removeCommand) {

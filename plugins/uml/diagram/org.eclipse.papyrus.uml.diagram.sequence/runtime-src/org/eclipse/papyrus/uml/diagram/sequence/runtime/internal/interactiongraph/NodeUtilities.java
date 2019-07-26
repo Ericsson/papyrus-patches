@@ -46,7 +46,6 @@ import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Gate;
-import org.eclipse.uml2.uml.InteractionUse;
 import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -283,6 +282,21 @@ public class NodeUtilities {
 		int max = allNodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
 		otherNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i< min || i > max);});
 		return otherNodes;
+	}
+
+	public static final List<List<Link>> getBlocksMessageLinks(List<Node> sources) {
+		List<List<Node>> blocks = getBlocks(sources);
+		return blocks.stream().map(d->NodeUtilities.getMessageLinks(d)).collect(Collectors.toList());
+	}
+
+	public static final List<Link> getBlockMessageLinks(Node node) {
+		List<Node> block = getBlock(node);
+		return getMessageLinks(block);
+	}
+
+	public static final List<Link> getMessageLinks(List<Node> nodes) {
+		return new ArrayList<Link>(NodeUtilities.flattenKeepClusters(nodes).stream().map(Node::getConnectedByLink).
+				filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet()));		
 	}
 	
 	public static int getLinkSlope(Link lnk) {
@@ -1095,6 +1109,26 @@ public class NodeUtilities {
 		return n;
 	}
 
+	public static Node getPrevNode(Cluster cluster, Node n) {
+		Node prev = null;
+		for (Node child : cluster.getAllNodes()) {
+			if (child == n)
+				return prev;
+			prev = child;
+		}		
+		return null;
+	}
+
+	public static Node getNextNode(Cluster cluster, Node n) {
+		Node prev = null;
+		for (Node child : cluster.getAllNodes()) {
+			if (prev == n)
+				return child;
+			prev = child;
+		}		
+		return null;
+	}
+	
 	public static Node getNextVerticalNode(Cluster cluster, int y) {
 		Node n = null;
 		for (Node child : cluster.getAllNodes()) {

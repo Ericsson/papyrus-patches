@@ -29,8 +29,10 @@ public class GateNodeLayout implements InteractionNodeLayout {
 		RowImpl row = node.row;
 
 		Rectangle r = new Rectangle();
-		r.x = column.getXPosition();
-		r.y = row.getYPosition();
+		if (column != null)
+			r.x = column.getXPosition();
+		if (row != null)
+			r.y = row.getYPosition();
 		r.width = 0;
 		r.height = 0;
 		node.setBounds(r);

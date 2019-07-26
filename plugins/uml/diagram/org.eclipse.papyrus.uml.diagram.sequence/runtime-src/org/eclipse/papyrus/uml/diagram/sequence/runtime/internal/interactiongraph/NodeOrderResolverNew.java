@@ -216,7 +216,7 @@ public class NodeOrderResolverNew {
 				} else if (impl.bounds != null) {
 					// TODO consider the x position and the y tolerance
 					final NodeImpl _impl = impl; 
-					Node nextNode = nodes.stream().filter(d -> d.getBounds().y > _impl.bounds.y).findFirst().get();
+					Node nextNode = nodes.stream().filter(d -> d.getBounds().y > _impl.bounds.y).findFirst().orElse(null);
 					if (nextNode == null)
 						nodes.add(impl);
 				} else {
@@ -233,7 +233,7 @@ public class NodeOrderResolverNew {
 				} else if (impl.bounds != null) {
 					// TODO consider the x position and the y tolerance
 					final NodeImpl _impl = impl; 
-					Node nextNode = nodes.stream().filter(d -> d.getBounds().y > _impl.bounds.y).findFirst().get();
+					Node nextNode = nodes.stream().filter(d -> d.getBounds().y > _impl.bounds.y).findFirst().orElse(null);
 					if (nextNode == null)
 						nodes.add(impl);
 				} else {

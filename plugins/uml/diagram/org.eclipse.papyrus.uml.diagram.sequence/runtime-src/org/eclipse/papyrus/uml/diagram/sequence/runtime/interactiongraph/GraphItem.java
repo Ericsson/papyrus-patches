@@ -15,6 +15,8 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
+import java.util.Map;
+
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Location;
 import org.eclipse.gmf.runtime.notation.View;
@@ -56,4 +58,9 @@ public interface GraphItem {
 	 * @return a {@link View}
 	 */
 	public GraphicalEditPart getEditPart();
+
+	public Object getProperty(String name);
+	public void setProperty(String name, Object value);
+	public Map<String,Object> getProperties();
+
 }

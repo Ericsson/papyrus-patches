@@ -385,7 +385,8 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 		if (element instanceof Lifeline) {
 			Lifeline newLifeline = (Lifeline)element;
 			if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-				cmd.moveMessageEnd(messageEnd, newLifeline, p);		
+				//cmd.moveMessageOcurrenceSpecification(messageEnd, newLifeline, p);
+				cmd.moveMessageEnd(messageEnd, newLifeline, p);
 			} else {
 				if (!(messageEnd instanceof MessageOccurrenceSpecification))
 					return UnexecutableCommand.INSTANCE;
@@ -397,12 +398,13 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 			}
 		} else {
 			InteractionFragment intFragment = (InteractionFragment)element;
-			if (!(messageEnd instanceof Gate))
-				return UnexecutableCommand.INSTANCE;
-			Gate gate = (Gate)messageEnd;			
 			if (KeyboardHandler.getKeyboardHandler().isAnyPressed() ) {
-				cmd.moveGate(gate, intFragment, p);		
+				cmd.moveMessageEnd(messageEnd, intFragment, p);		
 			} else {
+				if (!(messageEnd instanceof Gate)) {
+					return UnexecutableCommand.INSTANCE; // Can not nudge from gate till mos.			
+				}
+				Gate gate = (Gate)messageEnd;			
 				if (gate.getOwner() != intFragment)
 					return UnexecutableCommand.INSTANCE;
 					

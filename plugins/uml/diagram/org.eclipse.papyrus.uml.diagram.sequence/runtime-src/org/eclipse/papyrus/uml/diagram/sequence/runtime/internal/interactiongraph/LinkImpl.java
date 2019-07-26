@@ -25,6 +25,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Gate;
+import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.NamedElement;
 
 /**
@@ -32,8 +33,12 @@ import org.eclipse.uml2.uml.NamedElement;
  *
  */
 public class LinkImpl extends GraphItemImpl implements Link {
+	public static final String SYNCH_TYPE_PROPERTY = "Synch_Type";
+	public static final String SYNCH_TYPE_ACTION = "action";
+	public static final String SYNCH_TYPE_BEHAVIOR = "behavior";
+	
 	public LinkImpl(Element element) {
-		this.element = element;
+		this.element = (Message)element;
 	}
 
 	@Override
@@ -45,12 +50,12 @@ public class LinkImpl extends GraphItemImpl implements Link {
 		this.graph = graph;
 	}
 
-	public Element getElement() {
+	public Message getElement() {
 		return element;
 	}
 
 	void setElement(Element element) {
-		this.element = element;
+		this.element = (Message)element;
 	}
 	
 	public NodeImpl getSource() {
@@ -167,7 +172,7 @@ public class LinkImpl extends GraphItemImpl implements Link {
 	}
 	
 	private InteractionGraphImpl graph;
-	private  Element element;
+	private  Message element;
 	protected NodeImpl source;
 	protected NodeImpl target;
 	protected Edge edge;

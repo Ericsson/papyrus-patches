@@ -29,7 +29,6 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.IdentityAnchor;
 import org.eclipse.gmf.runtime.notation.NotationFactory;
 import org.eclipse.gmf.runtime.notation.View;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.helpers.AnchorHelper.FixedAnchorEx;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.InteractionGraphImpl;
@@ -48,11 +47,11 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 		SOURCE, TARGET
 	}
 	
-	public SetLinkViewAnchorCommand(TransactionalEditingDomain domain, Link link, Anchor anchor, View anchoringView, Point anchoringPoint, String label, List affectedFiles) {
+	public SetLinkViewAnchorCommand(TransactionalEditingDomain domain, Link link, Anchor anchor, Node anchoringNode, Point anchoringPoint, String label, List affectedFiles) {
 		super(domain, label, affectedFiles);
 		this.graphLink = (LinkImpl) link;
 		this.anchor = anchor;
-		this.anchoringView = anchoringView;
+		this.anchoringNode = anchoringNode;
 		this.point = anchoringPoint;
 	}
 
@@ -60,6 +59,7 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 		InteractionGraphImpl graph = graphLink.getInteractionGraph();
 		Edge edge = graphLink.getEdge();
+		View anchoringView = anchoringNode.getView();
 		if (anchor == Anchor.SOURCE) {
 			if (edge.getSource() != anchoringView) {
 				edge.setSource(anchoringView);
@@ -92,6 +92,6 @@ public class SetLinkViewAnchorCommand extends AbstractTransactionalCommand
 
 	private LinkImpl graphLink;
 	private Anchor anchor;
-	private View anchoringView; 
+	private Node anchoringNode; 
 	private Point point;
 }

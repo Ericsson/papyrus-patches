@@ -18,6 +18,7 @@ import java.util.List;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeImpl;
 import org.eclipse.uml2.uml.CombinedFragment;
 import org.eclipse.uml2.uml.Comment;
 import org.eclipse.uml2.uml.Element;
@@ -201,10 +202,13 @@ public interface InteractionGraph {
 	public Node getMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos);
 	public Node addMessageOccurrenceSpecification(Lifeline lifeline, MessageOccurrenceSpecification mos, Node insertBefore);
-	public Node getGate(Interaction interaction, Gate gate);
+	public Node addGate(InteractionFragment interaction, Gate gate, Node insertBefore);	
 	public Node addGate(Interaction interaction, Gate gate, Node insertBefore);
-	public Node getGate(InteractionUse interaction, Gate gate);
 	public Node addGate(InteractionUse interaction, Gate gate, Node insertBefore);
+
+	public Node getGate(InteractionFragment interaction, Gate gate);
+	public Node getGate(Interaction interaction, Gate gate);
+	public Node getGate(InteractionUse interaction, Gate gate);
 	
 	public Link connectMessageEnds(MessageEnd send, MessageEnd recv);
 

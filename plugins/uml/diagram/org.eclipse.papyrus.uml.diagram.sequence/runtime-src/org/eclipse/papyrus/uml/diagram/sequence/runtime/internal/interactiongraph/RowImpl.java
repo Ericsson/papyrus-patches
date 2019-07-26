@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -84,10 +85,20 @@ public class RowImpl extends SlotImpl implements Row {
 		private int rank(Node n) {
 			if (n.getElement() instanceof MessageEnd) {
 				MessageEnd me = (MessageEnd) n.getElement();
-				if (me.getMessage().getSendEvent() == me) {
-					return -1;
-				} else if (me.getMessage().getReceiveEvent() == me) {
-					return 1;
+				if (me.getMessage() != null) {
+					if (me.getMessage().getSendEvent() == me) {
+						return -1;
+					} else if (me.getMessage().getReceiveEvent() == me) {
+						return 1;
+					}
+				}
+				Link lk = n.getConnectedByLink();
+				if (lk != null) {  
+					if (lk.getSource() == n) {
+						return -1;
+					} else if (lk.getTarget() == n) {
+						return 1;
+					}
 				}
 			} else if (n.getElement() instanceof ExecutionSpecification) {
 				return 2;
