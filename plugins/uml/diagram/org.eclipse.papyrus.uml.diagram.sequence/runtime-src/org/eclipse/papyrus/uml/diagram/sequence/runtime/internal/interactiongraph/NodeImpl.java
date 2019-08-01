@@ -51,13 +51,6 @@ public class NodeImpl extends GraphItemImpl implements Node {
 
 	@Override
 	public ClusterImpl getParent() {
-		if (parent instanceof InteractionGraph) {
-			if (getElement() instanceof Gate)
-				return parent; // TODO: @etxacamWe could handling in specific NodeUtilities function getGateOwner() instead.... => Check the effect in moveBlocks functions 
-			else
-				return null; // Force the lifeline parent to be null. To stop searching up... 
-		}
-
 		if (parent == this) {			
 			// Avoid infinity loops if something went really wrong.
 			// We crash instead. hopefully transaction is aborted.

@@ -325,6 +325,7 @@ public class InteractionGraphService {
 					execElemType = UMLElementTypes.BehaviorExecutionSpecification_Shape;
 				}
 				
+				target = ((MessageOccurrenceSpecification)msg.getReceiveEvent()).getCovered();
 				addExecutionSpecification(execElemType, (Lifeline)target, (MessageOccurrenceSpecification)msg.getReceiveEvent(), true);
 			} 
 			return message;
@@ -822,14 +823,10 @@ public class InteractionGraphService {
 		Node msgEndNode = interactionGraph.getNodeFor(msgEnd);
 		FragmentCluster toMsgEndOwnerCluster = (FragmentCluster)interactionGraph.getClusterFor(intFragment);
 
+		MarkNode mk = interactionGraph.setlayoutMark(location);
 		interactionGraph.disableLayout();
 		Gate gate = SemanticElementsService.createElement(editingDomain, intFragment,UMLElementTypes.Gate_Shape);
-		Node insertBefore = ((FragmentClusterImpl)toMsgEndOwnerCluster).getAllGates().stream().
-				filter(d->d.getBounds().y > location.y).findFirst().orElse(null);
-		NodeImpl gateNode = interactionGraph.addGate(intFragment, gate, insertBefore);
-		gateNode.setBounds(new Rectangle(newLoc,new Dimension(0,0)));
 		
-		int removeOffset = 0; 
 		if (NodeUtilities.isStartNode(msgEndNode)){
 			Link l = NodeUtilities.getStartLink(msgEndNode.getParent());
 			List<Node> nodes = NodeUtilities.getBlock(msgEndNode.getParent());
@@ -838,20 +835,27 @@ public class InteractionGraphService {
 			NodeUtilities.removeNodeBlock(interactionGraph, nodes);
 			links.remove(l);
 			NodeUtilities.removeMessageLinks(interactionGraph, links);
-			newLoc.translate(0, -NodeUtilities.getArea(nodes).height);
-			gateNode.setBounds(new Rectangle(newLoc,new Dimension(0,0)));			
 		} else {
 			NodeUtilities.deleteNode(interactionGraph, msgEndNode);
 		}
 
+		// TODO: Nugde if collision???		
+		interactionGraph.enableLayout();
+		interactionGraph.layout();					
+		newLoc = mk.getLocation(); 
+		interactionGraph.clearLayoutMarks();
+		
+		interactionGraph.disableLayout();
+		Node insertBefore = ((FragmentClusterImpl)toMsgEndOwnerCluster).getAllGates().stream().
+				filter(d->d.getBounds().y > location.y).findFirst().orElse(null);
+		NodeImpl gateNode = interactionGraph.addGate(intFragment, gate, insertBefore);
+		gateNode.setBounds(new Rectangle(newLoc,new Dimension(0,0)));
 		if (msg.getReceiveEvent() == msgEnd)
 			interactionGraph.connectMessageEnds(msg.getSendEvent(), gate);
 		else
 			interactionGraph.connectMessageEnds(gate, msg.getReceiveEvent());
-		// TODO: Nugde if collision???
 		interactionGraph.enableLayout();
 		interactionGraph.layout();					
-
 		
 		if (!moveMessageEndImpl(msgEnd, toGateOwnerNode, newLoc))
 			return false;
@@ -1337,7 +1341,7 @@ public class InteractionGraphService {
 			MessageEnd msgEnd = (MessageEnd)sendMessageNode.getElement();
 			Point newPos = sendMessageNode.getLocation().getCopy();
 			newPos.y = point.y;
-			if (!moveMessageEndImpl(msgEnd, NodeUtilities.getLifelineNode(sendMessageNode), newPos))
+			if (!canMoveMessageEndImpl(msgEnd, NodeUtilities.getLifelineNode(sendMessageNode), newPos))
 				return false;
 		}
 		

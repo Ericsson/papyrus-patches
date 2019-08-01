@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
@@ -34,6 +35,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Fragmen
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
@@ -129,6 +131,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		// Gates
 		l .addAll((List)NodeUtilities.flatten(this).stream().map(FragmentCluster::getAllGates).
 				flatMap(Collection::stream).collect(Collectors.toList()));
+		l.addAll(layoutMarks);
 		return l;
 	}
 	
@@ -254,6 +257,70 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		return rows.stream().flatMap(r -> r.getNodes().stream()).collect(Collectors.toList());
 	}
 	
+	public MarkNode setlayoutMark(Point pt) {
+		MarkNodeImpl mark = new MarkNodeImpl(MarkNode.Kind.layout);
+		mark.setBounds(new Rectangle(pt.x,pt.y,0,0));
+		mark.setParent(this);
+		layoutMarks.add(mark);
+		if (disabledLayout > 0) {
+			RowImpl row = (RowImpl)NodeUtilities.getRowAt(this, pt.y);
+			if (row == null) {
+				Row ra = NodeUtilities.getRowAfter(this, pt.x);
+				int index = ra != null ? rows.indexOf(ra) : rows.size();
+				row = new RowImpl(this);
+				row.setYPosition(pt.y);
+				row.setIndex(index);
+				rows.add(index,row);
+				rows.stream().filter(r->r.getIndex()>index).forEach(r->r.setIndex(r.getIndex()+1));
+			}
+			row.addNode(mark);
+			
+			ColumnImpl col = (ColumnImpl)NodeUtilities.getColumnAt(this, pt.x);
+			if (col == null) {
+				Column ca = NodeUtilities.getColumnAfter(this, pt.x);
+				int index = ca != null ? columns.indexOf(ca) : columns.size();
+				col = new ColumnImpl(this);
+				col.setXPosition(pt.x);
+				col.setIndex(index);
+				columns.add(index,col);
+				columns.stream().filter(c->c.getIndex()>index).forEach(c->c.setIndex(c.getIndex()+1));
+			}			
+			col.addNode(mark);
+			
+		} else {			
+			layout();
+		}
+		return mark;
+	}
+	
+	public boolean removeLayoutMark(MarkNode mark) {
+		if (!layoutMarks.remove(mark))
+			return false;
+		
+		RowImpl row = (RowImpl)mark.getRow();
+		ColumnImpl col = (ColumnImpl)mark.getColumn();
+		
+		row.removeNode((MarkNodeImpl)mark);
+		col.removeNode((MarkNodeImpl)mark);
+
+		if (row.getNodes().isEmpty()) {				
+			int index = rows.indexOf(row);
+			rows.remove(row);
+			rows.stream().filter(r->r.getIndex()>index).forEach(r->r.setIndex(r.getIndex()-1));
+		}
+		if (col.getNodes().isEmpty()) {				
+			int index = columns.indexOf(col);
+			columns.remove(col);
+			columns.stream().filter(c->c.getIndex()>index).forEach(c->c.setIndex(c.getIndex()-1));
+		}
+		return true;
+	}
+
+	public void clearLayoutMarks() {
+		List<MarkNodeImpl> l = new ArrayList<>(layoutMarks);
+		l.forEach(this::removeLayoutMark);
+	}
+
 	@Override
 	public void layout() {
 		layoutGrid();
@@ -446,6 +513,19 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			columns.add(rightGatesColumn);
 		}
 
+		// Layout Mark Columns
+		for (MarkNodeImpl m : layoutMarks) {
+			ColumnImpl c = (ColumnImpl)NodeUtilities.getColumnAt(this, m.getBounds().x);
+			if (c == null) {
+				c = new ColumnImpl(this);
+				c.setXPosition(m.getBounds().x);
+				Column ca = NodeUtilities.getColumnAfter(this, c.getXPosition());
+				int index = ca == null ? columns.size() : columns.indexOf(ca);
+				columns.add(index,c);
+			}			
+			c.addNode(m);
+		}
+		
 		// Create Message:
 		for (Link lnk : getMessageLinks()) {
 			Message msg = (Message)lnk.getElement();
@@ -933,4 +1013,5 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	private List<RowImpl> rows = new ArrayList<>();
 	private List<ColumnImpl> columns = new ArrayList<>();
 	private InteractionLayoutManager layoutManager = new InteractionLayoutManager(this);
+	private List<MarkNodeImpl> layoutMarks = new ArrayList<>();
 }

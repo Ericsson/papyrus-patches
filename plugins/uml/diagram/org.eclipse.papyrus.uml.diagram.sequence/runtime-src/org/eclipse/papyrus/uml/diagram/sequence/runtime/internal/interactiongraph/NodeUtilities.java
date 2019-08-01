@@ -360,7 +360,7 @@ public class NodeUtilities {
 	}
 	
 	public static Node getFinishNode(Cluster cluster) {
-		List<Node> nodes = cluster.getNodes();
+		List<Node> nodes = cluster.getAllNodes();
 		if (nodes.isEmpty())
 			return null;
 		return nodes.get(nodes.size()-1);				
@@ -488,10 +488,13 @@ public class NodeUtilities {
 	}
 	
 	public static void moveNodeBlock(InteractionGraph interactionGraph, List<Node> nodes, int yPos, Map<Node, Cluster> toCluters) {
+		MarkNode insertMark = ((InteractionGraphImpl)interactionGraph).setlayoutMark(new Point(0,yPos));
+
 		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
+		
 		// 1) Calculate graph nodes in block area that are not part of the block
 		List<Node> otherNodes = NodeUtilities.getBlockOtherNodes(nodes);
-		
+		/*
 		// 2) Calculate insertion point after remove block and post insertion nudge ammount.
 		Rectangle blockArea = NodeUtilities.getArea(nodes);
 		Rectangle otherArea = NodeUtilities.getArea(otherNodes);
@@ -509,61 +512,21 @@ public class NodeUtilities {
 		int after = blockEndPoint - otherEndPoint; 
 		
 		int postInsertionNudge = 0;
-/*		if (yPos > blockEndPoint) {
-			// Insertion point after block
-			if (otherArea != null) {
-				newYPos -= prev;
-				newYPos -= after;
-			} else {
-				newYPos -= height;
-			}
-		} else if (otherArea != null && yPos > otherEndPoint) {
-			// Insertion point inside block after the other content
-			newYPos = otherEndPoint - prev;
-			postInsertionNudge = yPos - otherEndPoint;
-		} else if (otherArea != null && yPos > otherStartPoint) {
-			// Insertion point inside block inside the other content
-			newYPos -= prev;
-		} else if (yPos > blockStartPoint) {
-			// Insertion point inside block before the other content
-			newYPos = yPos;
-			postInsertionNudge = yPos - blockStartPoint;
-		}		
-*/		
-				
+		*/		
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
 				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getTopLevelCluster(d))));
 
 		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
 				collect(Collectors.toList());
-		removeNodeBlockImpl(interactionGraph, nodes,otherNodes,0);		
+				
+		removeNodeBlockImpl(interactionGraph, nodes,otherNodes);		
 		
 		Rectangle newOtherArea = NodeUtilities.getArea(otherNodes);
 		
-		int newYPos = yPos;
-		if (yPos > blockEndPoint) {
-			// Insertion point after block
-			if (otherArea != null) {
-				// TODO: @etxacam Need to calculate the newYPos based on the next row (if any otherwise -prev-after)
-				newYPos -= prev; 
-				newYPos -= after;
-			} else {
-				newYPos -= height;
-			}
-		} else if (otherArea != null && yPos > otherEndPoint) {
-			// Insertion point inside block after the other content
-			newYPos = newOtherArea.bottom() + yPos - otherArea.bottom();
-			postInsertionNudge = blockEndPoint - yPos ;
-		} else if (otherArea != null && yPos > otherStartPoint) {
-			// Insertion point inside block inside the other content
-			newYPos -= prev; // TODO: @etxacam Need to calculate the newYPos based other block start (if any otherwise -prev-after)
-		} else if (yPos > blockStartPoint) {
-			// Insertion point inside block before the other content
-			newYPos = yPos;
-			postInsertionNudge = yPos - blockStartPoint;
-		}				
+		int newYPos = insertMark.getBounds().y;		
+		((InteractionGraphImpl)interactionGraph).clearLayoutMarks();
 		
-		addNodeBlock(interactionGraph, nodesByLifeline, newYPos, postInsertionNudge);
+		addNodeBlock(interactionGraph, nodesByLifeline, newYPos, 0);
 	}
 	
 	public static void removeNodeBlocks(InteractionGraph interactionGraph, List<List<Node>> blocks) {
@@ -585,12 +548,12 @@ public class NodeUtilities {
 		// Preserve Fragment clusters blocks
 		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
 				collect(Collectors.toList());
-		removeNodeBlockImpl(interactionGraph, nodes, others, (others != null && !others.isEmpty()) ? 0 : nudge);
+		removeNodeBlockImpl(interactionGraph, nodes, others/*, (others != null && !others.isEmpty()) ? 0 : nudge*/);
 		allNodes.removeAll(NodeUtilities.flattenKeepClusters(fragments));
 		NodeUtilities.deleteNodes(interactionGraph, allNodes); // Delete all references
 	}
 	
-	private static void removeNodeBlockImpl(InteractionGraph interactionGraph, List<Node> nodes, List<Node> otherNodes, int extraNudge) {
+	private static void removeNodeBlockImpl(InteractionGraph interactionGraph, List<Node> nodes, List<Node> otherNodes) {
 		Rectangle blockArea = NodeUtilities.getArea(nodes);
 		Rectangle otherArea = NodeUtilities.getArea(otherNodes);
 		
@@ -607,33 +570,27 @@ public class NodeUtilities {
 			after = blockEndPoint - otherEndPoint; 
 		}
 		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
-		int nudge = after + prev; 
-		if (nudge <= 1) {
-			nudge = 0;
-		}
-		nudge += extraNudge;
-		
-		((InteractionGraphImpl)interactionGraph).disableLayout();
+
 		try {
-			NodeUtilities.removeNodes(interactionGraph, nodes);			
+			NodeUtilities.removeNodes(interactionGraph, nodes);
+
 			List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).collect(Collectors.toList());
 			Rectangle nodesAfterArea = NodeUtilities.getArea(nodesAfter);
 			
 			// Check how much can we nudge up...
 			Rectangle nudgeArea = NodeUtilities.getNudgeArea((InteractionGraphImpl)interactionGraph, otherNodes, false, true, allNodes);
-			int maxNudgePrev = prev;
 			int gridSpacing = interactionGraph.getGridSpacing();
-			if (nudgeArea != null && otherArea != null)
-				maxNudgePrev = (otherArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
+			if (nudgeArea != null && otherArea != null) {
+				int nudge = (otherArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
+				NodeUtilities.nudgeNodes(otherNodes, 0, -nudge);			
+			}
 			
 			nudgeArea = NodeUtilities.getNudgeArea((InteractionGraphImpl)interactionGraph, nodesAfter, false, true, allNodes);
-			int maxNudgeAfter = nudge; 
-			if (nudgeArea != null && nodesAfterArea != null)
-				maxNudgeAfter = (nodesAfterArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
+			if (nudgeArea != null && nodesAfterArea != null) {
+				int nudge = (nodesAfterArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
+				NodeUtilities.nudgeNodes(nodesAfter, 0, -nudge);
+			}
 
-			int nudgeUpOthers = otherArea == null ? 0 : Math.max(0, Math.min(prev, maxNudgePrev));
-			nudgeUpOthers = -NodeUtilities.nudgeNodes(otherNodes, 0, -nudgeUpOthers).height;			
-			NodeUtilities.nudgeNodes(nodesAfter, 0, -Math.max(0, Math.min(nudge, maxNudgeAfter) + nudgeUpOthers ));
 		} finally {
 			((InteractionGraphImpl)interactionGraph).enableLayout();
 			interactionGraph.layout();
@@ -1035,10 +992,22 @@ public class NodeUtilities {
 		return n;
 	}
 
+	// TODO: Move it to IntGrapg
+	public static Column getColumnAfter(InteractionGraph graph, int x) {
+		return graph.getColumns().stream().filter(d->d.getXPosition() >= x).findFirst().orElse(null);
+	}
+
+	// TODO: Move it to IntGrapg
 	public static Column getColumnAt(InteractionGraph graph, int x) {
 		return graph.getColumns().stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
 	}
 
+	// TODO: Move it to IntGrapg
+	public static Row getRowAfter(InteractionGraph graph, int y) {
+		return graph.getRows().stream().filter(d->d.getYPosition() >= y).findFirst().orElse(null);
+	}
+
+	// TODO: Move it to IntGrapg
 	public static Row getRowAt(InteractionGraph graph, int y) {
 		return graph.getRows().stream().filter(d->d.getYPosition() == y).findFirst().orElse(null);
 	}

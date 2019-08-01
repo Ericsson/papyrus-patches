@@ -20,8 +20,10 @@ import java.util.List;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.NamedElement;
 
 public class ClusterImpl extends NodeImpl implements Cluster {
@@ -29,6 +31,15 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		super(element);
 	}
 
+	@Override
+	public ClusterImpl getParent() {
+		ClusterImpl par = super.getParent();
+		if (par instanceof InteractionGraph) {
+			return null; // Force the lifeline parent to be null. To stop searching up... 
+		}		
+		return par;
+	}
+	
 	@Override
 	public FragmentClusterImpl getFragmentCluster() {
 		return fragmentCluster;

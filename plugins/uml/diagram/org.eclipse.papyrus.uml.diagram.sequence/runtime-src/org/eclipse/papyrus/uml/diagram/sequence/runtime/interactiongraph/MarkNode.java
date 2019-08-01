@@ -51,7 +51,12 @@ public interface MarkNode extends Node {
 		/**
 		 * A mark to represent the send event associated to a lost message.
 		 */
-		lostMessageEnd
+		lostMessageEnd,
+		
+		/**
+		 * A Mark used during layout operations.
+		 */
+		layout
 	}
 
 	/**
