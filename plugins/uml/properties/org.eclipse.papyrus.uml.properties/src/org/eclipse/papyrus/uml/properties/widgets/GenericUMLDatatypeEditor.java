@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2013, 2017 CEA LIST.
+ * Copyright (c) 2013, 2017, 2019 CEA LIST.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -12,6 +12,7 @@
  * Contributors:
  *  Camille Letavernier (camille.letavernier@cea.fr) - Initial API and implementation
  *  Vincent Lorenzo (CEA LIST) - bug 521861
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 549705
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.widgets;
 
@@ -123,13 +124,13 @@ public class GenericUMLDatatypeEditor extends AbstractPropertyEditor {
 				} else {
 					propertyEditor.setProviders(new UMLContentProvider(dataTypeInstance, feature), labelProvider);
 				}
-				
+
 
 				if (feature instanceof EReference) {
 					propertyEditor.setValueFactory(getUMLPropertyEditorFactory(dataTypeInstance, (EReference) feature));
 				}
 
-				propertyEditor.setFeatureToEdit(feature.getName(), feature, dataTypeInstance);
+				propertyEditor.setFeatureToEdit(feature.getName(), feature, null, dataTypeInstance);
 			}
 		}
 	}
@@ -143,12 +144,12 @@ public class GenericUMLDatatypeEditor extends AbstractPropertyEditor {
 
 		final Resource res = null != dataTypeInstance.eResource() ? dataTypeInstance.eResource() : null;
 		ResourceSet resourceSet = null != res ? res.getResourceSet() : null;
-		
+
 		// the datatype is not always in a resource (when it just comes to be created, nevertheless, its EClass is always in a resource loaded in the ResourceSet
-		if (null == resourceSet && null!=dataTypeInstance.eClass().eResource()) {
+		if (null == resourceSet && null != dataTypeInstance.eClass().eResource()) {
 			resourceSet = dataTypeInstance.eClass().eResource().getResourceSet();
 		}
-		
+
 		final ITreeContentProvider contentProvider;
 		if (null != dataTypeInstance.eResource()) {
 			contentProvider = new UMLContainerContentProvider(dataTypeInstance, reference);
