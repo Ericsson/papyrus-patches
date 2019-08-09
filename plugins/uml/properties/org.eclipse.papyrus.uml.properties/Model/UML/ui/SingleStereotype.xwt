@@ -24,5 +24,9 @@
 			<ppel:PropertiesLayout></ppel:PropertiesLayout>
 		</Composite.layout>
 		<ppe:MultiReference input="{Binding}" property="UML:Stereotype:icon"></ppe:MultiReference>
+		<ppe:MultiReference input="{Binding}"
+			property="UML:StructuredClassifier:ownedAttribute"></ppe:MultiReference>
+		<ppe:MultiReference input="{Binding}"
+			property="UML:Class:ownedOperation"></ppe:MultiReference>
 	</Composite>
 </Composite>
