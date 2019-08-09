@@ -34,4 +34,11 @@
 		<ppe:MultiReference input="{Binding}"
 			property="UML:StructuredClassifier:ownedAttribute"></ppe:MultiReference>
 	</Composite>
+	<Composite>
+		<Composite.layout>
+			<ppel:PropertiesLayout></ppel:PropertiesLayout>
+		</Composite.layout>
+		<ppe:ViewEditor numColumns="2" input="{Binding}" view="UML:MemberEnd"
+			property="UML:Association:memberEnd"></ppe:ViewEditor>
+	</Composite>
 </Composite>
