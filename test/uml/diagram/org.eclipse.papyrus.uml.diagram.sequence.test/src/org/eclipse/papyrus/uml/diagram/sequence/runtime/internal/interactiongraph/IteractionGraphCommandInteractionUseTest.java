@@ -37,7 +37,7 @@ import org.junit.Test;
 public class IteractionGraphCommandInteractionUseTest {
 	@BeforeClass
 	public static void init() {
-		WorkspaceAndPapyrusEditor.DEBUG = true;
+		WorkspaceAndPapyrusEditor.DEBUG = false;
 	}
 	
 	@After

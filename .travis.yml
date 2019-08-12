@@ -12,7 +12,15 @@ cache:
   directories:
     - "$HOME/.m2/repository"
 
-script: releng/scripts/deploy_pages.sh      
+services:
+  - xvfb
+  
+install: 
+  - "" 
+   
+script: 
+   - mvn clean package verify 
+   - releng/scripts/deploy_pages.sh      
      
 deploy:
   provider: pages
@@ -23,3 +31,6 @@ deploy:
   on:
     branch: master
   
+after_failure:
+  - cat /home/travis/build/Ericsson/papyrus-patches/test/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence.test/target/work/data/.metadata/.log
+  - cat /home/travis/build/Ericsson/papyrus-patches/test/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence.test/target/work/configuration/*.log

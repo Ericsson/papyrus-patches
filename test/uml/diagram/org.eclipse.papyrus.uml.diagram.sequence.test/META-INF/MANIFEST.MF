@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test for Runtime for the sequence diagram
 Bundle-SymbolicName: org.eclipse.papyrus.uml.diagram.sequence.test;singleton:=true
-Bundle-Version: 5.1.500.qualifier
-Fragment-Host: org.eclipse.papyrus.uml.diagram.sequence
+Bundle-Version: 5.2.200.qualifier
+Fragment-Host: org.eclipse.papyrus.uml.diagram.sequence;bundle-version="5.2.200"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.junit,
  org.hamcrest.core,
