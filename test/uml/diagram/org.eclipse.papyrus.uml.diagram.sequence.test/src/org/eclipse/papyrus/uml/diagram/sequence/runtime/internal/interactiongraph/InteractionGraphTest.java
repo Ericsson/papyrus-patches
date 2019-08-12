@@ -29,6 +29,10 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.GraphAssert;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.InteractionModelHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.InteractionNotationHelper;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.WorkspaceAndPapyrusEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.uml2.uml.ActionExecutionSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;

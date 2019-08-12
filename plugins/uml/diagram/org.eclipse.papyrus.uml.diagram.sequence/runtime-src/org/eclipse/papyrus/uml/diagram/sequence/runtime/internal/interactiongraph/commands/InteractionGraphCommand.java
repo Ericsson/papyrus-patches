@@ -123,6 +123,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		init((InteractionGraphImpl) interactionGraph);
 	}
 
+	public InteractionGraph getInteractionGraph() {
+		return interactionGraph;
+	}
+	
 	private void init(InteractionGraphImpl interactionGraph) {
 		this.interactionGraph = (InteractionGraphImpl) interactionGraph;
 		this.gridSpacing = this.interactionGraph.getGridSpacing();

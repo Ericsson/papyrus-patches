@@ -11,7 +11,7 @@
  *  Antonio Campesino (Ericsson) - Initial API and implementation
  *
  *****************************************************************************/
-package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
+package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils;
 
 import org.eclipse.core.databinding.observable.Realm;
 import org.eclipse.emf.ecore.resource.ResourceSet;
