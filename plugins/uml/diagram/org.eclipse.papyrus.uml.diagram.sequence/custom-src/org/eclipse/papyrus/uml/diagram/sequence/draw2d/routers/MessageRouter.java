@@ -240,39 +240,39 @@ public class MessageRouter extends ObliqueRouter {
 			
 			List<Rectangle> figuresOverlapping = Stream.concat(
 				FigureUtils.findChildFigureInstances(containerFigure, InteractionUseRectangleFigure.class).
-					stream().map(d->ViewUtilities.translateToAbsolute(conn, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
+					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds)),
 				FigureUtils.findChildFigureInstances(containerFigure, ExecutionSpecificationNodePlate.class).
-					stream().map(d->ViewUtilities.translateToAbsolute(conn, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
+					stream().map(d->ViewUtilities.translateToAbsolute(d, d.getBounds().getCopy())).filter(d->d.intersects(messageBounds))).
 				collect(Collectors.toList());
 			minx = figuresOverlapping.stream().map(Rectangle::x).min(Integer::compare).orElse(pe1.x);
 			maxx = figuresOverlapping.stream().map(d->d.right()-1).max(Integer::compare).orElse(pe1.x);
 		}
-		
-		int leftDiff = Math.abs(messageBounds.x - minx);
-		int rightDiff = Math.abs(messageBounds.right() - maxx - 1);
-		if (rightDiff <= leftDiff) {
+
+		Point pi1 = pe1.getCopy();
+		Point pi2 = pe2.getCopy();
+		if (pe1.x - pe2.x <= 0) {
 			// towards the right
-			pe1.x = maxx + 30;
-			pe2.x = maxx + 30;			
+			pi1.x = maxx + 30;
+			pi2.x = maxx + 30;			
 		} else {
-			pe1.x = minx - 30;
-			pe2.x = minx - 30;
+			pi1.x = minx - 30;
+			pi2.x = minx - 30;
 		}
 		
 		newLine.removeAllPoints();
-		Point pes = pe1.getCopy(); 
-		conn.translateToAbsolute(pes);
-		pes = conn.getSourceAnchor().getLocation(pes);
-		conn.translateToRelative(pes);
+		
+		conn.translateToAbsolute(pe1);
+		pe1 = conn.getSourceAnchor().getLocation(pi1);
+		conn.translateToRelative(pe1);
 
-		Point pee = pe2.getCopy();
-		conn.translateToAbsolute(pee);				
-		pee = conn.getTargetAnchor().getLocation(pee);
-		conn.translateToRelative(pee);
-		newLine.addPoint(pes);
+		conn.translateToAbsolute(pe2);
+		pe2 = conn.getTargetAnchor().getLocation(pi2);
+		conn.translateToRelative(pe2);
+		
 		newLine.addPoint(pe1);
+		newLine.addPoint(pi1);
+		newLine.addPoint(pi2);
 		newLine.addPoint(pe2);
-		newLine.addPoint(pee);
 	}
 	
 	@Override
