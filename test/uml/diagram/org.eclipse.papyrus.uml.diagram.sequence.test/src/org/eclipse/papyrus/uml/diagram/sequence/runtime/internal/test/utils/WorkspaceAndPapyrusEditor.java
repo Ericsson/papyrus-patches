@@ -54,9 +54,12 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 public class WorkspaceAndPapyrusEditor implements TestRule {
+	public static String DEBUG_WAIT_CLOSE_DIAGRAM_PROP = "debugWaitCloseDiagram"; 
 	public static boolean DEBUG = false; 
+	
 	@Override
 	public Statement apply(Statement base, Description description) {
+		DEBUG = Boolean.getBoolean(DEBUG_WAIT_CLOSE_DIAGRAM_PROP);
 		return new Statement() {
 			@Override
 			public void evaluate() throws Throwable {
@@ -75,7 +78,6 @@ public class WorkspaceAndPapyrusEditor implements TestRule {
 	private void startWorkbench(Description description) {
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		IProject project = getProject(description);
-
 		try {
 			// Close the Welcome view
 			IViewReference welcome = page.findViewReference("org.eclipse.ui.internal.introview");

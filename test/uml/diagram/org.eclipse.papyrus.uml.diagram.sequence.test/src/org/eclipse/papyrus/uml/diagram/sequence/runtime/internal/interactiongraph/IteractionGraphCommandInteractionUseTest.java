@@ -16,7 +16,6 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongra
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
-import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.papyrus.infra.core.resource.ModelSet;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.InteractionGraphCommandHelper;
@@ -37,7 +36,6 @@ import org.junit.Test;
 public class IteractionGraphCommandInteractionUseTest {
 	@BeforeClass
 	public static void init() {
-		WorkspaceAndPapyrusEditor.DEBUG = false;
 	}
 	
 	@After
@@ -83,7 +81,7 @@ public class IteractionGraphCommandInteractionUseTest {
 		Assert.assertNotEquals(null, msg1);		
 		editor.flushDisplayEvents();
 		
-		Message msg2 = helper.addMessage("Message1", MessageSort.ASYNCH_SIGNAL_LITERAL, lifeline2, new Point(270, 100), intUse1, new Point(320, 160));
+		Message msg2 = helper.addMessage("Message2", MessageSort.ASYNCH_SIGNAL_LITERAL, lifeline2, new Point(270, 100), intUse1, new Point(320, 160));
 		Assert.assertNotEquals(null, msg2);		
 		editor.flushDisplayEvents();
 
