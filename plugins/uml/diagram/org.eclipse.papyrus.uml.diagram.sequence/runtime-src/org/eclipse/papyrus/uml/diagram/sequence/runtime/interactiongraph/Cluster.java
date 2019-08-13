@@ -57,4 +57,6 @@ public interface Cluster extends Node {
 	public List<Node> getNodes();
 
 	public List<Node> getAllNodes();
+
+	public List<Cluster> getAllClusters();
 }

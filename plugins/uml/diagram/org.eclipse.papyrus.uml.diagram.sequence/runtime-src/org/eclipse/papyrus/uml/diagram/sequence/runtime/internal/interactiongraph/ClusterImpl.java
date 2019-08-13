@@ -17,13 +17,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
-import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.NamedElement;
 
 public class ClusterImpl extends NodeImpl implements Cluster {
@@ -94,6 +95,12 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		return NodeUtilities.flatten(this);
 	}
 	
+	public List<Cluster> getAllClusters() {
+		return NodeUtilities.flattenKeepClusters(this).stream().
+				filter(Cluster.class::isInstance).filter(Predicate.isEqual(this).negate()).
+				map(Cluster.class::cast).collect(Collectors.toList());
+	}
+
 	public Rectangle getBounds() {
 		Rectangle r = super.getBounds();
 		if (r != null)
