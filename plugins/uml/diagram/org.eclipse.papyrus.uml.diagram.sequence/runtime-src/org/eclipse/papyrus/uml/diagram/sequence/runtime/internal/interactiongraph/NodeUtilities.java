@@ -835,6 +835,7 @@ public class NodeUtilities {
 		((InteractionGraphImpl)graph).disableLayout();
 		List<Node> nodes = rows.stream().flatMap(d->d.getNodes().stream()).collect(Collectors.toList());
 		nudgeNodes(nodes, 0, yDelta);
+		rows.forEach(d->((RowImpl)d).setYPosition(d.getYPosition()+yDelta));
 		((InteractionGraphImpl)graph).enableLayout();
 	}
 
