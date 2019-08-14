@@ -85,7 +85,7 @@ public class InteractionGraphService {
 		Cluster cluster = interactionGraph.addLifeline(lifeline, nextLifeline);
 		Rectangle r = ((ClusterImpl) cluster).getBounds();
 		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram()))
-			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), rect);
+			rect = ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), rect.getCopy());
 		r.x = x;				
 		int offset = r.width;
 		((ClusterImpl) cluster).setBounds(r);
@@ -227,8 +227,8 @@ public class InteractionGraphService {
 	public boolean canAddMessage(MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 		if (ViewUtilities.isSnapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram())) {
-			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor);
-			ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor);
+			srcAnchor = ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), srcAnchor.getCopy());
+			trgAnchor = ViewUtilities.snapToGrid(interactionGraph.getEditPartViewer(), interactionGraph.getDiagram(), trgAnchor.getCopy());
 		}
 		
 		if (trgAnchor.y < srcAnchor.y) {
