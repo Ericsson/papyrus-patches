@@ -335,9 +335,25 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		disabledLayout = Math.max(0, disabledLayout);
 	}
 
-	// TODO: @etxacam Use the node blocks to split or merge rows in the same Y pos (or under threshold)
-	// TODO: @etxacam Remove the Layout manager and get the nodes provide it: So we can get the Origin of the node and recalculate 
-	//                size and the pos based on rows and cols.
+	/* The grid layout algorithm should do:
+	 *  Current issues with implementation. It should be:
+	 *  1) Layout all the leafs in rows and calculate the provisional order.
+	 *  2) Assign columns to Lifelines and leafs nodes.   
+	 *  3) Layout cluster (Bounds may be invalid as lifeline may have changed)
+	 *  5) Layout Interaction container (Bounds may be invalid as lifeline may have changed)
+	 *  6) Layout Create Message (Lifeline head to right row)  
+	 *  4) Interaction Gates (left & right sides)
+	 *  5) Invalidate Fragment clusters (Bounds may be invalid as lifeline may have changed or covered list has changed)
+	 *  6) Fragment cluster gates
+	 *  7) Fragment cluster inner fragments (recursively)
+	 *  8) Align rows to grid and merge too close rows (~ duplicated).
+	 *  9) Index rows
+	 *  10) Index Columns
+	 *  11) Resolve column overlapping ???
+	 *  12) Apply rows and cols positions to nodes (By layout them)
+	 *  13) Align lifeline bottom positions
+	 *  14) Extend / contract Interaction frame size  
+	 */
 	@SuppressWarnings("unchecked")
 	private void layoutGrid() {
 		if (disabledLayout > 0)
@@ -401,7 +417,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			ColumnImpl column = new ColumnImpl(this);
 			columns.add(column);
 			column.addNode(lfCluster);
-			// Calculate Columns sizes....
+			
+			// TODO: It maybe not good to resolve overlaps in Lifeline columns here, it may layout gates and 
+			// floating element wrongly... Needs to be done at the end. 
+			// See function comment.
 			Rectangle r = lfCluster.getBounds();
 			if (r != null) {
 				int nudgeX = 0;
@@ -414,6 +433,11 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 				prevX = r.x + r.width + nudgeX;
 			}
 			column.addNodes((List) lfCluster.getAllNodes());
+			
+			// Layout Clusters
+			List<ClusterImpl> subClusters = (List)lfCluster.getAllClusters();
+			Collections.reverse(subClusters);
+			subClusters.stream().forEach(layoutManager::layout);
 		}
 
 		ColumnImpl leftGatesColumn = null;
@@ -454,54 +478,49 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		}
 
-		// Fragment Gates
+		// Fragment Cluster & Fragment Cluster Gates
 		List<FragmentCluster> fragmentClusters = NodeUtilities.flatten(this);
 		for (FragmentCluster cluster : fragmentClusters) {
 			if (cluster == this) {
 				continue;
 			}
+			
+			// Needs to layout in order to layout gates on the right side. 
+			getLayoutManager().layout((FragmentClusterImpl)cluster);
+
 			List<Node> coveredLifelines = cluster.getClusters().stream().map(NodeImpl.class::cast).map(NodeUtilities::getLifelineNode).
 					filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
-			Rectangle fragmentBounds = ViewUtilities.getBounds(viewer, cluster.getView());
+			Rectangle fragmentBounds = cluster.getBounds();//ViewUtilities.getBounds(viewer, cluster.getView());
 			Column leftLifelineColumn = coveredLifelines.stream().map(Node::getColumn).min(Comparator.comparing(d->columns.indexOf(d))).orElse(null);
 			Column rightLifelineColumn = coveredLifelines.stream().map(Node::getColumn).max(Comparator.comparing(d->columns.indexOf(d))).orElse(null);
 			if (leftLifelineColumn == null || rightLifelineColumn == null)
 				continue;
 			for (Node gate : cluster.getAllGates()) {
 				// TODO: Correlate in & out gates
-				Node opposite = gate.getConnectedByNode();
-				if (opposite == null) {
-					opposite = gate.getConnectedNode();
-				}
-
-				Rectangle r = (opposite == null ? gate.getBounds() : opposite.getBounds());
-				// Force gate to fall in left or right side				
-				if (r != null) {
-					ColumnImpl col;
-					if (Math.abs(r.getCenter().x - fragmentBounds.getLeft().x) <= Math.abs(r.getCenter().x - fragmentBounds.getRight().x)) {
-						int x = fragmentBounds.x();
-						col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
-						if (col == null) {
-							col = new ColumnImpl(this);
-							col.setXPosition(x);
-							columns.add(columns.indexOf(leftLifelineColumn), col);							
-						}
-					} else {
-						int x = fragmentBounds.right();
-						col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
-						if (col == null) {
-							col = new ColumnImpl(this);
-							col.setXPosition(x);
-							int index = columns.indexOf(rightLifelineColumn) +1;
-							if (index >= columns.size())
-								columns.add(col);
-							else
-								columns.add(index, col);							
-						}
+				Rectangle r = gate.getBounds();
+				ColumnImpl col;
+				if (Math.abs(r.getCenter().x - fragmentBounds.getLeft().x) <= Math.abs(r.getCenter().x - fragmentBounds.getRight().x)) {
+					int x = fragmentBounds.x();
+					col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
+					if (col == null) {
+						col = new ColumnImpl(this);
+						col.setXPosition(x);
+						columns.add(columns.indexOf(leftLifelineColumn), col);							
 					}
-					col.addNode((NodeImpl)gate);						
-				} 
-				
+				} else {
+					int x = fragmentBounds.right();
+					col = columns.stream().filter(d->d.getXPosition() == x).findFirst().orElse(null);
+					if (col == null) {
+						col = new ColumnImpl(this);
+						col.setXPosition(x);
+						int index = columns.indexOf(rightLifelineColumn) +1;
+						if (index >= columns.size())
+							columns.add(col);
+						else
+							columns.add(index, col);							
+					}
+				}
+				col.addNode((NodeImpl)gate);						
 			}
 		}
 

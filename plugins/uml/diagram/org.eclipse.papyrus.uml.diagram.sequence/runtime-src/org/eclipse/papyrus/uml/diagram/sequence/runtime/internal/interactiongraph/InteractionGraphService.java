@@ -180,9 +180,29 @@ public class InteractionGraphService {
 	
 	public void nudgeLifeline(Lifeline lifeline, Point moveDelta) {
 		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
+		// We need to nudge the left colums associated with the fragments which the lifeline is the lefter most lifeline.
+		List<FragmentCluster> fragmentClusters = lifeline.getCoveredBys().stream().
+				filter(d->d instanceof InteractionUse || d instanceof CombinedFragment).
+				map(interactionGraph::getClusterFor).map(d-> d instanceof FragmentCluster ? d : d.getFragmentCluster()).
+				map(FragmentCluster.class::cast).collect(Collectors.toList());
+		int firstColIndex = lifelineNode.getColumn().getIndex();
+		for (FragmentCluster c : fragmentClusters) {
+			List<Cluster> lifelines = c.getClusters().stream().map(NodeUtilities::getLifelineNode).filter(Predicate.isEqual(null).negate()).collect(Collectors.toList());
+			int leftSideIndex = lifelines.stream().map(Node::getColumn).map(Column::getIndex).collect(Collectors.minBy(Integer::compare)).get();
+			if (leftSideIndex == lifelineNode.getColumn().getIndex()) {
+				firstColIndex = Math.min(firstColIndex,c.getAllGates().stream().
+						map(Node::getColumn).map(Column::getIndex).collect(Collectors.minBy(Integer::compare)).get());
+			}
+				
+		}
+
+		int _firstColIndex = firstColIndex; 
 		lifelineNode.getBounds().x += moveDelta.x;
-		interactionGraph.getColumns().stream().filter(d -> d.getIndex() > lifelineNode.getColumn().getIndex())
+		interactionGraph.getColumns().stream().filter(d -> d.getIndex() >= _firstColIndex)
 				.map(ColumnImpl.class::cast).forEach(d -> d.nudge(moveDelta.x));
+		
+		
+		
 		interactionGraph.layout();
 	}
 
