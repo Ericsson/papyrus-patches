@@ -19,6 +19,7 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
@@ -160,7 +161,7 @@ public class NodeImpl extends GraphItemImpl implements Node {
 			return null;
 		}
 		r = r.getCopy();
-		if (r.width == 1 && r.height == 1) {
+		if ((r.width == 1 && r.height == 1) || !(this instanceof Cluster)) {
 			r.width = 0;
 			r.height = 0;
 		}
