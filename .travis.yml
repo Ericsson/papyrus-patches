@@ -19,7 +19,8 @@ install:
   - "" 
    
 script: 
-   - mvn clean package verify 
+   - mvn clean package 
+   - mvn clean verify -f test/pom.xml 
    - releng/scripts/deploy_pages.sh      
      
 deploy:

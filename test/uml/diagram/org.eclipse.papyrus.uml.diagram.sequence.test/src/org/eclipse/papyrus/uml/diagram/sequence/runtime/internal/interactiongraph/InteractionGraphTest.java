@@ -44,10 +44,12 @@ import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.UMLFactory;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
-
+@Ignore
 public class InteractionGraphTest {
 	@BeforeClass
 	public static void init() {

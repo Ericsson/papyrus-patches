@@ -3,9 +3,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0     http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<groupId>com.ericsson.papyrus</groupId>
-		<artifactId>com.ericsson.papyrus.patches</artifactId>
+		<artifactId>com.ericsson.papyrus.patches.test</artifactId>
 		<version>3.0.0-SNAPSHOT</version>
-		<relativePath>../../../../pom.xml</relativePath>
+		<relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>org.eclipse.papyrus.uml.diagram.sequence.test</artifactId>
@@ -21,94 +21,19 @@
 				<configuration>
 					<dependency-resolution>
 						<extraRequirements>
-							<!-- requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement-->
 							<requirement>
 								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.alf.feature</id>
+								<id>org.eclipse.papyrus.sdk.feature</id>
 								<versionRange>0.0.0</versionRange>
 							</requirement>
 							<requirement>
 								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.architecture.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.decoratormodel.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<!-- requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.diagram.css.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement-->
-							<!-- requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.diagram.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement-->
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.expressions.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.internationalization.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.m2m.qvto.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.modelexplorer.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.nattable.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<!-- requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.properties.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement-->
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.search.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.textedit.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.tools.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.ui.feature</id>
-								<versionRange>0.0.0</versionRange>
-							</requirement>
-							<requirement>
-								<type>eclipse-feature</type>
-								<id>org.eclipse.papyrus.uml.xtext.integration.feature</id>
+								<id>com.ericsson.papyrus.patches.feature</id>
 								<versionRange>0.0.0</versionRange>
 							</requirement>
 						</extraRequirements>
 					</dependency-resolution>
-				</configuration>
+				</configuration>				
 			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
@@ -122,29 +47,24 @@
 		</plugins>
 	</build>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.ericsson.papyrus</groupId>
-			<artifactId>org.eclipse.papyrus.uml.diagram.sequence</artifactId>
-			<type>eclipse-plugin</type>
-			<version>5.2.200-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>com.ericsson.papyrus</groupId>
-			<artifactId>org.eclipse.papyrus.infra.gmfdiag.common</artifactId>
-			<type>eclipse-plugin</type>
-			<version>3.201.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>com.ericsson.papyrus</groupId>
-			<artifactId>org.eclipse.papyrus.uml.properties</artifactId>
-			<type>eclipse-plugin</type>
-			<version>3.3.100-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>com.ericsson.papyrus</groupId>
-			<artifactId>org.eclipse.papyrus.uml.diagram.css</artifactId>
-			<version>2.0.500-SNAPSHOT</version>
-		</dependency>		
-	</dependencies>	
+	<repositories>
+		<repository>
+			<id>Patches</id>
+			<url>file:${project.basedir}/../../../../releng/com.ericsson.papyrus.patches.update-site/target/site</url>
+			<layout>p2</layout>
+		</repository>
+		
+		<repository>
+			<id>Papyrus</id>
+			<url>http://download.eclipse.org/modeling/mdt/papyrus/updates/releases/2019-06/4.4.0</url>
+			<layout>p2</layout>
+		</repository>
+		
+		<repository>
+			<id>Eclipse</id>
+			<url>http://download.eclipse.org/releases/2019-06/</url>
+			<layout>p2</layout>
+		</repository>
+		
+	</repositories>
 </project>

@@ -18,7 +18,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ InteractionGraphInteractionUseTest.class, InteractionGraphTest.class })
+@SuiteClasses({ InteractionGraphTest.class, InteractionUseTest.class })
 public class AllTests {
 
 }

@@ -41,10 +41,13 @@ import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.UMLFactory;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
-public class InteractionGraphInteractionUseTest {
+@Ignore
+public class InteractionUseTest {
 	/**
 	 * <pre>   
 	 *   +---+            +---+

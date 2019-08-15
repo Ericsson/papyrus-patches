@@ -144,7 +144,7 @@
 	  <module>patches/com.ericsson.papyrus.patches.feature</module>
 	  <module>releng/com.ericsson.papyrus.patches.update-site</module>
 	  
-	  <module>test/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence.test</module>
+	  <!-- module>test/uml/diagram/org.eclipse.papyrus.uml.diagram.sequence.test</module-->
 
 	  <module>releng/com.ericsson.papyrus.patches.targets</module>
   </modules>
