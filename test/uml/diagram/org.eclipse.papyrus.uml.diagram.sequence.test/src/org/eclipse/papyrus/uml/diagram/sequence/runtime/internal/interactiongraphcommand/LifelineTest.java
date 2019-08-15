@@ -29,7 +29,6 @@ import org.eclipse.uml2.uml.Lifeline;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
 
 
 public class LifelineTest extends BaseTest {
@@ -56,8 +55,7 @@ public class LifelineTest extends BaseTest {
 		editor.flushDisplayEvents();
 				
 		
-		lifeline1_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-		lifeline1_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+		lifeline1_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline1, lifeline1_rect);
 		ViewAssert.assertView(diagram, lifeline1, 
 				LifelineEditPart.VISUAL_ID, 
 				ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),
@@ -89,8 +87,7 @@ public class LifelineTest extends BaseTest {
 		Assert.assertNotEquals(null, lifeline2);		
 		editor.flushDisplayEvents();
 		
-		lifeline2_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-		lifeline2_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+		lifeline2_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline2, lifeline2_rect);
 		ViewAssert.assertView(diagram, lifeline2, 
 				LifelineEditPart.VISUAL_ID, 
 				ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),
@@ -126,15 +123,13 @@ public class LifelineTest extends BaseTest {
 		editor.flushDisplayEvents();
 		
 		lifeline1_rect.x += 100; // Nudging  
-		lifeline1_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-		lifeline1_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+		lifeline1_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline1, lifeline1_rect);
 		ViewAssert.assertView(diagram, lifeline1, 
 				LifelineEditPart.VISUAL_ID, 
 				ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),
 				lifeline1_rect);
 					
-		lifeline2_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-		lifeline2_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+		lifeline2_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline2, lifeline2_rect);
 		ViewAssert.assertView(diagram, lifeline2, 
 				LifelineEditPart.VISUAL_ID, 
 				ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),

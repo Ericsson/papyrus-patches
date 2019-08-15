@@ -118,15 +118,13 @@ public class InteractionUseTest {
 			Assert.assertNotEquals(null, msg2);		
 			editor.flushDisplayEvents();
 			
-			lifeline1_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-			lifeline1_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+			lifeline1_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline1, lifeline1_rect);
 			ViewAssert.assertView(diagram, lifeline1, 
 					LifelineEditPart.VISUAL_ID, 
 					ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),
 					lifeline1_rect);
 			
-			lifeline2_rect.y = ViewConstants.DEFAULT_LIFELINE_YPOS;
-			lifeline2_rect.height = ViewConstants.DEFAULT_LIFELINE_HEIGHT;
+			lifeline2_rect = ViewConstants.DEFAULT_LIFELINE_YPOS(helper.getViewer(), lifeline2, lifeline2_rect);
 			ViewAssert.assertView(diagram, lifeline2, 
 					LifelineEditPart.VISUAL_ID, 
 					ViewUtilities.getViewWithType(diagram, InteractionInteractionCompartmentEditPart.VISUAL_ID),
