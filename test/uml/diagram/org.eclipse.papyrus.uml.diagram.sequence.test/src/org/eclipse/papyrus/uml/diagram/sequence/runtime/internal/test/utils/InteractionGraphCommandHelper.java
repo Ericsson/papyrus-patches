@@ -2,9 +2,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils;
 
 import java.util.List;
 
-import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -14,13 +12,11 @@ import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.gmf.runtime.diagram.core.edithelpers.CreateElementRequestAdapter;
 import org.eclipse.gmf.runtime.diagram.core.preferences.PreferencesHint;
-import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateConnectionViewAndElementRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.papyrus.infra.core.resource.ModelSet;
-import org.eclipse.papyrus.infra.emf.gmf.command.EMFtoGMFCommandWrapper;
 import org.eclipse.papyrus.infra.emf.gmf.command.GMFtoEMFCommandWrapper;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateEditPart;
@@ -33,7 +29,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.uml2.uml.Element;
@@ -50,10 +45,22 @@ public class InteractionGraphCommandHelper {
 		
 	}
 	
+	public Diagram getDiagram() {
+		return diagram;
+	}
+	
+	public Interaction getInteraction() {
+		return interaction;
+	}
+
+	public EditPartViewer getViewer() {
+		return viewer;
+	}
+
 	public Diagram createSequenceDiagram(String name) {
 		interaction = UMLFactory.eINSTANCE.createInteraction();
 		interaction.setName(name);		
-
+		
 		diagram = InteractionNotationHelper.createSequenceDiagram(interaction);
 		diagram.setName(name);				
 		return diagram;
@@ -84,8 +91,10 @@ public class InteractionGraphCommandHelper {
 				rect);
 		command.addAction().apply(d->last(d.getLifelineClusters())).handleResult((Node n)->setName(n, name));
 		IStatus status = executeCommand(command);
-		if (status.isOK()) 
-			return (Lifeline)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(Lifeline.class);
+		if (status.isOK()) {
+			Lifeline lf = (Lifeline)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(Lifeline.class);
+			return lf;
+		}
 		return null;
 	}
 		
@@ -108,8 +117,10 @@ public class InteractionGraphCommandHelper {
 				rect);
 		command.addAction().apply(d->last(d.getFragmentClusters())).handleResult((Node n)->setName(n, name));
 		IStatus status = executeCommand(command);
-		if (status.isOK()) 
-			return (InteractionUse)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(InteractionUse.class);
+		if (status.isOK()) {
+			InteractionUse use = (InteractionUse)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(InteractionUse.class);
+			return use;
+		}
 		return null;
 	}
 
@@ -150,8 +161,10 @@ public class InteractionGraphCommandHelper {
 				target,	trgPoint);
 		command.addAction().apply(d->last(d.getMessageLinks())).handleResult((Link n)->setName(n, name));
 		IStatus status = executeCommand(command);
-		if (status.isOK()) 
-			return (Message)req.getConnectionViewAndElementDescriptor().getElementAdapter().getAdapter(Message.class);
+		if (status.isOK()) {			
+			Message msg = (Message)req.getConnectionViewAndElementDescriptor().getElementAdapter().getAdapter(Message.class);
+			return msg;
+		}
 		return null;
 	}
 
