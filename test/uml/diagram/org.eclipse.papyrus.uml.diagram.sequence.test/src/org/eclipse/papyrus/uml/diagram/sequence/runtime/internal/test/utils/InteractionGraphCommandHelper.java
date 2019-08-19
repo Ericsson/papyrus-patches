@@ -1,6 +1,7 @@
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -27,6 +28,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphFactory;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.NodeUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.service.types.element.UMLElementTypes;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -106,6 +108,22 @@ public class InteractionGraphCommandHelper {
 		return status.isOK(); 
 	}
 
+	public boolean moveLifeline(Lifeline lifeline, int dx) {
+		initInteractionGraph();
+		InteractionGraphCommand command = newCommand("Move Lifeline");
+		command.moveLifeline(lifeline, new Point(dx,0));
+		IStatus status = executeCommand(command);
+		return status.isOK(); 
+	}
+
+	public boolean deleteLifeline(Lifeline lifeline) {
+		initInteractionGraph();
+		InteractionGraphCommand command = newCommand("Delete Lifeline");
+		command.deleteLifeline(lifeline);
+		IStatus status = executeCommand(command);
+		return status.isOK(); 
+	}
+
 	public InteractionUse addInteractionUse(String name, Rectangle rect) {
 		initInteractionGraph();
 		InteractionGraphCommand command = newCommand("Add Interaction Use");
@@ -155,11 +173,11 @@ public class InteractionGraphCommandHelper {
 
 		CreateConnectionViewAndElementRequest req = new CreateConnectionViewAndElementRequest(elemType, hint, PreferencesHint.USE_DEFAULTS);
 		
-		command.addMessage(msgSort, req.getConnectionViewAndElementDescriptor().getCreateElementRequestAdapter(), 
+		command.addMessage(name, msgSort, req.getConnectionViewAndElementDescriptor().getCreateElementRequestAdapter(), 
 				req.getConnectionViewAndElementDescriptor(), 
 				source, srcPoint,
 				target,	trgPoint);
-		command.addAction().apply(d->last(d.getMessageLinks())).handleResult((Link n)->setName(n, name));
+
 		IStatus status = executeCommand(command);
 		if (status.isOK()) {			
 			Message msg = (Message)req.getConnectionViewAndElementDescriptor().getElementAdapter().getAdapter(Message.class);
@@ -168,6 +186,23 @@ public class InteractionGraphCommandHelper {
 		return null;
 	}
 
+	public boolean deleteMessage(Message msg) {
+		initInteractionGraph();
+		InteractionGraphCommand command = newCommand("Delete Message");
+		command.deleteMessage(msg);
+		IStatus status = executeCommand(command);
+		return status.isOK(); 
+	}
+
+	public boolean nudgeMessage(Message msg, int offsetY) {
+		initInteractionGraph();
+		InteractionGraphCommand command = newCommand("Nudge Message");
+		command.nudgeMessage(msg, new Point(0,offsetY));
+		IStatus status = executeCommand(command);
+		return status.isOK(); 		
+	}
+
+	
 	public IStatus executeCommand(InteractionGraphCommand command) {
 		InteractionGraph graph = command.getInteractionGraph(); 
 		EditPartViewer viewer = graph.getEditPartViewer();
@@ -200,9 +235,13 @@ public class InteractionGraphCommandHelper {
 	}
 	
 	private <T> T last(List<T> list) {
+		return last(list,0);
+	}
+
+	private <T> T last(List<T> list, int index) {
 		if (list.isEmpty())
 			return null;
-		return list.get(list.size()-1); 
+		return list.get(list.size()-1-index); 
 	}
 
 	private void setName(Node node, String name) {

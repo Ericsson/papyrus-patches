@@ -50,6 +50,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -77,6 +78,7 @@ public class InteractionUseTest {
 	 *     |                |
 	 */
 	@Test
+	@Ignore("Issue with the message router with gates involved!")
 	public void testSelfMessageBendpoint1() throws ExecutionException {
 		ModelSet modelSet = editor.getResourceSet();
 		InteractionGraphCommandHelper helper = new InteractionGraphCommandHelper(modelSet);
@@ -177,14 +179,14 @@ public class InteractionUseTest {
 			messages.forEach(d->Arrays.asList(d.getValue()).forEach(p->p.x+=200));
 			editor.flushDisplayEvents();			
 			ViewAssert.assertViewsBounds(diagram, (List)elements);
-			ViewAssert.assertAnchorsLocations(diagram, messages);
+			ViewAssert.assertEdgeAnchorsLocations(diagram, messages);
 	
 			helper.nudgeLifeline(lifeline1, -200);
 			elements.forEach(d->d.getValue().x-=200);
 			messages.forEach(d->Arrays.asList(d.getValue()).forEach(p->p.x-=200));
 			editor.flushDisplayEvents();
 			ViewAssert.assertViewsBounds(diagram, (List)elements);
-			ViewAssert.assertAnchorsLocations(diagram, messages);
+			ViewAssert.assertEdgeAnchorsLocations(diagram, messages);
 			
 			editor.waitForClose(diagram);
 		} catch (Throwable e) {

@@ -116,13 +116,25 @@ public class InteractionGraphService {
 	public void moveLifeline(Lifeline lifeline, Point moveDelta) {
 		Node lifelineNode = interactionGraph.getNodeFor(lifeline);
 		int newX = lifelineNode.getBounds().x + moveDelta.x;
+
+		int curr_x = lifelineNode.getBounds().x;
+		Cluster curNextLifeline = interactionGraph.getLifelineClusters().stream()
+				.filter(l -> l.getBounds().x > curr_x && l.getBounds().x < newX).
+				findFirst().orElse(null);
+		int extraNudge = curNextLifeline != null ? curNextLifeline.getBounds().x - lifelineNode.getBounds().right() : 0; 
+		
 		Cluster nextLifeline = interactionGraph.getLifelineClusters().stream()
 				.filter(l -> l.getBounds().x > newX).findFirst().orElse(null);
-
+		
+		
 		interactionGraph.moveLifeline(lifeline,
 				(Lifeline) (nextLifeline == null ? null : nextLifeline.getElement()));
-		lifelineNode.getBounds().x = newX;
+		lifelineNode.getBounds().x = newX;		
 		interactionGraph.layout();
+		
+		if (curNextLifeline != null) {
+			nudgeLifeline((Lifeline)curNextLifeline.getElement(), new Point(-lifelineNode.getBounds().width - extraNudge,0));
+		}
 	}
 
 	public boolean canDeleteLifeline(Lifeline lifeline) {
@@ -143,19 +155,24 @@ public class InteractionGraphService {
 			interactionGraph.enableLayout();
 		}
 		
+		int curr_x = lifelineNode.getBounds().x;
+		Cluster nextLifeline = interactionGraph.getLifelineClusters().stream()
+				.filter(l -> l.getBounds().x > curr_x).
+				findFirst().orElse(null);
+		int extraNudge = nextLifeline != null ? nextLifeline.getBounds().x - lifelineNode.getBounds().right() : 0; 
+		int horzNudge = lifelineNode.getBounds().width + extraNudge;
 		try {
-			NodeUtilities.removeNodeBlocks(interactionGraph,blocksToDelete);			
-			Column col = lifelineNode.getColumn();
-			Column prev = col.getIndex() == 0 ? null : interactionGraph.getColumns().get(col.getIndex()-1);
-			int prevSize = prev == null ? 0 : (lifelineNode.getBounds().x  - NodeUtilities.getArea(prev.getNodes()).right());
-			int horzNudge = lifelineNode.getBounds().width + prevSize;
+			NodeUtilities.removeNodeBlocks(interactionGraph,blocksToDelete);
+
+			
 			interactionGraph.disableLayout();
 			NodeUtilities.removeNodes(interactionGraph, Collections.singletonList(lifelineNode));
-			interactionGraph.getColumns().stream().filter(d->d.getIndex() > col.getIndex()).forEach(d -> ((ColumnImpl)d).nudge(-horzNudge));
 		} finally {
 			interactionGraph.enableLayout();
 			interactionGraph.layout();					
 		}
+		if (nextLifeline != null)
+			nudgeLifeline((Lifeline)nextLifeline.getElement(), new Point(-horzNudge, 0));
 	}
 
 	public boolean canNudgeLifeline(Lifeline lifeline, Point moveDelta) {
@@ -260,12 +277,20 @@ public class InteractionGraphService {
 	
 	public Link addMessage(MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
+		return addMessage(null, msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor);
+	}
+	
+	public Link addMessage(String name, MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
+			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 		interactionGraph.disableLayout();
 		try {
 	
 			Message msg = SemanticElementsService.createRelationship(editingDomain, interactionGraph.getInteraction(), source, target, 
 					(IElementType)elementAdapter.getAdapter(IElementType.class)); 
-			msg.setName(NodeUtilities.getNewElementName(interactionGraph, msg));
+			if (name == null || name.isEmpty())
+				msg.setName(NodeUtilities.getNewElementName(interactionGraph, msg));
+			else
+				msg.setName(name);
 			
 			MessageEnd msgEndSrc = msg.getSendEvent();
 			if (msgEndSrc instanceof MessageOccurrenceSpecification) {

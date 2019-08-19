@@ -12,9 +12,11 @@ import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.LayoutConstraint;
 import org.eclipse.gmf.runtime.notation.Node;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageReplyEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities.EdgeSide;
 import org.eclipse.uml2.uml.Element;
+import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.NamedElement;
@@ -81,7 +83,7 @@ public class ViewAssert {
 				 edge.getTarget());
 	}
 
-	public static void assertAnchorsLocations(Diagram dia, List<SimpleEntry<Message, Point[]>> entries) {
+	public static void assertEdgeAnchorsLocations(Diagram dia, List<SimpleEntry<Message, Point[]>> entries) {
 		entries.forEach(d-> {
 			assertEdgeAnchorLocation(dia, d.getKey(), d.getKey().getSendEvent(), d.getValue()[0]);
 			assertEdgeAnchorLocation(dia, d.getKey(), d.getKey().getReceiveEvent(), d.getValue()[1]);
@@ -104,6 +106,28 @@ public class ViewAssert {
 		 
 	}
 
+	public static void assertMessageGroup(Diagram dia, 
+			Message msg, String type, Element anchoringSource, Point srcAnchor, ExecutionSpecification execSpec, String execSpecType,
+			Rectangle execSpec_Rectangle, Message msgReply) 
+	{
+		// Check Message
+		
+		assertEdge(dia, msg, type,anchoringSource, srcAnchor, execSpec, execSpec_Rectangle.getTop());
+
+		// Check Reply Message
+		assertEdge(dia, msgReply, MessageReplyEditPart.VISUAL_ID, 
+				execSpec, execSpec_Rectangle.getTop().getTranslated(0, execSpec_Rectangle.height), 
+				anchoringSource, srcAnchor.getTranslated(0, execSpec_Rectangle.height));
+		
+		assertView(dia, execSpec, execSpecType, ViewUtilities.getViewForElement(dia, execSpec.getCovereds().get(0)),
+				execSpec_Rectangle);
+		
+		
+/*
+*/
+		
+	}
+	
 	private static final String getElementName(Element el) {
 		if (el instanceof NamedElement)
 			return ((NamedElement) el).getName();

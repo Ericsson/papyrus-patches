@@ -143,11 +143,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		addAction()
 			.prepare(()->interactionGraphService.canAddLifeline(elementAdapter, rect))
 			.apply(()->{return interactionGraphService.addLifeline(rect);})
+			.postApply((Cluster cluster) ->elementAdapter.setNewElement(cluster.getElement())) 
 			.handleResult(
-				(CommandResult r,Cluster cluster) -> {
-					elementAdapter.setNewElement(cluster.getElement());
-					descriptor.setView(cluster.getView());
-				});		
+				(CommandResult r,Cluster cluster) ->descriptor.setView(cluster.getView()));		
 	}
 
 	public void moveLifeline(Lifeline lifeline, Point moveDelta) {
@@ -174,18 +172,22 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 			apply(() -> interactionGraphService.resizeLifeline(lifeline, sizeDelta));
 	}
 
-	// TODO: @etxacam Reply messages
-	// TODO: @etxacam Self messages
-	
 	public void addMessage(MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
+			Element source, Point srcAnchor, Element target, Point trgAnchor) {
+		addMessage(null, msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor);
+	}
+	
+	// TODO: @etxacam Reply messages
+	// TODO: @etxacam Self messages	
+	public void addMessage(String name, MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
 		addAction().
 			prepare(() -> interactionGraphService.canAddMessage(msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).		
-			apply(()->interactionGraphService.addMessage(msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
+			apply(()->interactionGraphService.addMessage(name, msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
+			postApply((Link message)->elementAdapter.setNewElement(message.getElement())).
 			handleResult(
-				(CommandResult r, Link message) -> {				
-					elementAdapter.setNewElement(message.getElement());
+				(CommandResult r, Link message) -> {									
 					descriptor.setView(message.getView());
 			});
 	}
@@ -277,10 +279,8 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		addAction().
 			prepare(() -> interactionGraphService.canAddInteractionUse(elementAdapter, descriptor, rect)).
 			apply(() -> interactionGraphService.addInteractionUse(elementAdapter, descriptor, rect)).
-			handleResult((ClusterImpl cluster) -> {
-				elementAdapter.setNewElement(cluster.getElement());
-				descriptor.setView(cluster.getView());
-			});
+			postApply((Cluster cluster) -> elementAdapter.setNewElement(cluster.getElement())).
+			handleResult((ClusterImpl cluster) -> descriptor.setView(cluster.getView()));
 	}
 
 	public void nudgeInteractionUse(InteractionUse intUse, Point delta) {
@@ -335,6 +335,10 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 				if (!action.apply(interactionGraph)) {
 					return CommandResult.newErrorCommandResult("Could not apply action.");
 				}
+			}
+
+			for (InteractionGraphEditAction action : actions) {
+				action.postApply(interactionGraph);
 			}
 
 			ICommand cmd = buildDelegateCommands(getEditingDomain(), getLabel());

@@ -62,6 +62,16 @@ public class InteractionGraphEditActionBuilder {
 		return this;
 	}
 
+	public <T> InteractionGraphEditActionBuilder postApply(BiConsumer<InteractionGraph, T> handleResult) {
+		this.action.postApply = handleResult;
+		return this;
+	}
+
+	public <T> InteractionGraphEditActionBuilder postApply(Consumer<T> handleResult) {
+		this.action.postApply = (BiConsumer<InteractionGraph , T>)(InteractionGraph g, T item) -> handleResult.accept(item);
+		return this;
+	}
+
 	InteractionGraphEditAction action() {
 		return action;
 	}
@@ -101,6 +111,15 @@ public class InteractionGraphEditActionBuilder {
 	
 		@SuppressWarnings("unchecked")
 		@Override
+		public void postApply(InteractionGraph graph) {
+			if (postApply != null) {
+				((BiConsumer)postApply).accept(graph, item);
+			}
+		}
+
+
+		@SuppressWarnings("unchecked")
+		@Override
 		public void handleResult(CommandResult result) {
 			if (handleResult != null) {
 				if (!result.getStatus().isOK())
@@ -112,6 +131,7 @@ public class InteractionGraphEditActionBuilder {
 		private InteractionGraph interactionGraph;
 		private Function<InteractionGraph, Boolean> prepare;
 		private Function<InteractionGraph, ?> apply;
+		private BiConsumer<InteractionGraph, ?> postApply;
 		private BiConsumer<CommandResult, ?> handleResult;
 		private Object item;
 	}

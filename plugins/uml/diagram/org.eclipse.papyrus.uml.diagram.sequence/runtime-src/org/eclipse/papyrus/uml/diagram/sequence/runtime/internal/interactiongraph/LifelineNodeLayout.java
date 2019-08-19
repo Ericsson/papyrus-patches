@@ -18,6 +18,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gmf.runtime.notation.View;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CInteractionInteractionCompartmentEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
@@ -32,7 +33,8 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 	public void layout(NodeImpl node) {
 		Rectangle r = node.getBounds();
 		int width = r == null || r.width == -1 ? ViewUtilities.LIFELINE_DEFAULT_WIDTH : r.width;
-		int height = ViewUtilities.LIFELINE_HEADER_HEIGHT;
+		int headerHeight = node.getEditPart() != null ? ((CLifeLineEditPart)node.getEditPart()).getStickerHeight() : ViewUtilities.LIFELINE_HEADER_HEIGHT; 
+		int height = headerHeight;
 		
 		View containerContentPane = ViewUtilities.getViewWithType(node.getInteractionGraph().getInteractionView(), CInteractionInteractionCompartmentEditPart.VISUAL_ID);
 		if (containerContentPane != null) {
@@ -51,7 +53,7 @@ public class LifelineNodeLayout implements InteractionNodeLayout {
 		ColumnImpl column = node.column;
 		RowImpl row = node.row;
 
-		Point origin = new Point((width / 2), (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2));
+		Point origin = new Point((width / 2), (headerHeight / 2));
 		r = new Rectangle();
 		r.y = row.getYPosition() - origin.y;
 		r.x = column.getXPosition() - origin.x;

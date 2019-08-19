@@ -60,10 +60,7 @@ public class ViewUtilities {
 		Target
 	};
 	
-	public static final int ROW_PADDING = 10;
-	public static final int COL_PADDING = 10;
-
-	public static final int LIFELINE_HEADER_HEIGHT = 19;
+	public static final int LIFELINE_HEADER_HEIGHT = 18;
 	public static final int LIFELINE_DEFAULT_WIDTH = 100;
 	public static final int EXECUTION_SPECIFICATION_WIDTH = AbstractExecutionSpecificationEditPart.DEFAUT_WIDTH;
 
@@ -564,7 +561,7 @@ public class ViewUtilities {
 	}
 	
 	public static int getClosestGrid(int gridSpacing, int pos) {
-		return (int)(Math.round(40.0 / (double)gridSpacing) * (double)gridSpacing);	
+		return (int)(Math.round(pos / (double)gridSpacing) * (double)gridSpacing);	
 	}
 	
 	

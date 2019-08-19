@@ -29,10 +29,14 @@ public interface InteractionGraphEditAction {
 			return false;
 		}
 
+		@Override
+		public void postApply(InteractionGraph graph) {}
+
 	};
 
 
 	public boolean prepare();
 	public boolean apply(InteractionGraph graph);
+	public void postApply(InteractionGraph graph);
 	public void handleResult(CommandResult result);
 }

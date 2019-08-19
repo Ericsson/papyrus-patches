@@ -574,7 +574,9 @@ public class NodeUtilities {
 		try {
 			NodeUtilities.removeNodes(interactionGraph, nodes);
 
-			List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).collect(Collectors.toList());
+			List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().
+					filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).
+					collect(Collectors.toList());
 			Rectangle nodesAfterArea = NodeUtilities.getArea(nodesAfter);
 			
 			// Check how much can we nudge up...
@@ -587,7 +589,7 @@ public class NodeUtilities {
 			
 			nudgeArea = NodeUtilities.getNudgeArea((InteractionGraphImpl)interactionGraph, nodesAfter, false, true, allNodes);
 			if (nudgeArea != null && nodesAfterArea != null) {
-				int nudge = (nodesAfterArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
+				int nudge = (nodesAfterArea.y - Math.max(nudgeArea.y, blockEndPoint)) / gridSpacing * gridSpacing;
 				NodeUtilities.nudgeNodes(nodesAfter, 0, -nudge);
 			}
 
@@ -780,7 +782,7 @@ public class NodeUtilities {
 		InteractionGraphImpl graph = ((InteractionGraphImpl)nodes.get(0).getInteractionGraph());
 		
 		int newYDelta = yDelta;
-		Set<Cluster> parents = nodes.stream().map(Node::getParent).collect(Collectors.toSet());
+		Set<Cluster> parents = nodes.stream().map(Node::getParent).filter(Predicate.isEqual(null).negate()).collect(Collectors.toSet());
 		// Check how much we can nudge without break parents minimum size.
 		for (Cluster c : parents) {
 			Dimension minSize = graph.getLayoutManager().getMinimumSize((ClusterImpl)c);
@@ -1282,6 +1284,11 @@ public class NodeUtilities {
 		return getNewElementName(graph, eClass);
 	}
 	
+	public static String getNewElementName(InteractionGraph graph, Element element, String prefix) {
+		EClass eClass = element.eClass(); 
+		return getNewElementName(graph, eClass, prefix);
+	}
+
 	public static String getNewElementName(InteractionGraph graph, EClass eClass) {
 		String prefix = eClass.getName();
 		return getNewElementName(graph, eClass, prefix);

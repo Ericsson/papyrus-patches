@@ -65,6 +65,8 @@ public class CreateNodeViewCommand extends CreateViewCommand {
 				ep.refresh();
 				ep.getContentPane().invalidateTree();
 				ep.getContentPane().validate();				
+				ep.getFigure().invalidateTree();
+				ep.getFigure().validate();				
 			}
 			
 			((GraphItemImpl) interactionGraphNode).setView(view);

@@ -161,9 +161,18 @@ public class NodeImpl extends GraphItemImpl implements Node {
 			return null;
 		}
 		r = r.getCopy();
-		if ((r.width == 1 && r.height == 1) || !(this instanceof Cluster)) {
+		if (!(this instanceof Cluster)) {
+			if (r.width != 1 && r.height != 1) {
+				r.x = r.getCenter().x;
+				r.y = r.getCenter().y;
+			}
 			r.width = 0;
 			r.height = 0;
+		} else {
+			if (r.width == 1 && r.height == 1) {
+				r.width = 0;
+				r.height = 0;				
+			}
 		}
 		return r.getCopy();
 	}

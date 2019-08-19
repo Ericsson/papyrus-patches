@@ -28,6 +28,7 @@ import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
 import org.eclipse.gmf.runtime.notation.Diagram;
 import org.eclipse.gmf.runtime.notation.Edge;
 import org.eclipse.gmf.runtime.notation.View;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionInteractionCompartmentEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
@@ -39,6 +40,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNod
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Row;
+import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -52,6 +54,8 @@ import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.MessageSort;
 import org.eclipse.uml2.uml.OccurrenceSpecification;
+
+import com.google.common.collect.Comparators;
 
 public class InteractionGraphImpl extends FragmentClusterImpl implements InteractionGraph {
 	public InteractionGraphImpl(Interaction interaction, Diagram diagram, DiagramEditPart editPart) {
@@ -368,8 +372,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 
 		View lifelineContainer = ViewUtilities.getViewWithType(getInteractionView(), InteractionInteractionCompartmentEditPart.VISUAL_ID);
 		Rectangle compRect = ViewUtilities.getClientAreaBounds(viewer, lifelineContainer);
-
-		int y = compRect.y + ViewUtilities.ROW_PADDING + (ViewUtilities.LIFELINE_HEADER_HEIGHT / 2);
+		int headerHeight = lifelineClusters.stream().filter(CLifeLineEditPart.class::isInstance).
+				map(d->((CLifeLineEditPart)d.getEditPart()).getStickerHeight()).
+				max(Integer::compare).orElse(ViewUtilities.LIFELINE_HEADER_HEIGHT); 
+		int y = compRect.y + SequenceUtil.LIFELINE_VERTICAL_OFFSET + (headerHeight / 2); // getGridSpacing(20) ;
 		row.setYPosition(y);
 
 		List<NodeImpl> allNodes = getAllGraphNodes();
@@ -411,7 +417,7 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			prevNode = node;
 		}
 
-		int prevX = Integer.MIN_VALUE;
+		Rectangle prevBounds = null;
 		// Layout Lifeline Columns
 		for (ClusterImpl lfCluster : lifelineClusters) {
 			ColumnImpl column = new ColumnImpl(this);
@@ -424,13 +430,13 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 			Rectangle r = lfCluster.getBounds();
 			if (r != null) {
 				int nudgeX = 0;
-				if (prevX >= r.x && prevX <= r.x + r.width) {
-					nudgeX += prevX - r.x + ViewUtilities.COL_PADDING;
+				if (prevBounds != null && Draw2dUtils.intersects(r,prevBounds)) {
+					nudgeX += prevBounds.right() + getGridSpacing(20) - r.x;
 				}
 				int colX = r.getCenter().x + nudgeX;
 
 				column.setXPosition(colX);
-				prevX = r.x + r.width + nudgeX;
+				prevBounds = r;
 			}
 			column.addNodes((List) lfCluster.getAllNodes());
 			
