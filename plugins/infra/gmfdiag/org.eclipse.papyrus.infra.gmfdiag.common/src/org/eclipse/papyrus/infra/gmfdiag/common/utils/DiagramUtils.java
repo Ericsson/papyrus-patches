@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2013, 2017 CEA LIST and others.
+ * Copyright (c) 2013, 2017, 2019 CEA LIST and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -14,6 +14,7 @@
  *  Benoit Maggi    (Cea)        benoit.maggi@cea.fr - Add utility to get the containing diagram
  *  Christian W. Damus - bug 527580
  *  Ansgar Radermacher - bug 539754
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 550568
  *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.utils;
@@ -173,9 +174,28 @@ public class DiagramUtils {
 	 *            A diagram
 	 * @return The diagram's prototype
 	 */
-	public static ViewPrototype getPrototype(Diagram diagram) {
+	public static ViewPrototype getPrototype(final Diagram diagram) {
+		return getPrototype(diagram, true);
+	}
+
+	/**
+	 * Gets the prototype of a diagram
+	 * Check if the selected viewpoint contains
+	 * 1. the diagram model kind
+	 * 2. an ancestor of the diagram model kind
+	 * 3. a descendant of the diagram model kind
+	 *
+	 * @param diagram
+	 *            A diagram.
+	 * @param checkViewpoint
+	 *            Boolean to determinate if we have to check viewpoint consistency before returning the view prototype.
+	 * @return The diagram's prototype
+	 *
+	 * @since 3.103
+	 */
+	public static ViewPrototype getPrototype(final Diagram diagram, final boolean checkViewpoint) {
 		PolicyChecker checker = PolicyChecker.getFor(diagram);
-		return getPrototype(diagram, checker);
+		return getPrototype(diagram, checker, checkViewpoint);
 	}
 
 	/**
@@ -189,7 +209,25 @@ public class DiagramUtils {
 	 *
 	 * @since 3.2
 	 */
-	public static ViewPrototype getPrototype(Diagram diagram, PolicyChecker checker) {
+	public static ViewPrototype getPrototype(final Diagram diagram, final PolicyChecker checker) {
+		// By default check the viewpoint consistency
+		return getPrototype(diagram, checker, true);
+	}
+
+	/**
+	 * Gets the prototype of a {@code diagram} according to a given policy {@code checker}.
+	 *
+	 * @param diagram
+	 *            A diagram.
+	 * @param checker
+	 *            A policy checker.
+	 * @param checkViewpoint
+	 *            Boolean to determinate if we have to check viewpoint consistency before returning the view prototype.
+	 * @return the policy {@code checker}'s prototype for the {@code diagram}
+	 *
+	 * @since 3.103
+	 */
+	public static ViewPrototype getPrototype(final Diagram diagram, final PolicyChecker checker, final boolean checkViewpoint) {
 		PapyrusDiagramStyle pvs = getPapyrusDiagramStyle(diagram);
 		if (pvs != null) {
 			ArchitectureDomainManager manager = ArchitectureDomainManager.getInstance();
@@ -204,7 +242,7 @@ public class DiagramUtils {
 			// Check if the selected viewpoint contains the diagram model kind
 			if (repKind != null) {
 
-				if (checker.isInViewpoint(repKind)) {
+				if (!checkViewpoint || checker.isInViewpoint(repKind)) {
 					return ViewPrototype.get(repKind);
 				}
 

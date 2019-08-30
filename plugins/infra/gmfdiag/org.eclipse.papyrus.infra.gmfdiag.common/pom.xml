@@ -9,6 +9,6 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>org.eclipse.papyrus.infra.gmfdiag.common</artifactId>
-	<version>3.102.0-SNAPSHOT</version>
+	<version>3.103.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 </project>
