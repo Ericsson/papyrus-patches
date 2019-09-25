@@ -54,9 +54,9 @@ public class ConstraintHelperAdvice extends AbstractEditHelperAdvice {
 	@Override
 	protected ICommand getAfterSetCommand(SetRequest request) {
 		EObject element = request.getElementToEdit();
-		View view = findView(element);
-		if (view != null) {
-			if (element instanceof Constraint) {
+		if (element instanceof Constraint) {
+			View view = findView(element);
+			if (view != null) {
 				EStructuralFeature feature = request.getFeature();
 				final Object value = request.getValue();
 				Vector<Edge> edgesToDestroy = new Vector<>();

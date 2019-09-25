@@ -55,8 +55,6 @@ public abstract class AbstractDurationLinkAdvice extends AbstractEditHelperAdvic
 	@Override
 	protected ICommand getAfterSetCommand(SetRequest request) {
 		if (request.getFeature() == eventsReference && durationElementType.isInstance(request.getElementToEdit())) {
-			Collection<Setting> usages = EMFHelper.getUsages(request.getElementToEdit());
-
 			// We need to delegate to the command provider; otherwise the view is not correctly destroyed,
 			// and the diagram may still display a ghost connection (referencing a view that is no longer
 			// attached to the notation model)
@@ -65,7 +63,9 @@ public abstract class AbstractDurationLinkAdvice extends AbstractEditHelperAdvic
 				return null;
 			}
 
-			CompositeCommand deletions = new CompositeCommand("Delete inconsistent DurationLink views");
+			Collection<Setting> usages = EMFHelper.getUsages(request.getElementToEdit());
+
+			CompositeCommand deletions = new CompositeCommand("Delete inconsistent DurationLink views"); //$NON-NLS-1$
 			for (Setting usage : usages) {
 				if (usage.getEObject() instanceof Connector && usage.getEStructuralFeature() == NotationPackage.Literals.VIEW__ELEMENT) {
 					Connector connector = (Connector) usage.getEObject();

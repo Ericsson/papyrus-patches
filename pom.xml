@@ -111,10 +111,19 @@
 		<profile>
 			<id>2019-06</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<activeByDefault>false</activeByDefault>
 			</activation>
 			<properties>
 				<papyrus-patches.targetPlatform>2019-06</papyrus-patches.targetPlatform>
+			</properties>
+		</profile>
+		<profile>
+			<id>2019-09</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<papyrus-patches.targetPlatform>2019-09</papyrus-patches.targetPlatform>
 			</properties>
 		</profile>
 		<profile>

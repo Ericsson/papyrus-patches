@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2013, 2017 CEA LIST.
+ * Copyright (c) 2013, 2017, 2019 CEA LIST.
  *
  *
  * All rights reserved. This program and the accompanying materials
@@ -13,6 +13,7 @@
  *  Camille Letavernier (camille.letavernier@cea.fr) - Initial API and implementation
  *  Pierre GAUTIER (CEA LIST) - bug 521865
  *  Vincent LORENZO (CEA LIST) - bug 521861
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 549705
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.widgets;
 
@@ -92,7 +93,7 @@ public class EObjectContentsEditor extends Composite {
 
 	/**
 	 * listener to be be able to move the scrollbar with the mouse wheel
-	 * 
+	 *
 	 */
 	private final MouseWheelListener mouseWheelListener = new MouseWheelListener() {
 
@@ -150,6 +151,7 @@ public class EObjectContentsEditor extends Composite {
 
 		valueListener = new IChangeListener() {
 
+			@Override
 			public void handleChange(ChangeEvent event) {
 				updateContents();
 			}
@@ -157,6 +159,7 @@ public class EObjectContentsEditor extends Composite {
 
 		parent.addDisposeListener(new DisposeListener() {
 
+			@Override
 			public void widgetDisposed(DisposeEvent e) {
 				dispose();
 			}
@@ -216,12 +219,12 @@ public class EObjectContentsEditor extends Composite {
 				} else {
 					propertyEditor.setProviders(new UMLContentProvider(dataTypeInstance, feature), labelProvider);
 				}
-				
+
 				if (feature instanceof EReference) {
 					propertyEditor.setValueFactory(getUMLPropertyEditorFactory(dataTypeInstance, (EReference) feature));
 				}
 
-				propertyEditor.setFeatureToEdit(feature.getName(), feature, dataTypeInstance);
+				propertyEditor.setFeatureToEdit(feature.getName(), feature, null, dataTypeInstance);
 			}
 		}
 
@@ -235,7 +238,7 @@ public class EObjectContentsEditor extends Composite {
 
 	/**
 	 * Register the mouse wheel listener for the control and its children
-	 * 
+	 *
 	 * @param control
 	 *            a control
 	 */
@@ -250,7 +253,7 @@ public class EObjectContentsEditor extends Composite {
 
 	/**
 	 * Unregister the mouse wheel listener for the control and its children
-	 * 
+	 *
 	 * @param control
 	 *            a control
 	 */
@@ -278,10 +281,12 @@ public class EObjectContentsEditor extends Composite {
 
 		addButton.addSelectionListener(new SelectionListener() {
 
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				addAction();
 			}
 
+			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				// Nothing
 			}
@@ -310,10 +315,12 @@ public class EObjectContentsEditor extends Composite {
 
 		deleteButton.addSelectionListener(new SelectionListener() {
 
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				deleteAction();
 			}
 
+			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				//
 			}
@@ -337,19 +344,19 @@ public class EObjectContentsEditor extends Composite {
 
 		final Resource res = null != dataTypeInstance.eResource() ? dataTypeInstance.eResource() : null;
 		ResourceSet resourceSet = null != res ? res.getResourceSet() : null;
-		
+
 		// the datatype is not always in a resource (when it just comes to be created, nevertheless, its EClass is always in a resource loaded in the ResourceSet
-		if (null == resourceSet && null!=dataTypeInstance.eClass().eResource()) {
+		if (null == resourceSet && null != dataTypeInstance.eClass().eResource()) {
 			resourceSet = dataTypeInstance.eClass().eResource().getResourceSet();
 		}
-		
+
 		final ITreeContentProvider contentProvider;
 		if (null != dataTypeInstance.eResource()) {
 			contentProvider = new UMLContainerContentProvider(dataTypeInstance, reference);
 		} else {
 			contentProvider = new UMLContainerContentProvider(dataTypeInstance, reference, resourceSet);
 		}
-		
+
 		EMFGraphicalContentProvider provider = ProviderHelper.encapsulateProvider(contentProvider, resourceSet, HistoryUtil.getHistoryID(dataTypeInstance, reference, "container")); //$NON-NLS-1$
 
 		factory.setContainerContentProvider(provider);

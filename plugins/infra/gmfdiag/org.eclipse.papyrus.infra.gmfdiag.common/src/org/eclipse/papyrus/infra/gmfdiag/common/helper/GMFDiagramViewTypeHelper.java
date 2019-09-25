@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2013, 2017 CEA LIST and others.
+ * Copyright (c) 2013, 2017, 2019 CEA LIST and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -12,6 +12,7 @@
  *  Laurent Wouters laurent.wouters@cea.fr - Initial API and implementation
  *  Christian W. Damus - bug 527580
  *  Ansgar Radermacher - bug 539754
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 550568
  *
  *****************************************************************************/
 package org.eclipse.papyrus.infra.gmfdiag.common.helper;
@@ -89,6 +90,6 @@ public class GMFDiagramViewTypeHelper extends AbstractViewTypeHelper<PapyrusDiag
 		Diagram diagram = (Diagram) view;
 
 		PolicyChecker checker = getPolicyChecker(diagram);
-		return DiagramUtils.getPrototype(diagram, checker);
+		return DiagramUtils.getPrototype(diagram, checker, false);
 	}
 }

@@ -56,13 +56,13 @@
 		
 		<repository>
 			<id>Papyrus</id>
-			<url>http://download.eclipse.org/modeling/mdt/papyrus/updates/releases/2019-06/4.4.0</url>
+			<url>http://download.eclipse.org/modeling/mdt/papyrus/updates/releases/2019-09/4.5.0</url>
 			<layout>p2</layout>
 		</repository>
 		
 		<repository>
 			<id>Eclipse</id>
-			<url>http://download.eclipse.org/releases/2019-06/</url>
+			<url>http://download.eclipse.org/releases/2019-09/</url>
 			<layout>p2</layout>
 		</repository>
 		

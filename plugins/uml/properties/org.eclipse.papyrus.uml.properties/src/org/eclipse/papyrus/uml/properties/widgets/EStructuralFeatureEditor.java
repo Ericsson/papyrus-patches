@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2012, 2014, 2017 Atos, CEA, and others.
+ * Copyright (c) 2012, 2014, 2017, 2019 Atos, CEA, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  *  Pierre GAUTIER (CEA LIST) - bug 521857
  *  Fanch BONNABESSE (ALL4TEC) fanch.bonnabesse@all4tec.net - Bug 521902, Bug 526304
  *  Vincent LORENZO (CEA LIST) - bug 526900
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 549705
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.widgets;
 
@@ -27,6 +28,7 @@ import org.eclipse.core.databinding.observable.ChangeEvent;
 import org.eclipse.core.databinding.observable.IChangeListener;
 import org.eclipse.core.databinding.observable.list.IListChangeListener;
 import org.eclipse.core.databinding.observable.list.ListChangeEvent;
+import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.core.databinding.observable.value.IValueChangeListener;
 import org.eclipse.core.databinding.observable.value.ValueChangeEvent;
 import org.eclipse.emf.ecore.EAttribute;
@@ -65,6 +67,7 @@ import org.eclipse.papyrus.uml.tools.utils.DataTypeUtil;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.PageBook;
+import org.eclipse.uml2.uml.Element;
 
 /**
  * A structural feature editor
@@ -159,7 +162,36 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		return new Composite(pageBook, style);
 	}
 
+	/**
+	 * This allows to set the feature to edit to the current editor.
+	 *
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @param element
+	 *            The stereotype application.
+	 * @deprecated Use {@link #setFeatureToEdit(String, EStructuralFeature, Element, EObject)} instead.
+	 */
+	@Deprecated
 	public void setFeatureToEdit(final String title, final EStructuralFeature feature, final EObject element) {
+		setFeatureToEdit(title, feature, null, element);
+	}
+
+	/**
+	 * This allows to set the feature to edit to the current editor.
+	 *
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @param owner
+	 *            The owner element.
+	 * @param stereotypeApplication
+	 *            The stereotype application.
+	 * @since 3.4
+	 */
+	public void setFeatureToEdit(final String title, final EStructuralFeature feature, final Element owner, final EObject stereotypeApplication) {
 		Composite previousPage = this.currentPage;
 		if (currentPage != null) {
 			currentPage = null;
@@ -168,19 +200,19 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		if (feature instanceof EReference) {
 			if (feature.isMany()) {
 				final MultipleReferenceEditor editor = new MultipleReferenceEditor(pageBook, style);
-				setMultipleValueEditorProperties(editor, (List<?>) element.eGet(feature), element, title, feature);
+				setMultipleValueEditorProperties(editor, (List<?>) stereotypeApplication.eGet(feature), stereotypeApplication, owner, title, feature);
 				editor.setProviders(contentProvider, labelProvider);
 				editor.setFactory(valueFactory);
 				currentPage = editor;
 			} else {
 				final EClassifier featureType = feature.getEType();
-				if (featureType instanceof EClass && DataTypeUtil.isDataTypeDefinition((EClass) featureType, element)) {
+				if (featureType instanceof EClass && DataTypeUtil.isDataTypeDefinition((EClass) featureType, stereotypeApplication)) {
 					final EObjectContentsEditor editor = new EObjectContentsEditor(pageBook, style, (EReference) feature);
-					editor.setValue(new GMFObservableValue(element, feature, EMFHelper.resolveEditingDomain(element)));
+					editor.setValue(getReferenceObservableValue((EReference) feature, stereotypeApplication, owner));
 					currentPage = editor;
 				} else {
 					final ReferenceDialog editor = new ReferenceDialog(pageBook, style);
-					setValueEditorProperties(editor, element, title, feature);
+					setValueEditorProperties(editor, stereotypeApplication, owner, title, feature);
 					editor.setContentProvider(contentProvider);
 					editor.setLabelProvider(labelProvider);
 					editor.setValueFactory(valueFactory);
@@ -195,13 +227,13 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 			if (featureType instanceof EEnum) {
 				if (feature.isMany()) {
 					final MultipleReferenceEditor editor = new MultipleReferenceEditor(pageBook, style);
-					setMultipleValueEditorProperties(editor, (List<?>) element.eGet(feature), element, title, feature);
+					setMultipleValueEditorProperties(editor, (List<?>) stereotypeApplication.eGet(feature), stereotypeApplication, owner, title, feature);
 					editor.setProviders(contentProvider, labelProvider);
 					editor.setFactory(valueFactory);
 					currentPage = editor;
 				} else {
 					final EnumCombo editor = new EnumCombo(pageBook, style);
-					setValueEditorProperties(editor, element, title, feature);
+					setValueEditorProperties(editor, stereotypeApplication, owner, title, feature);
 					editor.setContentProvider(new EMFEnumeratorContentProvider(feature));
 					currentPage = editor;
 				}
@@ -212,9 +244,9 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 					throw new IllegalArgumentException("No clazz has been found for aliasedInstanceClassName '" + aliasedInstanceClassName + "'"); //$NON-NLS-1$ //$NON-NLS-2$
 				}
 				if (feature.isMany()) {
-					createMultipleEditor(clazz, element, title, feature);
+					createMultipleEditor(clazz, stereotypeApplication, owner, title, feature);
 				} else {
-					createSingleEditor(clazz, element, title, feature);
+					createSingleEditor(clazz, stereotypeApplication, owner, title, feature);
 				}
 			}
 		}
@@ -227,7 +259,56 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		previousPage = null;
 	}
 
+	/**
+	 * Get the observable value for a reference property.
+	 *
+	 * @param feature
+	 *            the reference feature.
+	 * @param stereotypeApplication
+	 *            The stereotype application.
+	 * @param owner
+	 *            The owner element.
+	 * @return The observable value.
+	 * @since 3.4
+	 */
+	protected IObservableValue<?> getReferenceObservableValue(final EReference feature, final EObject stereotypeApplication, final Element owner) {
+		return new GMFObservableValue(stereotypeApplication, feature, EMFHelper.resolveEditingDomain(stereotypeApplication));
+	}
+
+	/**
+	 * This allows to set the observable value for the editor.
+	 *
+	 * @param editor
+	 *            The value editor to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @deprecated Use {@link #setValueEditorProperties(AbstractValueEditor, EObject, Element, String, EStructuralFeature)} instead.
+	 */
+	@Deprecated
 	protected void setValueEditorProperties(final AbstractValueEditor editor, final EObject stereotypeApplication, final String title, final EStructuralFeature feature) {
+		setValueEditorProperties(editor, stereotypeApplication, null, title, feature);
+	}
+
+	/**
+	 * This allows to set the observable value for the editor.
+	 *
+	 * @param editor
+	 *            The value editor to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application
+	 * @param owner
+	 *            The owner element.
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @since 3.4
+	 */
+	protected void setValueEditorProperties(final AbstractValueEditor editor, final EObject stereotypeApplication, final Element owner, final String title, final EStructuralFeature feature) {
 		final GMFObservableValue observable = new GMFObservableValue(stereotypeApplication, feature, EMFHelper.resolveEditingDomain(stereotypeApplication));
 		observable.addValueChangeListener(this);
 		editor.setLabel(title);
@@ -235,7 +316,42 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		editor.setModelObservable(observable);
 	}
 
+	/**
+	 * This allows to set the observable list for the editor.
+	 *
+	 * @param editor
+	 *            The multiple value editor to manage.
+	 * @param initialList
+	 *            The initial list to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @deprecated Use {@link #setMultipleValueEditorProperties(MultipleValueEditor, List, EObject, Element, String, EStructuralFeature)} instead.
+	 */
+	@Deprecated
 	protected void setMultipleValueEditorProperties(final MultipleValueEditor<?> editor, final List<?> initialList, final EObject stereotypeApplication, final String title, final EStructuralFeature feature) {
+		setMultipleValueEditorProperties(editor, initialList, stereotypeApplication, null, title, feature);
+	}
+
+	/**
+	 * This allows to set the observable list for the editor.
+	 *
+	 * @param editor
+	 *            The multiple value editor to manage.
+	 * @param initialList
+	 *            The initial list to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 * @since 3.4
+	 */
+	protected void setMultipleValueEditorProperties(final MultipleValueEditor<?> editor, final List<?> initialList, final EObject stereotypeApplication, final Element owner, final String title, final EStructuralFeature feature) {
 		final GMFObservableList observable = new GMFObservableList(initialList, EMFHelper.resolveEditingDomain(stereotypeApplication), stereotypeApplication, feature);
 		observable.addListChangeListener(this);
 		editor.setLabel(title);
@@ -250,7 +366,21 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		editor.addCommitListener(observable);
 	}
 
-	private void createMultipleEditor(final Class<?> typeClass, final EObject element, final String title, final EStructuralFeature feature) {
+	/**
+	 * This allows to create the multiple value editor to manage lists (it also create the correct observable list).
+	 *
+	 * @param typeClass
+	 *            The type of class to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application.
+	 * @param owner
+	 *            The owner element.
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 */
+	private void createMultipleEditor(final Class<?> typeClass, final EObject stereotypeApplication, final Element owner, final String title, final EStructuralFeature feature) {
 		final Class<? extends MultipleStringEditor<?>> editorClazz = EStructuralFeatureEditor.TYPE_TO_MULTI_EDITOR_CLASS.get(typeClass);
 		if (editorClazz == null) {
 			throw new IllegalArgumentException("No multiple editor has been found for class '" + typeClass + "'"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -258,14 +388,28 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		try {
 			final Constructor<? extends MultipleStringEditor<?>> constructor = editorClazz.getConstructor(Composite.class, boolean.class, boolean.class, int.class);
 			final MultipleStringEditor<?> editor = constructor.newInstance(pageBook, true, true, style);
-			setMultipleValueEditorProperties(editor, (List<?>) element.eGet(feature), element, title, feature);
+			setMultipleValueEditorProperties(editor, (List<?>) stereotypeApplication.eGet(feature), stereotypeApplication, owner, title, feature);
 			currentPage = editor;
 		} catch (final Exception e) {
 			Activator.log.error(e);
 		}
 	}
 
-	private void createSingleEditor(final Class<?> typeClass, final EObject element, final String title, final EStructuralFeature feature) {
+	/**
+	 * This allows to create the single value editor to manage lists (it also create the correct observable list).
+	 *
+	 * @param typeClass
+	 *            The type of class to manage.
+	 * @param stereotypeApplication
+	 *            The stereotype application.
+	 * @param owner
+	 *            The owner element.
+	 * @param title
+	 *            The title corresponding to the property.
+	 * @param feature
+	 *            The feature to manage.
+	 */
+	private void createSingleEditor(final Class<?> typeClass, final EObject stereotypeApplication, final Element owner, final String title, final EStructuralFeature feature) {
 		final Class<? extends AbstractValueEditor> clazz = EStructuralFeatureEditor.TYPE_TO_SINGLE_EDITOR_CLASS.get(typeClass);
 		if (clazz == null) {
 			throw new IllegalArgumentException("No single editor has been found for class '" + typeClass + "'"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -273,7 +417,7 @@ public class EStructuralFeatureEditor implements IValueChangeListener<Object>, I
 		try {
 			final Constructor<? extends AbstractValueEditor> constructor = clazz.getConstructor(Composite.class, int.class);
 			final AbstractValueEditor editor = constructor.newInstance(pageBook, style);
-			setValueEditorProperties(editor, element, title, feature);
+			setValueEditorProperties(editor, stereotypeApplication, owner, title, feature);
 			currentPage = editor;
 		} catch (final Exception e) {
 			Activator.log.error(e);

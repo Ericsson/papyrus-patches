@@ -9,6 +9,6 @@
 	  <relativePath>../../../../pom.xml</relativePath>
 	</parent>
 	<artifactId>org.eclipse.papyrus.uml.diagram.sequence</artifactId>
-	<version>5.2.200-SNAPSHOT</version>
+	<version>5.3.200-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 </project>

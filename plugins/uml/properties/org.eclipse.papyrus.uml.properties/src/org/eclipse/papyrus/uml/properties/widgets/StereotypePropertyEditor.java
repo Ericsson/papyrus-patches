@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2012, 2014 Atos, CEA, and others.
+ * Copyright (c) 2012, 2014, 2019 Atos, CEA, and others.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -11,7 +11,8 @@
  * Contributors:
  *  Mathieu Velten (Atos) mathieu.velten@atos.net - Initial API and implementation
  *  Christian W. Damus (CEA) - bug 448139
- *  
+ *  Nicolas FAUVERGUE (CEA LIST) nicolas.fauvergue@cea.fr - Bug 549705
+ *
  *****************************************************************************/
 package org.eclipse.papyrus.uml.properties.widgets;
 
@@ -42,11 +43,12 @@ import org.eclipse.papyrus.uml.tools.providers.UMLFilteredLabelProvider;
 import org.eclipse.papyrus.uml.tools.providers.UMLLabelProvider;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.Stereotype;
 
 public class StereotypePropertyEditor implements ISelectionChangedListener, IChangeListener {
 
-	protected EStructuralFeatureEditor eStructuralFeatureEditor;
+	protected StereotypeEStructuralFeatureEditor eStructuralFeatureEditor;
 
 	protected AppliedStereotypeCompositeWithView stereotypeComposite;
 
@@ -54,10 +56,11 @@ public class StereotypePropertyEditor implements ISelectionChangedListener, ICha
 
 	public StereotypePropertyEditor(Composite parent, int style, AppliedStereotypeCompositeWithView stereotypeComposite) {
 		this.stereotypeComposite = stereotypeComposite;
-		eStructuralFeatureEditor = new EStructuralFeatureEditor(parent, style);
+		eStructuralFeatureEditor = new StereotypeEStructuralFeatureEditor(parent, style);
 		eStructuralFeatureEditor.setChangeListener(this);
 	}
 
+	@Override
 	public void selectionChanged(SelectionChangedEvent event) {
 		if (event != null) {
 			IStructuredSelection structSelection = (IStructuredSelection) event.getSelection();
@@ -67,6 +70,7 @@ public class StereotypePropertyEditor implements ISelectionChangedListener, ICha
 				AppliedStereotypePropertyTreeObject pTO = (AppliedStereotypePropertyTreeObject) selection;
 
 				EObject stereotypeApplication = pTO.getStereotypeApplication();
+				Element owner = pTO.getElement();
 				EStructuralFeature feature = pTO.getFeature();
 				Stereotype stereotype = pTO.getStereotype();
 
@@ -77,14 +81,15 @@ public class StereotypePropertyEditor implements ISelectionChangedListener, ICha
 					labelProvider = new UMLLabelProvider();
 				}
 
+				eStructuralFeatureEditor.setStereotype(stereotype);
 				eStructuralFeatureEditor.setProviders(new UMLContentProvider(stereotypeApplication, feature, stereotype), labelProvider);
 				if (feature instanceof EReference) {
 					eStructuralFeatureEditor.setValueFactory(getUMLPropertyEditorFactory(stereotypeApplication, (EReference) feature));
 				}
 
-				eStructuralFeatureEditor.setFeatureToEdit(pTO.getProperty().getName(), feature, stereotypeApplication);
+				eStructuralFeatureEditor.setFeatureToEdit(pTO.getProperty().getName(), feature, owner, stereotypeApplication);
 			} else {
-				eStructuralFeatureEditor.setFeatureToEdit(null, null, null);
+				eStructuralFeatureEditor.setFeatureToEdit(null, null, null, null);
 			}
 		}
 	}
@@ -110,6 +115,7 @@ public class StereotypePropertyEditor implements ISelectionChangedListener, ICha
 		eStructuralFeatureEditor.setLayoutData(data);
 	}
 
+	@Override
 	public void handleChange(ChangeEvent event) {
 		if (!stereotypeComposite.isDisposed()) {
 			stereotypeComposite.refreshTreeViewer();
