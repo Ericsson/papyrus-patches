@@ -203,6 +203,14 @@ public class InteractionGraphCommandHelper {
 	}
 
 	
+	public boolean moveMessage(Message msg, int offsetY) {
+		initInteractionGraph();
+		InteractionGraphCommand command = newCommand("Nudge Message");
+		command.moveMessage(msg, new Point(0,offsetY));
+		IStatus status = executeCommand(command);
+		return status.isOK(); 		
+	}
+
 	public IStatus executeCommand(InteractionGraphCommand command) {
 		InteractionGraph graph = command.getInteractionGraph(); 
 		EditPartViewer viewer = graph.getEditPartViewer();

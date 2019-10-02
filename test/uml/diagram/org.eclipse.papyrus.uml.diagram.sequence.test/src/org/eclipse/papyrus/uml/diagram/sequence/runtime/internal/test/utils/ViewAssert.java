@@ -17,6 +17,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongrap
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities.EdgeSide;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionSpecification;
+import org.eclipse.uml2.uml.Lifeline;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
 import org.eclipse.uml2.uml.NamedElement;
@@ -53,8 +54,14 @@ public class ViewAssert {
 		 
 		 Rectangle r = ViewUtilities.getBounds(viewer, view);
 		 Assert.assertNotNull(String.format("View for '%s' can not calculate Bounds rect.",name),  r);
-		 
-		 Assert.assertEquals(String.format("View for '%s' bounds:",name), bounds, r);		 
+		 if (element instanceof Lifeline) {
+			 if (Math.abs(r.x-bounds.x) >= 2 || Math.abs(r.y-bounds.y) >= 2 ||
+				 Math.abs(r.bottom()-bounds.bottom()) >= 2 || Math.abs(r.right()-bounds.right()) >= 2) {
+				 Assert.assertEquals(String.format("View for '%s' bounds:",name), bounds, r);			 				 
+			 }
+		 } else {
+			 Assert.assertEquals(String.format("View for '%s' bounds:",name), bounds, r);			 
+		 }
 	}
 
 	public static void assertEdge(Diagram dia, Message msg, String type, Element anchoringSource, Point srcAnchor, Element anchoringTarget, Point trgAnchor) {

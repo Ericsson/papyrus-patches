@@ -19,6 +19,26 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
 	</properties>
+	<repositories>
+		<repository>
+			<id>Patches</id>
+			<url>file:${maven.multiModuleProjectDirectory}/../releng/com.ericsson.papyrus.patches.update-site/target/site</url>
+			<layout>p2</layout>
+		</repository>
+		
+		<repository>
+			<id>Papyrus</id>
+			<url>http://download.eclipse.org/modeling/mdt/papyrus/updates/releases/2019-09/4.5.0</url>
+			<layout>p2</layout>
+		</repository>
+		
+		<repository>
+			<id>Eclipse</id>
+			<url>http://download.eclipse.org/releases/2019-09/</url>
+			<layout>p2</layout>
+		</repository>
+		
+	</repositories>
 	<build>
 		<plugins>
 			<plugin>
@@ -60,6 +80,7 @@
 	</build>
 	
 	<modules>
+		<module>../devtools</module>
 		<module>uml/diagram/org.eclipse.papyrus.uml.diagram.sequence.test</module>
 	</modules>
 </project>

@@ -324,6 +324,10 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 		List<MarkNodeImpl> l = new ArrayList<>(layoutMarks);
 		l.forEach(this::removeLayoutMark);
 	}
+	
+	public List<MarkNode> getLayoutMarks() {
+		return Collections.unmodifiableList(layoutMarks);
+	}
 
 	@Override
 	public void layout() {

@@ -488,45 +488,31 @@ public class NodeUtilities {
 	}
 	
 	public static void moveNodeBlock(InteractionGraph interactionGraph, List<Node> nodes, int yPos, Map<Node, Cluster> toCluters) {
+		Rectangle r = NodeUtilities.getArea(nodes);
+		Node nodeAfter = NodeUtilities.getNodeAfterVerticalPos(interactionGraph, r.bottom());
+		Node nodeBefore = NodeUtilities.getNodeBeforeVerticalPos(interactionGraph, r.y());
+		int afterPos = nodeAfter != null ? nodeAfter.getBounds().y() : 0; 
 		MarkNode insertMark = ((InteractionGraphImpl)interactionGraph).setlayoutMark(new Point(0,yPos));
 
-		List<Node> allNodes = NodeUtilities.removeDuplicated(NodeUtilities.flattenKeepClusters(nodes));
-		
-		// 1) Calculate graph nodes in block area that are not part of the block
 		List<Node> otherNodes = NodeUtilities.getBlockOtherNodes(nodes);
-		/*
-		// 2) Calculate insertion point after remove block and post insertion nudge ammount.
-		Rectangle blockArea = NodeUtilities.getArea(nodes);
-		Rectangle otherArea = NodeUtilities.getArea(otherNodes);
-		
-		int blockStartPoint = blockArea.y;
-		int blockEndPoint = blockStartPoint + blockArea.height;
-		int otherStartPoint = blockStartPoint;
-		int otherEndPoint = blockEndPoint;
-		if (otherArea != null) {
-			otherStartPoint = otherArea.height != -1 ? otherArea.y : blockStartPoint;
-			otherEndPoint = otherArea.height != -1 ?  (otherArea.y + otherArea.height) : blockEndPoint;
-		}
-		int height = blockEndPoint - blockStartPoint;
-		int prev = otherStartPoint - blockStartPoint;
-		int after = blockEndPoint - otherEndPoint; 
-		
-		int postInsertionNudge = 0;
-		*/		
 		Map<Cluster, List<Node>> nodesByLifeline = nodes.stream().collect(Collectors.groupingBy(
 				d -> (toCluters.containsKey(d) ? toCluters.get(d) : NodeUtilities.getTopLevelCluster(d))));
 
-		List<Cluster> fragments = allNodes.stream().filter(Cluster.class::isInstance).map(Cluster.class::cast).filter(d->d.getFragmentCluster() != null).
-				collect(Collectors.toList());
-				
-		removeNodeBlockImpl(interactionGraph, nodes,otherNodes);		
-		
-		Rectangle newOtherArea = NodeUtilities.getArea(otherNodes);
-		
-		int newYPos = insertMark.getBounds().y;		
+		removeNodeBlockImpl(interactionGraph, nodes,otherNodes);				
+		int newYPos = insertMark.getBounds().y;
 		((InteractionGraphImpl)interactionGraph).clearLayoutMarks();
+		int extraNudge = interactionGraph.getGridSpacing();
+		if (nodeAfter == NodeUtilities.getNodeAfterVerticalPos(interactionGraph, newYPos) && 
+			nodeBefore == NodeUtilities.getNodeBeforeVerticalPos(interactionGraph, newYPos) && nodeAfter != null) {
+			// Must nudge all nodes After
+			int nudge = afterPos - nodeAfter.getBounds().y();
+			List<Node> nodesAfter = NodeUtilities.getNodesAfterVerticalPos(interactionGraph, newYPos);
+			NodeUtilities.nudgeNodes(nodesAfter, 0, nudge);
+			newYPos = yPos;
+			extraNudge = 0;
+		}
 		
-		addNodeBlock(interactionGraph, nodesByLifeline, newYPos, 0);
+		addNodeBlock(interactionGraph, nodesByLifeline, newYPos, extraNudge);
 	}
 	
 	public static void removeNodeBlocks(InteractionGraph interactionGraph, List<List<Node>> blocks) {
@@ -554,8 +540,8 @@ public class NodeUtilities {
 	}
 	
 	private static void removeNodeBlockImpl(InteractionGraph interactionGraph, List<Node> nodes, List<Node> otherNodes) {
-		Rectangle blockArea = NodeUtilities.getArea(nodes);
-		Rectangle otherArea = NodeUtilities.getArea(otherNodes);
+		Rectangle blockArea = NodeUtilities.getArea(nodes, interactionGraph.getLifelineClusters());
+		Rectangle otherArea = NodeUtilities.getArea(otherNodes, interactionGraph.getLifelineClusters());
 		
 		int blockStartPoint = blockArea.y;
 		int blockEndPoint = blockStartPoint + blockArea.height;
@@ -577,19 +563,19 @@ public class NodeUtilities {
 			List<Node> nodesAfter = interactionGraph.getLayoutNodes().stream().
 					filter(d->!allNodes.contains(d) && d.getBounds().y >= blockEndPoint).
 					collect(Collectors.toList());
-			Rectangle nodesAfterArea = NodeUtilities.getArea(nodesAfter);
+			Rectangle nodesAfterArea = NodeUtilities.getArea(nodesAfter, interactionGraph.getLifelineClusters());
 			
 			// Check how much can we nudge up...
 			Rectangle nudgeArea = NodeUtilities.getNudgeArea((InteractionGraphImpl)interactionGraph, otherNodes, false, true, allNodes);
 			int gridSpacing = interactionGraph.getGridSpacing();
 			if (nudgeArea != null && otherArea != null) {
 				int nudge = (otherArea.y - nudgeArea.y) / gridSpacing * gridSpacing;
-				NodeUtilities.nudgeNodes(otherNodes, 0, -nudge);			
-			}
+				NodeUtilities.nudgeNodes(otherNodes, 0, -nudge);
+			} 
 			
 			nudgeArea = NodeUtilities.getNudgeArea((InteractionGraphImpl)interactionGraph, nodesAfter, false, true, allNodes);
 			if (nudgeArea != null && nodesAfterArea != null) {
-				int nudge = (nodesAfterArea.y - Math.max(nudgeArea.y, blockEndPoint)) / gridSpacing * gridSpacing;
+				int nudge = (nodesAfterArea.y - Math.max(nudgeArea.y, blockStartPoint)) / gridSpacing * gridSpacing;
 				NodeUtilities.nudgeNodes(nodesAfter, 0, -nudge);
 			}
 
@@ -606,7 +592,7 @@ public class NodeUtilities {
 	// TODO: @etxacam generalize lifelineXXXX variables to parentClusterXXXX => Apply to all blocks functions
 	public static void addNodeBlock(InteractionGraph interactionGraph, Map<Cluster,List<Node>> nodesByTopClusters, int yPos, int extraNudge) {
 		List<Node> nodes = nodesByTopClusters.values().stream().flatMap(d->d.stream()).collect(Collectors.toList());
-		//Map<Cluster,List<Node>> allNodes = NodeUtilities.flattenKeepClusters(nodes);
+
 		int gridSpacing = interactionGraph.getGridSpacing(); 
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
 		List<Node> firstNodes = nodes.stream().filter(d->d.getBounds() != null && d.getBounds().y == totalArea.y).collect(Collectors.toList());		
@@ -618,7 +604,6 @@ public class NodeUtilities {
 					nudgeOverlap = false;
 					break;
 				}
-//				NodeUtilities.nudgeNodes(Arrays.asList(n), 0,gridSpacing);				
 			}
 
 			if (nudgeOverlap) {				
@@ -975,6 +960,12 @@ public class NodeUtilities {
 		return r;
 	}
 	
+	public static Rectangle getArea(List<? extends Node> nodes, List<? extends Node> excludeNodes) {
+		ArrayList<Node> ns = new ArrayList<Node>(nodes);
+		ns.removeAll(excludeNodes);
+		return getArea(ns);
+	}
+
 	public static Cluster getClusterAt(Cluster cluster, Point p) {
 		Node n = getNodeAt(cluster, p);
 		if (n == null)
@@ -1132,6 +1123,26 @@ public class NodeUtilities {
 		return afters.get(0);
 	}
 
+	public static final List<Node> getNodesBefore(InteractionGraph graph, List<Node> nodes) {
+		List<Node> orderedNodes = graph.getOrderedNodes();
+		int max = nodes.stream().map(orderedNodes::indexOf).filter(d->d>=0).max(Integer::compare).orElse(Integer.MAX_VALUE);
+		orderedNodes.removeIf(d->{ int i= orderedNodes.indexOf(d); return (i >= max);});
+		return orderedNodes;
+	}
+	
+	public static final List<Node> getNodesBeforeVerticalPos(InteractionGraph graph, int y) {
+		List<Node> orderedNodes = graph.getOrderedNodes();
+		orderedNodes.removeIf(d->d.getBounds().y >= y);
+		return orderedNodes;
+	}
+
+	public static final Node getNodeBeforeVerticalPos(InteractionGraph graph, int y) {
+		List<Node> befores = getNodesBeforeVerticalPos(graph, y);
+		if (befores.isEmpty())
+			return null;
+		return befores.get(befores.size()-1);
+	}
+
 	public static Rectangle getNudgeArea(InteractionGraphImpl graph, List<? extends Node> nodesToNudge, boolean horizontal, boolean vertical) {
 		return getNudgeArea(graph, nodesToNudge, horizontal, vertical, null); 
 	}
@@ -1195,13 +1206,15 @@ public class NodeUtilities {
 					.map(NodeUtilities::getLifelineNode).collect(Collectors.toList());
 			vLimitNodes.removeAll(lifelines);
 			for (Node n : lifelines) {
-				Rectangle clientArea = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
+				
+				Rectangle clientAreaView = ViewUtilities.getClientAreaBounds(graph.getEditPartViewer(),n.getView());
+				Rectangle headAreaView = ViewUtilities.getBounds(graph.getEditPartViewer(),n.getView());
 				Rectangle headArea = n.getBounds().getCopy();
-				headArea.height = clientArea.y - headArea.y;
+				headArea.height = clientAreaView.y - headAreaView.y;
 				if (!createLifelines.contains(n)) {
 					Node coveredNode = nodesToNudge.stream().filter(d->NodeUtilities.getLifelineNode(d) == n).findFirst().orElse(null);
 					if (coveredNode != null)
-						minY = Math.max(minY, clientArea.y);
+						minY = Math.max(minY, headArea.bottom());
 					else
 						minY = Math.max(minY, headArea.getCenter().y);
 				}

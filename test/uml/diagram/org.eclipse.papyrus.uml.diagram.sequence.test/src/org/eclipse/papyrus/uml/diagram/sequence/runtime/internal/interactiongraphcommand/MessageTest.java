@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.draw2d.geometry.Dimension;
@@ -39,6 +40,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.Inte
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.UmlAssert;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.ViewAssert;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.ViewConstants;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.test.utils.WorkspaceAndPapyrusEditor;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
 import org.eclipse.uml2.uml.InteractionFragment;
@@ -51,13 +53,16 @@ import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MessageTest extends BaseTest {
-
+	static {
+		System.setProperty("org.eclipse.papyrus.uml.diagram.sequence.debug.GridEnable","true");
+	}
+	
+	
 	private Lifeline[] createLifelines(Diagram diagram, InteractionGraphCommandHelper helper, int nLifelines, Rectangle[] lifelineRects) throws ExecutionException {
 		Lifeline[] lfs = new Lifeline[nLifelines];
 		
@@ -107,7 +112,7 @@ public class MessageTest extends BaseTest {
 		int y = offsetY + 80;
 		Point msg1_send = new Point(lifelines_rect[0].getCenter().x, y);
 		Point msg1_recv = new Point(lifelines_rect[1].getCenter().x, y);
-		Message msg1 = helper.addMessage("Message1", 
+		Message msg1 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.ASYNCH_SIGNAL_LITERAL, 
 				lifelines[0], msg1_send, 
 				lifelines[1], msg1_recv);
@@ -117,7 +122,7 @@ public class MessageTest extends BaseTest {
 		y += 40;
 		Point msg2_send = new Point(lifelines_rect[1].getCenter().x, y);
 		Point msg2_recv = new Point(lifelines_rect[0].getCenter().x, y);
-		Message msg2 = helper.addMessage("Message1", 
+		Message msg2 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.ASYNCH_SIGNAL_LITERAL, 
 				lifelines[1], msg2_send, 
 				lifelines[0], msg2_recv);
@@ -207,7 +212,7 @@ public class MessageTest extends BaseTest {
 
 		Point msg1_send = new Point(lifelines_rect[0].getCenter().x, y);
 		Point msg1_recv = new Point(lifelines_rect[1].getCenter().x, y);
-		Message msg1 = helper.addMessage("Message1", 
+		Message msg1 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.SYNCH_CALL_LITERAL, 
 				lifelines[0], msg1_send, 
 				lifelines[1], msg1_recv);
@@ -216,7 +221,7 @@ public class MessageTest extends BaseTest {
 	
 		Point msg2_send = new Point(lifelines_rect[1].getCenter().x, y+80);
 		Point msg2_recv = new Point(lifelines_rect[0].getCenter().x, y+80);
-		Message msg2 = helper.addMessage("Message2", 
+		Message msg2 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.SYNCH_CALL_LITERAL, 
 				lifelines[1], msg2_send, 
 				lifelines[0], msg2_recv);
@@ -286,7 +291,6 @@ public class MessageTest extends BaseTest {
 	}
 	
 	@Test
-	@Ignore("Delete empty space after block not working!")
 	public void message022_DeleteSyncMessage() throws ExecutionException {
 		test(this::deleteSyncMessage);
 	}
@@ -363,7 +367,7 @@ public class MessageTest extends BaseTest {
 
 		Point msg1_send = new Point(lifelines_rect[1].getCenter().x, y);
 		Point msg1_recv = new Point(lifelines_rect[2].getCenter().x, y);
-		Message msg1 = helper.addMessage("Message1", 
+		Message msg1 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.CREATE_MESSAGE_LITERAL, 
 				lifelines[1], msg1_send, 
 				lifelines[2], msg1_recv);
@@ -372,7 +376,7 @@ public class MessageTest extends BaseTest {
 	
 		Point msg2_send = new Point(lifelines_rect[1].getCenter().x, y+60);
 		Point msg2_recv = new Point(lifelines_rect[0].getCenter().x, y+60);
-		Message msg2 = helper.addMessage("Message1", 
+		Message msg2 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.CREATE_MESSAGE_LITERAL, 
 				lifelines[1], msg2_send, 
 				lifelines[0], msg2_recv);
@@ -428,7 +432,6 @@ public class MessageTest extends BaseTest {
 	}	
 
 	@Test
-	@Ignore("Delete empty space after block not working!")
 	public void message024_DeleteCreateMessage() throws ExecutionException {
 		test(this::deleteCreateMessage);
 	}
@@ -506,7 +509,7 @@ public class MessageTest extends BaseTest {
 		int y = offsetY + 80;
 		Point msg1_send = new Point(lifelines_rect[1].getCenter().x, y);
 		Point msg1_recv = new Point(lifelines_rect[2].getCenter().x, y);
-		Message msg1 = helper.addMessage("Message1", 
+		Message msg1 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.DELETE_MESSAGE_LITERAL, 
 				lifelines[1], msg1_send, 
 				lifelines[2], msg1_recv);
@@ -515,7 +518,7 @@ public class MessageTest extends BaseTest {
 	
 		Point msg2_send = new Point(lifelines_rect[1].getCenter().x, y+60);
 		Point msg2_recv = new Point(lifelines_rect[0].getCenter().x, y+60);
-		Message msg2 = helper.addMessage("Message1", 
+		Message msg2 = helper.addMessage("Message"+(nMessage++), 
 				MessageSort.DELETE_MESSAGE_LITERAL, 
 				lifelines[1], msg2_send, 
 				lifelines[0], msg2_recv);
@@ -629,11 +632,11 @@ public class MessageTest extends BaseTest {
 	}
 	
 	@Test
-	public void message016_NudgeAsynchMessage() throws ExecutionException {
-		test(this::nudgeAsynchMessage);
+	public void message016_NudgeMessages() throws ExecutionException {
+		test(this::nudgeMessages);
 	}
 
-	private boolean nudgeAsynchMessage(Diagram diagram, InteractionGraphCommandHelper helper) throws ExecutionException {
+	private boolean nudgeMessages(Diagram diagram, InteractionGraphCommandHelper helper) throws ExecutionException {
 		Rectangle[] lf_rects = new Rectangle[3];
 		Lifeline[] lfs = createLifelines(diagram, helper, 3, lf_rects);
 		
@@ -678,6 +681,7 @@ public class MessageTest extends BaseTest {
 		
 		for (int n=0; n<nMessages.length; n++) {
 			helper.nudgeMessage(msgs.get(nMessages[n]), nudges[n]);
+			editor.flushDisplayEvents();
 			Point p = new Point();
 			for (int i=nMessages[n]; i<msgs.size(); i++) {
 				Message msg = msgs.get(i);
@@ -696,11 +700,102 @@ public class MessageTest extends BaseTest {
 		return true;
 	}
 			
+	@Test
+	public void message017_MoveMessages() throws ExecutionException {
+		test(this::moveMessages);
+	}
+
+	private boolean moveMessages(Diagram diagram, InteractionGraphCommandHelper helper) throws ExecutionException {
+		Rectangle[] lf_rects = new Rectangle[3];
+		Lifeline[] lfs = createLifelines(diagram, helper, 3, lf_rects);
+		
+		Rectangle[][] lifelines_rects = {
+				{lf_rects[0], lf_rects[1]},
+				{lf_rects[1], lf_rects[2]},
+				{lf_rects[0], lf_rects[2]}
+		};
+		
+		Lifeline[][] lifelines = {
+				{lfs[0], lfs[1]},
+				{lfs[1], lfs[2]},
+				{lfs[0], lfs[2]}				
+		};
+
+		List<Message> msgs = new ArrayList<>();
+		List<Edge> msgViews = new ArrayList<>();
+		List<Point> msgSrcAnchors = new ArrayList<>();
+		List<Point> msgTrgAnchors = new ArrayList<>();
+
+		// Adding Asynch Message
+		offsetY += 20;
+		msgs.addAll(Arrays.asList(createCreateMessage(diagram,helper, lfs, lf_rects)));		
+		offsetY += 120;
+		msgs.addAll(Arrays.asList(createAsyncMessage(diagram,helper, lifelines[0], lifelines_rects[0])));
+		offsetY += 80;
+		msgs.addAll(Arrays.asList(createSyncMessage(diagram,helper, lifelines[1], lifelines_rects[1])));
+		offsetY += 160;
+		msgs.addAll(Arrays.asList(createDeleteMessage(diagram,helper, lfs, lf_rects)));		
+		
+		for (int i=0; i<msgs.size(); i+=2) {
+			msgViews.add((Edge)ViewUtilities.getViewForElement(diagram, msgs.get(i)));
+			msgViews.add((Edge)ViewUtilities.getViewForElement(diagram, msgs.get(i+1)));
+			msgSrcAnchors.add(ViewUtilities.getAnchorLocationForView(helper.getViewer(), msgViews.get(i), EdgeSide.Source));
+			msgTrgAnchors.add(ViewUtilities.getAnchorLocationForView(helper.getViewer(), msgViews.get(i), EdgeSide.Target));
+			msgSrcAnchors.add(ViewUtilities.getAnchorLocationForView(helper.getViewer(), msgViews.get(i+1), EdgeSide.Source));
+			msgTrgAnchors.add(ViewUtilities.getAnchorLocationForView(helper.getViewer(), msgViews.get(i+1), EdgeSide.Target));
+		}
+		
+		int nMessages[] = {0,2,6,8,9};
+		List[] groups = {Arrays.asList(0),Arrays.asList(2),Arrays.asList(6,7),Arrays.asList(8), Arrays.asList(9)};
+		int moves[] = {100,140, -120, 40, -40};
+		int adjustments[][] = {{-60, 20 },{-40,20},{-80, 60}, {0, 0}, {0,20}}; 
+		
+		for (int n=0; n<nMessages.length; n++) {
+			helper.moveMessage(msgs.get(nMessages[n]), moves[n]);
+			editor.flushDisplayEvents();
+			Message moveMessage = msgs.get(nMessages[n]);
+			int origY = msgSrcAnchors.get(nMessages[n]).y;
+			int destY = origY + moves[n];
+			Point p = new Point();			
+			for (int i=0; i<msgs.size(); i++) {
+				Message msg = msgs.get(i);
+				p.setLocation(msgSrcAnchors.get(i));
+				int delta = 0;
+				if (groups[n].stream().filter(Predicate.isEqual(i)).findFirst().orElse(null) != null) {
+					if (destY > origY) 
+						delta = moves[n] + adjustments[n][0];
+					else
+						delta = moves[n];
+						
+				} else {
+					
+					if (p.y > origY)
+						delta += adjustments[n][0];
+					if (p.y > destY)
+						delta += adjustments[n][1];
+				}				
+													
+				p.translate(0, delta);
+				ViewAssert.assertEdgeAnchorLocation(diagram, msg, msg.getSendEvent(), p);
+				msgSrcAnchors.get(i).setLocation(p);
+				
+				p.setLocation(msgTrgAnchors.get(i));
+				p.translate(0, delta);
+				ViewAssert.assertEdgeAnchorLocation(diagram, msg, msg.getReceiveEvent(), p);
+				msgTrgAnchors.get(i).setLocation(p);			
+			}
+		}
+		
+		return true;
+	}
 
 	@Before
 	public void reset() {
 		offsetY = 0;
+		nMessage=1;
 	}
+
+	private int nMessage = 1;
 	
 	private int offsetY = 0;
 	

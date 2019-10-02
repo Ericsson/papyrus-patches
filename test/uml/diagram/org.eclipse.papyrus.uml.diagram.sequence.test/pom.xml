@@ -46,25 +46,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<repositories>
-		<repository>
-			<id>Patches</id>
-			<url>file:${project.basedir}/../../../../releng/com.ericsson.papyrus.patches.update-site/target/site</url>
-			<layout>p2</layout>
-		</repository>
-		
-		<repository>
-			<id>Papyrus</id>
-			<url>http://download.eclipse.org/modeling/mdt/papyrus/updates/releases/2019-09/4.5.0</url>
-			<layout>p2</layout>
-		</repository>
-		
-		<repository>
-			<id>Eclipse</id>
-			<url>http://download.eclipse.org/releases/2019-09/</url>
-			<layout>p2</layout>
-		</repository>
-		
-	</repositories>
 </project>
