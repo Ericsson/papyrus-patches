@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Column;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.FragmentCluster;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.GraphItem;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.MarkNode.Kind;
@@ -68,6 +70,39 @@ public class InteractionGraphService {
 		this.interactionGraph = interactionGraph;
 		this.editingDomain = editingDomain;
 	}
+	
+	public boolean canMoveElements(List<Element> elements, Point point) {
+		
+		int minY = Integer.MAX_VALUE;
+		int maxY = Integer.MIN_VALUE;
+		List<Node> nodes = elements.stream().map(interactionGraph::getItemFor).
+				map(d->d instanceof Link ? ((Link)d).getSource() : (Node)d).
+				collect(Collectors.toList());
+		nodes = nodes.stream().flatMap(d->d instanceof FragmentCluster ? ((FragmentCluster)d).getClusters().stream() : Collections.singleton(d).stream()).
+			collect(Collectors.toList());
+		nodes = NodeUtilities.flatten(nodes);
+		Set<Cluster> lfs = nodes.stream().map(d->NodeUtilities.getLifelineNode(d)).collect(Collectors.toSet());
+		for (Cluster n : lfs) {
+			Rectangle lifelineArea = ViewUtilities.getClientAreaBounds(interactionGraph.getEditPartViewer(), 
+					NodeUtilities.getLifelineNode(n).getView());
+			minY = Math.min(minY,lifelineArea.y);
+			maxY = Math.max(maxY,lifelineArea.y+lifelineArea.height);
+		}
+		
+		if (point.y <= minY || point.y >= maxY) {
+			return false;
+		}
+		return true;
+	}
+
+	public void moveElements(List<Element> elements, Point point) {
+		List<Node> nodes = elements.stream().map(interactionGraph::getItemFor).
+				map(d->d instanceof Link ? ((Link)d).getSource() : (Node)d).
+				collect(Collectors.toList());
+		List<List<Node>> blocks = NodeUtilities.getBlocks(nodes);
+		NodeUtilities.moveNodeBlocks(interactionGraph, blocks, point.y);
+	}
+	
 	
 	public boolean canAddLifeline(CreateElementRequestAdapter elementAdapter, Rectangle rect) {
 		// TODO: Check with ElementType Services?? Just now, we assume it is possible. 
@@ -135,6 +170,8 @@ public class InteractionGraphService {
 		if (curNextLifeline != null) {
 			nudgeLifeline((Lifeline)curNextLifeline.getElement(), new Point(-lifelineNode.getBounds().width - extraNudge,0));
 		}
+		
+		
 	}
 
 	public boolean canDeleteLifeline(Lifeline lifeline) {
@@ -1522,9 +1559,14 @@ public class InteractionGraphService {
 	}
 
 
-	public boolean canNudgeResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+	public boolean canNudgeResizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
 		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);
 		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
+
+		Rectangle rect = fragmentCluster.getBounds().getCopy();
+		rect.translate(deltaMove);
+		rect.resize(deltaSize);
+		
 		if (minSize.width > rect.width || minSize.height > rect.height) {
 			return false; 
 		}
@@ -1561,12 +1603,18 @@ public class InteractionGraphService {
 		return true;
 	}
 
-	public void nudgeResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+	public void nudgeResizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
 		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);
+		
+		Rectangle rect = fragmentCluster.getBounds().getCopy();
+		rect.translate(deltaMove);
+		rect.resize(deltaSize);
+
 		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
 		List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
 				collect(Collectors.toList());
-		
+
+
 		int newBottom = rect.bottom();
 		int bottom = fragmentCluster.getBounds().bottom(); 
 		if ( bottom != newBottom) {
@@ -1613,8 +1661,11 @@ public class InteractionGraphService {
 		interactionGraph.layout();
 	}
 
-	public boolean canResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+	public boolean canResizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
 		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
+		Rectangle rect = fragmentCluster.getBounds().getCopy();
+		rect.translate(deltaMove);
+		rect.resize(deltaSize);
 
 		Dimension minSize = interactionGraph.getLayoutManager().getMinimumSize(fragmentCluster);
 		if (minSize.width > rect.width || minSize.height > rect.height) {
@@ -1661,8 +1712,12 @@ public class InteractionGraphService {
 		return true;
 	}
 
-	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
+	public void resizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
 		FragmentClusterImpl fragmentCluster = (FragmentClusterImpl)interactionGraph.getClusterFor(intUse);		
+		Rectangle rect = fragmentCluster.getBounds().getCopy();
+		rect.translate(deltaMove);
+		rect.resize(deltaSize);
+
 		List<Cluster> lifelines = NodeUtilities.getIntersectingLifelineLines(interactionGraph,rect);
 
 		List<Cluster> curLifelines = fragmentCluster.getClusters().stream().map(NodeUtilities::getLifelineNode).
@@ -1745,7 +1800,7 @@ public class InteractionGraphService {
 		FragmentCluster fragmentCluster = (FragmentCluster)interactionGraph.getClusterFor(intUse);		
 		List<Node> nodes = NodeUtilities.getBlock(fragmentCluster);
 		Rectangle totalArea = NodeUtilities.getArea(nodes);
-		NodeUtilities.moveNodeBlock(interactionGraph,nodes, totalArea.y); // We moved to the 
+		NodeUtilities.moveNodeBlock(interactionGraph,nodes, rect.y); // We moved to the 
 	}
 
 	public boolean canDeleteInteractionUse(InteractionUse intUse) {

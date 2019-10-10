@@ -91,7 +91,7 @@ public class InteractionGraphCommandHelper {
 		command.addLifeline((CreateElementRequestAdapter)req.getViewAndElementDescriptor().getElementAdapter(),
 				req.getViewAndElementDescriptor(),
 				rect);
-		command.addAction().apply(d->last(d.getLifelineClusters())).handleResult((Node n)->setName(n, name));
+		command.addAction("addLifeline").apply(d->last(d.getLifelineClusters())).handleResult((Node n)->setName(n, name));
 		IStatus status = executeCommand(command);
 		if (status.isOK()) {
 			Lifeline lf = (Lifeline)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(Lifeline.class);
@@ -133,7 +133,7 @@ public class InteractionGraphCommandHelper {
 		command.addInteractionUse((CreateElementRequestAdapter)req.getViewAndElementDescriptor().getElementAdapter(),
 				req.getViewAndElementDescriptor(),
 				rect);
-		command.addAction().apply(d->last(d.getFragmentClusters())).handleResult((Node n)->setName(n, name));
+		command.addAction("addInteractionUse").apply(d->last(d.getFragmentClusters())).handleResult((Node n)->setName(n, name));
 		IStatus status = executeCommand(command);
 		if (status.isOK()) {
 			InteractionUse use = (InteractionUse)req.getViewAndElementDescriptor().getElementAdapter().getAdapter(InteractionUse.class);
@@ -225,6 +225,7 @@ public class InteractionGraphCommandHelper {
 			status = new Status(IStatus.ERROR, 
 					org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin.ID, 
 					e.getMessage(), e);
+			e.printStackTrace();
 		}
 		InteractionModelHelper.endTransaction();
 		InteractionNotationHelper.refreshViewer(viewer);

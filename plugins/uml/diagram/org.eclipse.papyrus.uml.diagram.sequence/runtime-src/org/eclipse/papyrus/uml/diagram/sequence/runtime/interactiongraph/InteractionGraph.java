@@ -43,6 +43,7 @@ import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
  */
 public interface InteractionGraph {
 
+	public void reset();
 	/**
 	 * Returns the diagram used to build this graph, basically to tag the nodes graphical positions.
 	 *

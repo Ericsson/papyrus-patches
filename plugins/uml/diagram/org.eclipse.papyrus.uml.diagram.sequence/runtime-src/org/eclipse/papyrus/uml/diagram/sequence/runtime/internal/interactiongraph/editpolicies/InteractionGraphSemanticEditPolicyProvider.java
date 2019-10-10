@@ -23,8 +23,15 @@ import org.eclipse.gmf.runtime.diagram.ui.services.editpolicy.IEditPolicyProvide
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractExecutionSpecificationEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.CLifeLineEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.GateNameEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.InteractionUseEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageAsyncAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageDeleteAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageFoundAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageLostAppliedStereotypeEditPart;
+import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageSyncAppliedStereotypeEditPart;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.OccurenceSemanticEditPolicy;
 import org.eclipse.uml2.uml.DestructionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
@@ -42,6 +49,20 @@ import org.eclipse.uml2.uml.OccurrenceSpecification;
  * </p>
  */
 public class InteractionGraphSemanticEditPolicyProvider extends AbstractProvider implements IEditPolicyProvider {
+	private static final Class<?> ADD_POLICY_CLASSES[] = {
+		   AbstractMessageEditPart.class, CLifeLineEditPart.class,  AbstractExecutionSpecificationEditPart.class,
+		   InteractionUseEditPart.class, InteractionEditPart.class
+	};		
+
+	private static final Class<?> REMOVE_POLICY_CLASSES[] = {
+		   MessageAsyncAppliedStereotypeEditPart.class, 
+		   MessageSyncAppliedStereotypeEditPart.class,
+		   MessageCreateAppliedStereotypeEditPart.class,
+		   MessageDeleteAppliedStereotypeEditPart.class,
+		   MessageLostAppliedStereotypeEditPart.class,
+		   MessageFoundAppliedStereotypeEditPart.class,
+		   GateNameEditPart.class
+	};		
 
 	@Override
 	public boolean provides(IOperation operation) {
@@ -52,16 +73,42 @@ public class InteractionGraphSemanticEditPolicyProvider extends AbstractProvider
 		CreateEditPoliciesOperation op = (CreateEditPoliciesOperation) operation;
 		EditPart editPart = op.getEditPart();
 
-		return editPart instanceof AbstractMessageEditPart || 
-			   editPart instanceof CLifeLineEditPart || 
-			   editPart instanceof AbstractExecutionSpecificationEditPart ||
-			   editPart instanceof InteractionUseEditPart ||
-			   editPart instanceof InteractionEditPart;
+		for (Class<?> c : ADD_POLICY_CLASSES) {
+			if (c.isInstance(editPart))
+				return true;
+		}
+
+		for (Class<?> c : REMOVE_POLICY_CLASSES) {
+			if (c.isInstance(editPart))
+				return true;
+		}
+		
+		return false; 
 	}
 
 	@Override
 	public void createEditPolicies(EditPart editPart) {
-		editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new InteractionGraphSemanticEditPolicy());
+		boolean add = false;
+		for (Class<?> c : ADD_POLICY_CLASSES) {
+			if (c.isInstance(editPart)) {
+				add = true;
+				break;
+			}
+		}
+
+		boolean remove = false;
+		for (Class<?> c : REMOVE_POLICY_CLASSES) {
+			if (c.isInstance(editPart)) {
+				remove = true;
+				break;
+			}
+		}
+
+		if (remove)
+			editPart.removeEditPolicy(EditPolicyRoles.SEMANTIC_ROLE);
+		if (add)
+			editPart.installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new InteractionGraphSemanticEditPolicy());
+	
 	}
 
 }

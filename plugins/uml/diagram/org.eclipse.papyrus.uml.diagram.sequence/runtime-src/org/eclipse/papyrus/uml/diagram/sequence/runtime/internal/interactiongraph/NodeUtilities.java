@@ -195,6 +195,16 @@ public class NodeUtilities {
 			}
 		}
 		
+		flat = new HashSet<>();
+		// Reverse pass
+		for (int i=blocks.size()-1; i>=0; i--) {
+			List<Node> block = blocks.get(i);
+			if (flat.containsAll(block)) {
+				blocks.remove(i);
+			}			
+			flat.addAll(NodeUtilities.flattenKeepClusters(block));
+		}
+		
 		return blocks;
 	}
 
@@ -515,6 +525,43 @@ public class NodeUtilities {
 		addNodeBlock(interactionGraph, nodesByLifeline, newYPos, extraNudge);
 	}
 	
+	public static void moveNodeBlocks(InteractionGraph interactionGraph, List<List<Node>> blocks, int yPos) {
+		int newYPos = yPos;
+		List<Map<Cluster, List<Node>>> nodesByLifelines = new ArrayList<>();
+		List<Integer> extraNudge = new ArrayList<Integer>();
+		for (List<Node> nodes : blocks) {		
+			Rectangle r = NodeUtilities.getArea(nodes);
+			Node nodeAfter = NodeUtilities.getNodeAfterVerticalPos(interactionGraph, r.bottom());
+			Node nodeBefore = NodeUtilities.getNodeBeforeVerticalPos(interactionGraph, r.y());
+			int afterPos = nodeAfter != null ? nodeAfter.getBounds().y() : 0; 
+			MarkNode insertMark = ((InteractionGraphImpl)interactionGraph).setlayoutMark(new Point(0,newYPos));
+	
+			List<Node> otherNodes = NodeUtilities.getBlockOtherNodes(nodes);
+			Map<Cluster, List<Node>> nbl = nodes.stream().collect(Collectors.groupingBy(d -> NodeUtilities.getTopLevelCluster(d)));
+			nodesByLifelines.add(nbl);
+
+			removeNodeBlockImpl(interactionGraph, nodes,otherNodes);				
+			newYPos = insertMark.getBounds().y;
+			((InteractionGraphImpl)interactionGraph).clearLayoutMarks();
+
+			if (nodeAfter == NodeUtilities.getNodeAfterVerticalPos(interactionGraph, newYPos) && 
+				nodeBefore == NodeUtilities.getNodeBeforeVerticalPos(interactionGraph, newYPos) && nodeAfter != null) {
+				// Must nudge all nodes After
+				int nudge = afterPos - nodeAfter.getBounds().y();
+				List<Node> nodesAfter = NodeUtilities.getNodesAfterVerticalPos(interactionGraph, newYPos);
+				NodeUtilities.nudgeNodes(nodesAfter, 0, nudge);
+				newYPos = yPos;
+				extraNudge.add(0);
+			} else {
+				extraNudge.add(interactionGraph.getGridSpacing());				
+			}
+		}
+
+		for (int i=blocks.size()-1; i>=0; i--) {		
+			addNodeBlock(interactionGraph, nodesByLifelines.get(i), newYPos, extraNudge.get(i));
+		}
+	}
+
 	public static void removeNodeBlocks(InteractionGraph interactionGraph, List<List<Node>> blocks) {
 		for (List<Node> block : blocks) {
 			removeNodeBlock(interactionGraph, block);

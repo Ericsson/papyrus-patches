@@ -13,6 +13,7 @@
  *****************************************************************************/
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph;
 
+import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -26,7 +27,6 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ExecutionOccurrenceSpecification;
 import org.eclipse.uml2.uml.ExecutionSpecification;
-import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageOccurrenceSpecification;
 import org.eclipse.uml2.uml.NamedElement;
@@ -37,6 +37,20 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		this.element = element;
 	}
 
+	protected void reset() {
+		parent = null;
+		connects = false;
+		oppositeNode = null;
+		connectingLink = null;  
+		
+		view = null;
+		editPart = null;
+		row = null;
+		column = null;
+		bounds = null;
+		boundsAlingment = PositionConstants.MIDDLE | PositionConstants.CENTER; 
+	}
+	
 	void setParent(ClusterImpl cluster) {
 		this.parent = cluster;
 	}
@@ -155,6 +169,15 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		return graph.getEditPartViewer();
 	}
 
+	public int getBoundsPosition() {
+		return boundsAlingment;
+	}
+
+	public void setBoundsPosition(int boundsAlingment) {
+		this.boundsAlingment = boundsAlingment;
+	}
+
+
 	Rectangle extractBounds() {
 		Rectangle r = ViewUtilities.getBounds(getViewer(), view);
 		if (r == null) {
@@ -163,8 +186,15 @@ public class NodeImpl extends GraphItemImpl implements Node {
 		r = r.getCopy();
 		if (!(this instanceof Cluster)) {
 			if (r.width != 1 && r.height != 1) {
-				r.x = r.getCenter().x;
-				r.y = r.getCenter().y;
+				if ((boundsAlingment & PositionConstants.CENTER) != 0)					
+					r.x = r.getCenter().x;
+				else if ((boundsAlingment & PositionConstants.RIGHT) != 0)
+					r.x = r.getRight().x;
+				
+				if ((boundsAlingment & PositionConstants.MIDDLE) != 0)					
+					r.y = r.getCenter().y;
+				else if ((boundsAlingment & PositionConstants.BOTTOM) != 0)
+					r.y = r.getBottom().y;
 			}
 			r.width = 0;
 			r.height = 0;
@@ -262,4 +292,5 @@ public class NodeImpl extends GraphItemImpl implements Node {
 	protected RowImpl row;
 	protected ColumnImpl column;
 	protected Rectangle bounds;
+	private int boundsAlingment = PositionConstants.MIDDLE | PositionConstants.CENTER; 
 }

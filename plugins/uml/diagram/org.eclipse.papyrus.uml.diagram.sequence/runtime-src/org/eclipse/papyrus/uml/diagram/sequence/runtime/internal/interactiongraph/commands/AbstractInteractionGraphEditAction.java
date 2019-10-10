@@ -18,16 +18,11 @@ import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
 
 public abstract class AbstractInteractionGraphEditAction implements InteractionGraphEditAction {
-	public AbstractInteractionGraphEditAction(InteractionGraph interactionGraph) {
-		this.interactionGraph = interactionGraph;
-	}
-
-	protected InteractionGraph getInteractionGraph() {
-		return interactionGraph;
+	public AbstractInteractionGraphEditAction() {
 	}
 
 	@Override
-	public boolean prepare() {
+	public boolean prepare(InteractionGraph interactionGraph) {
 		return true;
 	};
 

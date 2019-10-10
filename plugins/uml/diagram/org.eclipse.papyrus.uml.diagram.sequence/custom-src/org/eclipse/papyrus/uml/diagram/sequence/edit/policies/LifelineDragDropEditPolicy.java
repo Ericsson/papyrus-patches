@@ -50,7 +50,7 @@ public class LifelineDragDropEditPolicy extends DragDropEditPolicy {
 
 	@Override
 	protected Command getDropCommand(ChangeBoundsRequest request) {
-		GraphicalEditPart ep = (GraphicalEditPart)request.getEditParts().get(0);
+		EditPart ep = (EditPart)request.getEditParts().get(0);
 		if (ep instanceof AbstractExecutionSpecificationEditPart) {
 			if (!KeyboardHandler.getKeyboardHandler().isAnyPressed())
 				return UnexecutableCommand.INSTANCE;

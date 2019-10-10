@@ -32,6 +32,12 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 		super(element);
 	}
 
+	protected void reset() {
+		super.reset();
+		fragmentCluster = null;
+		nodes = new ArrayList<NodeImpl>();
+	}
+	
 	@Override
 	public ClusterImpl getParent() {
 		ClusterImpl par = super.getParent();
@@ -136,6 +142,7 @@ public class ClusterImpl extends NodeImpl implements Cluster {
 	private String getPrintableString(Element element) {
 		return getElement() instanceof NamedElement ? ((NamedElement)getElement()).getName() : "A " + getElement().eClass().getName();
 	}
+	
 	private FragmentClusterImpl fragmentCluster;
 	private List<NodeImpl> nodes = new ArrayList<NodeImpl>();
 }

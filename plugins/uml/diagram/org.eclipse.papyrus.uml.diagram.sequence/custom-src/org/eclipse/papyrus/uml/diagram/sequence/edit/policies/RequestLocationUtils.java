@@ -14,6 +14,9 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.edit.policies;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.EditPartViewer;
@@ -33,6 +36,7 @@ public class RequestLocationUtils {
 	public static final String CLICK_LOCATION_KEY = "clickLocation";
 	public static final String ORIG_LOCATION_KEY = "origLocation";
 
+	@SuppressWarnings("unchecked")
 	public static Point calculateRequestDragDelta(Request request, Point point, GraphicalEditPart ep, Point figureDragPoint) {
 		EditPartViewer viewer = ep.getViewer();
 		Point loc = point.getCopy();
@@ -41,16 +45,26 @@ public class RequestLocationUtils {
 			SelectInDiagramHelper.exposeLocation((FigureCanvas)viewer.getControl(),loc);
 		}
 	
-		Point srcLoc = (Point)request.getExtendedData().get(CLICK_LOCATION_KEY);		
+		Map<GraphicalEditPart,Point> map = (Map<GraphicalEditPart,Point>)request.getExtendedData().get(CLICK_LOCATION_KEY);
+		if (map == null) {
+			map = new HashMap<>();
+			request.getExtendedData().put(CLICK_LOCATION_KEY, map);
+		}		
+		Point srcLoc = map.get(ep);		
 		if (srcLoc == null) {
 			srcLoc = loc.getCopy();
-			request.getExtendedData().put(CLICK_LOCATION_KEY, srcLoc);
+			map.put(ep, srcLoc);
 		}
 
-		Point orig = (Point)request.getExtendedData().get(ORIG_LOCATION_KEY);
+		map = (Map<GraphicalEditPart,Point>)request.getExtendedData().get(ORIG_LOCATION_KEY);
+		if (map == null) {
+			map = new HashMap<>();
+			request.getExtendedData().put(ORIG_LOCATION_KEY, map);
+		}		
+		Point orig = map.get(ep);
 		if (orig == null) {
 			orig = figureDragPoint.getCopy();
-			request.getExtendedData().put(ORIG_LOCATION_KEY, figureDragPoint);
+			map.put(ep, orig);
 		}
 		
 		loc = SequenceUtil.getSnappedLocation(ep,loc);

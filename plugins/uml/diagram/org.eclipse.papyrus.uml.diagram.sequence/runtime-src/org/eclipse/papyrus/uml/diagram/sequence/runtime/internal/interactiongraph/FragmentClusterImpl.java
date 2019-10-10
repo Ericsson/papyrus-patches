@@ -32,6 +32,16 @@ public class FragmentClusterImpl extends ClusterImpl implements FragmentCluster 
 		super(element);
 	}
 
+	protected void reset() {
+		super.reset();
+		clusters = new ArrayList<ClusterImpl>();
+		fragmentClusters = new ArrayList<FragmentClusterImpl>();
+		innerGates = new ArrayList<NodeImpl>();
+		outerGates = new ArrayList<NodeImpl>();
+		floatingNodes = new ArrayList<MarkNodeImpl>();;
+		
+	}
+	
 	@Override
 	public List<Cluster> getClusters() {
 		return Collections.unmodifiableList(clusters);

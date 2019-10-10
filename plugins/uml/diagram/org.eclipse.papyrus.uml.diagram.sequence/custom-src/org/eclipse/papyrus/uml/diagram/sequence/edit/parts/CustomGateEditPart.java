@@ -43,6 +43,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Interac
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ViewUtilities;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.InteractionGraphCommand;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands.KeyboardHandler;
+import org.eclipse.papyrus.uml.diagram.sequence.tools.PapyrusSequenceDragEditPartsTracker;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.uml2.uml.Gate;
 import org.eclipse.uml2.uml.InteractionFragment;
@@ -86,8 +87,7 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 				
 				Gate gate = (Gate)resolveSemanticElement();
 				InteractionGraphCommand cmd = new InteractionGraphCommand(((IGraphicalEditPart) getHost()).getEditingDomain(), 
-						"Move Message", graph, null);
-
+						"Move Gate", graph, null);
 				Rectangle bounds = ViewUtilities.getBounds(getViewer(), ((IGraphicalEditPart)getHost()).getNotationView()).getCopy();
 				bounds = request.getTransformedRectangle(bounds);	
 				Rectangle beforeSnap = bounds.getCopy();
@@ -166,7 +166,7 @@ public class CustomGateEditPart extends GateEditPart implements IGraphicalEditPa
 	 */
 	@Override
 	public DragTracker getDragTracker(Request request) {
-		return new PapyrusDragEditPartsTrackerEx(this, false, true, false) {
+		return new PapyrusSequenceDragEditPartsTracker(this, false, true, false) {
 			@Override
 			protected void setCloneActive(boolean cloneActive) {
 				super.setCloneActive(false); // Disable cloning

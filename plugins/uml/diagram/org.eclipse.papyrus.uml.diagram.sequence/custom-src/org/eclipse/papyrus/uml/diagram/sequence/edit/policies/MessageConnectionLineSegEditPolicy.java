@@ -25,6 +25,7 @@ import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.GhostImageFigure;
 import org.eclipse.draw2d.XYAnchor;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.BendpointRequest;
 import org.eclipse.gmf.runtime.diagram.ui.commands.ICommandProxy;
@@ -55,7 +56,7 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 		
 		Connection connection = getConnection();
 		Point p = connection.getSourceAnchor().getReferencePoint();
-		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, request.getSource(), p);
+		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, (GraphicalEditPart)getHost(), p);
 		delta.x = 0;
 		Edge connectionView = (Edge) request.getSource().getModel();
 		if (!(connectionView.getElement() instanceof Message))
@@ -86,7 +87,7 @@ public class MessageConnectionLineSegEditPolicy extends ConnectionBendpointEditP
 	protected void showCreateBendpointFeedback(BendpointRequest request) {
 		Connection con = getConnection();
 		Point p = con.getSourceAnchor().getReferencePoint();
-		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, request.getSource(), p);
+		Point delta = RequestLocationUtils.calculateRequestDragDelta(request, (GraphicalEditPart)getHost(), p);
 		
 		if (originalSourceAnchor == null || originalTargetAnchor == null) {
 			originalSourceAnchor = con.getSourceAnchor();

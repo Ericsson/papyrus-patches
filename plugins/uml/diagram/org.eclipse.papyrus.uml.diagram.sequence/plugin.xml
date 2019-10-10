@@ -354,12 +354,12 @@
             name="Highest">
       </Priority>
    </editpolicyProvider>
-   <editpolicyProvider
+   <!--editpolicyProvider
          class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomExecutionSpecificationEditPolicyProvider">
       <Priority
             name="Highest">
       </Priority>
-   </editpolicyProvider>
+   </editpolicyProvider-->
     <editpolicyProvider
          class="org.eclipse.papyrus.uml.diagram.sequence.providers.CustomCombinedFragmentEditPolicyProvider">
       <Priority

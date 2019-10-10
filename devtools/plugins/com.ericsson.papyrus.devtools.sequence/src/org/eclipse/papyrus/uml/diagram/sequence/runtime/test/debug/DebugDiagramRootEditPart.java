@@ -99,7 +99,10 @@ public class DebugDiagramRootEditPart extends DiagramRootEditPart {
 				return;
 			Diagram dia = (Diagram)getContents().getModel();
 			Interaction interaction = (Interaction)dia.getElement();
-			graph = InteractionGraphFactory.getInstance().createInteractionGraph(interaction, dia, getViewer());				
+			if (graph == null)
+				graph = InteractionGraphFactory.getInstance().createInteractionGraph(interaction, dia, getViewer());
+			else
+				graph.reset();
 
 			Rectangle bounds = getBounds();
 			Color oldFc = g.getForegroundColor();

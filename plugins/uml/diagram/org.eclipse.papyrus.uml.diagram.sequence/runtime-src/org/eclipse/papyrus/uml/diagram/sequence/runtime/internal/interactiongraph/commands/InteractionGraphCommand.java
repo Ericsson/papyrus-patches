@@ -69,6 +69,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.providers.SequenceDiagramElement
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Cluster;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphFactory;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Link;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.Node;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.ClusterImpl;
@@ -133,14 +134,21 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		this.interactionGraphService = new InteractionGraphService(this.interactionGraph,getEditingDomain());
 	}
 	
-	public InteractionGraphEditActionBuilder addAction() {
-		InteractionGraphEditActionBuilder builder = new InteractionGraphEditActionBuilder(interactionGraph);
+	public InteractionGraphEditActionBuilder addAction(String name) {
+		InteractionGraphEditActionBuilder builder = new InteractionGraphEditActionBuilder(name);
 		actions.add(builder.action());
+		
 		return builder;
 	}
 	
+	public void moveSelection(List<Element> elements, Point location) {
+		addAction("moveSelection")
+		.prepare(()->interactionGraphService.canMoveElements(elements, location))
+		.apply(()->interactionGraphService.moveElements(elements,location));		
+	}
+	
 	public void addLifeline(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
-		addAction()
+		addAction("addLifeline")
 			.prepare(()->interactionGraphService.canAddLifeline(elementAdapter, rect))
 			.apply(()->{return interactionGraphService.addLifeline(rect);})
 			.postApply((Cluster cluster) ->elementAdapter.setNewElement(cluster.getElement())) 
@@ -149,25 +157,29 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	public void moveLifeline(Lifeline lifeline, Point moveDelta) {
-		addAction()
+		addAction("moveLifeline")
+			.isApplicableIfExist(lifeline)
 			.prepare(()->interactionGraphService.canMoveLifeline(lifeline, moveDelta))
 			.apply(() -> interactionGraphService.moveLifeline(lifeline, moveDelta));
 	}
 
 	public void deleteLifeline(Lifeline lifeline) {
-		addAction()
+		addAction("deleteLifeline")
+			.isApplicableIfExist(lifeline)
 			.prepare(()->interactionGraphService.canDeleteLifeline(lifeline))
 			.apply(() -> interactionGraphService.deleteLifeline(lifeline));
 	}
 	
 	public void nudgeLifeline(Lifeline lifeline, Point moveDelta) {
-		addAction().
+		addAction("nudgeLifeline").
+			isApplicableIfExist(lifeline).
 			prepare(() -> interactionGraphService.canNudgeLifeline(lifeline, moveDelta)).
 			apply(	() -> interactionGraphService.nudgeLifeline(lifeline, moveDelta));
 	}
 
 	public void resizeLifeline(Lifeline lifeline, Dimension sizeDelta) {
-		addAction().
+		addAction("resizeLifeline").
+			isApplicableIfExist(lifeline).
 			prepare(() -> interactionGraphService.canResizeLifeline(lifeline, sizeDelta)).
 			apply(() -> interactionGraphService.resizeLifeline(lifeline, sizeDelta));
 	}
@@ -182,7 +194,7 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	public void addMessage(String name, MessageSort msgSort, CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, 
 			Element source, Point srcAnchor, Element target, Point trgAnchor) {
 
-		addAction().
+		addAction("addMessage").
 			prepare(() -> interactionGraphService.canAddMessage(msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).		
 			apply(()->interactionGraphService.addMessage(name, msgSort, elementAdapter, descriptor, source, srcAnchor, target, trgAnchor)).
 			postApply((Link message)->elementAdapter.setNewElement(message.getElement())).
@@ -193,20 +205,23 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 	
 	public void deleteMessage(Message msg) {				
-		addAction().
+		addAction("deleteMessage").
+			isApplicableIfExist(msg).
 			prepare(()->interactionGraphService.canDeleteMessage(msg)).
 			apply(()->interactionGraphService.deleteMessage(msg));
 	}
 
 	public void nudgeMessage(Message msg, Point delta) {
 		// TODO: @etxacam Need to handle Lost & Found messages, messages with gates and create message.		
-		addAction().
+		addAction("nudgeMessage").
+			isApplicableIfExist(msg).
 			prepare(()->interactionGraphService.canNudgeMessage(msg, delta)).
 			apply(()->interactionGraphService.nudgeMessage(msg, delta));
 	}
 
 	public void nudgeMessageEnd(MessageEnd msgEnd, Point location) {
-		addAction().
+		addAction("nudgeMessageEnd").
+			isApplicableIfExist(msgEnd).
 			prepare(()->interactionGraphService.canNudgeMessageEnd(msgEnd, location)).
 			apply(()->interactionGraphService.nudgeMessageEnd(msgEnd, location));
 	}
@@ -214,69 +229,79 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	// TODO: @etxacam Check self messages
 	public void moveMessage(Message msg, Point moveDelta) {
-		addAction().
+		addAction("moveMessage").
+			isApplicableIfExist(msg).
 			prepare(() -> interactionGraphService.canMoveMessage(msg, moveDelta)).
 			apply(() -> interactionGraphService.moveMessage(msg, moveDelta));
 	}
 	
 	public void moveMessageEnd(MessageEnd msgEnd, Lifeline toLifeline, Point location) {		
-		addAction().
+		addAction("moveMessageEndToLifeline").
+			isApplicableIfExist(msgEnd,toLifeline).
 			prepare(()->interactionGraphService.canMoveMessageEnd(msgEnd, toLifeline, location)).
 			apply(()->interactionGraphService.moveMessageEnd(msgEnd, toLifeline, location));
 	}
 	
 	
 	public void moveMessageEnd(MessageEnd msgEnd, InteractionFragment intFragment, Point location) {		
-		addAction().
+		addAction("moveMessageEndToInteractionFragment").
+			isApplicableIfExist(msgEnd, intFragment).
 			prepare(()->interactionGraphService.canMoveMessageEnd(msgEnd, intFragment, location)).
 			apply(()->interactionGraphService.moveMessageEnd(msgEnd, intFragment, location));
 	}
 
 	public void nudgeGate(Gate gate, Point location) {		
-		addAction().
+		addAction("nudgeGate").
+			isApplicableIfExist(gate).
 			prepare(() -> interactionGraphService.canNudgeGate(gate, location)).
 			apply(() -> interactionGraphService.nudgeGate(gate, location));
 	}
 	
 	public void moveGate(Gate gate, InteractionFragment intFragment, Point location) {
-		addAction().
+		addAction("moveGate").
+			isApplicableIfExist(gate, intFragment).
 			prepare(() -> interactionGraphService.canMoveGate(gate, intFragment, location)).
 			apply(() -> interactionGraphService.moveGate(gate, intFragment, location));
 	}
 
 	public void nudgeExecutionSpecification(ExecutionSpecification execSpec, int delta) {
-		addAction().
+		addAction("nudgeExecutionSpecification").
+			isApplicableIfExist(execSpec).
 			prepare(() -> interactionGraphService.canNudgeExecutionSpecification(execSpec, delta)).
 			apply(() -> interactionGraphService.nudgeExecutionSpecification(execSpec, delta));
 	}
 	
 	public void resizeExecutionSpecification(ExecutionSpecification execSpec, boolean topSide, int delta) {
-		addAction().
+		addAction("resizeExecutionSpecification").
+			isApplicableIfExist(execSpec).
 			prepare(() -> interactionGraphService.canResizeExecutionSpecification(execSpec, topSide, delta)).
 			apply(() -> interactionGraphService.resizeExecutionSpecification(execSpec, topSide, delta));
 
 	}
 
 	public void moveExecutionSpecification(ExecutionSpecification execSpec, Lifeline lifeline, Point point) {
-		addAction().
+		addAction("moveExecutionSpecification").
+			isApplicableIfExist(execSpec, lifeline).
 			prepare(() -> interactionGraphService.canMoveExecutionSpecification(execSpec, lifeline, point)).
 			apply(() -> interactionGraphService.moveExecutionSpecification(execSpec, lifeline, point));
 	}
 
 	public void moveExecutionSpecificationOccurrence(ExecutionSpecification execSpec, OccurrenceSpecification occurrenceSpec, Point point) {
-		addAction().
+		addAction("moveExecutionSpecificationOccurrence").
+			isApplicableIfExist(execSpec, occurrenceSpec).
 			prepare(() -> interactionGraphService.canMoveExecutionSpecificationOccurrence(execSpec, occurrenceSpec, point)).
 			apply(() -> interactionGraphService.moveExecutionSpecificationOccurrence(execSpec, occurrenceSpec, point));
 	}
 
 	public void deleteExecutionSpecification(ExecutionSpecification execSpec) {
-		addAction().
+		addAction("deleteExecutionSpecification").
+			isApplicableIfExist(execSpec).
 			prepare(()->interactionGraphService.canDeleteExecutionSpecification(execSpec)).
 			apply(() -> interactionGraphService.deleteExecutionSpecification(execSpec));
 	}
 	
 	public void addInteractionUse(CreateElementRequestAdapter elementAdapter, ViewDescriptor descriptor, Rectangle rect) {
-		addAction().
+		addAction("addInteractionUse").
 			prepare(() -> interactionGraphService.canAddInteractionUse(elementAdapter, descriptor, rect)).
 			apply(() -> interactionGraphService.addInteractionUse(elementAdapter, descriptor, rect)).
 			postApply((Cluster cluster) -> elementAdapter.setNewElement(cluster.getElement())).
@@ -284,39 +309,44 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 	}
 
 	public void nudgeInteractionUse(InteractionUse intUse, Point delta) {
-		addAction().
+		addAction("nudgeInteractionUse").
+			isApplicableIfExist(intUse).
 			prepare(()->interactionGraphService.canNudgeInteractionUse(intUse,delta)).
 			apply(()->interactionGraphService.nudgeInteractionUse(intUse,delta));
 	}
 
-	public void nudgeResizeInteractionUse(InteractionUse intUse, Rectangle rect) {
-		addAction().
-			prepare(()->interactionGraphService.canNudgeResizeInteractionUse(intUse,rect)).
-			apply(()->interactionGraphService.nudgeResizeInteractionUse(intUse,rect));
+	public void nudgeResizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
+		addAction("nudgeResizeInteractionUse").
+			isApplicableIfExist(intUse).
+			prepare(()->interactionGraphService.canNudgeResizeInteractionUse(intUse, deltaMove, deltaSize)).
+			apply(()->interactionGraphService.nudgeResizeInteractionUse(intUse, deltaMove, deltaSize));
 	}
 	
-	public void resizeInteractionUse(InteractionUse intUse, Rectangle rect) {
-		addAction().
-			prepare(()->interactionGraphService.canResizeInteractionUse(intUse,rect)).
-			apply(()->interactionGraphService.resizeInteractionUse(intUse,rect));
+	public void resizeInteractionUse(InteractionUse intUse, Point deltaMove, Dimension deltaSize) {
+		addAction("resizeInteractionUse").
+			isApplicableIfExist(intUse).
+			prepare(()->interactionGraphService.canResizeInteractionUse(intUse, deltaMove, deltaSize)).
+			apply(()->interactionGraphService.resizeInteractionUse(intUse,deltaMove, deltaSize));
 	}
 
 	public void moveInteractionUse(InteractionUse intUse, Rectangle rect) {
-		addAction().
+		addAction("moveInteractionUse").
+			isApplicableIfExist(intUse).
 			prepare(()->interactionGraphService.canMoveInteractionUse(intUse,rect)).
 			apply(()->interactionGraphService.moveInteractionUse(intUse,rect));		
 	}
 
 	public void deleteInteractionUse(InteractionUse intUse) {
-		addAction().
+		addAction("deleteInteractionUse").
+			isApplicableIfExist(intUse).
 			prepare(()->interactionGraphService.canDeleteInteractionUse(intUse)).
 			apply(()->interactionGraphService.deleteInteractionUse(intUse));		
 	}
-		
+
 	@Override
 	public boolean canExecute() {
 		for (InteractionGraphEditAction action : actions) {
-			if (!action.prepare()) {
+			if (action.isApplicable(interactionGraph) && !action.prepare(interactionGraph)) {
 				return false;
 			}
 		}
@@ -325,6 +355,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 
 	@Override
 	protected CommandResult doExecuteWithResult(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
+		// Force reload the graph in case something has change by another command.
+		interactionGraph.reset();
+
 		if (!canExecute()) {
 			return CommandResult.newCancelledCommandResult();
 		}
@@ -332,6 +365,9 @@ public class InteractionGraphCommand extends AbstractTransactionalCommand {
 		CommandResult res;
 		try {
 			for (InteractionGraphEditAction action : actions) {
+				if (!action.isApplicable(interactionGraph))
+					continue;
+				
 				if (!action.apply(interactionGraph)) {
 					return CommandResult.newErrorCommandResult("Could not apply action.");
 				}

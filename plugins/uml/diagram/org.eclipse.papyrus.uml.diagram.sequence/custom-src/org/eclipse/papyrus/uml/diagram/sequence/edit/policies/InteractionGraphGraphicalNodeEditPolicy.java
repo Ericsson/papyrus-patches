@@ -109,7 +109,7 @@ public class InteractionGraphGraphicalNodeEditPolicy extends DefaultGraphicalNod
 		Command cmd = super.getConnectionAndRelationshipCreateCommand(request);
 		if (cmd == null) {
 			// No semantic policy, so we delegate to the 
-			return super.getConnectionCreateCommand(request);
+			return getConnectionCreateCommand(request);
 		}
 		
 		return cmd;

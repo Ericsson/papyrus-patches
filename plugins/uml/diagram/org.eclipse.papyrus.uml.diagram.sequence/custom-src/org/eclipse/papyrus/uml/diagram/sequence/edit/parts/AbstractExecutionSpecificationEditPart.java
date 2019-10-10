@@ -73,6 +73,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.figures.ExecutionSpecificationNo
 import org.eclipse.papyrus.uml.diagram.sequence.locator.CenterLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
+import org.eclipse.papyrus.uml.diagram.sequence.tools.PapyrusSequenceDragEditPartsTracker;
 import org.eclipse.papyrus.uml.diagram.sequence.util.DurationLinkUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.GeneralOrderingUtil;
 import org.eclipse.papyrus.uml.diagram.sequence.util.OccurrenceSpecificationUtil;
@@ -561,7 +562,7 @@ public abstract class AbstractExecutionSpecificationEditPart extends RoundedComp
 
 	@Override
 	public DragTracker getDragTracker(Request req) {
-		return new PapyrusDragEditPartsTrackerEx(this, true, false, false) {
+		return new PapyrusSequenceDragEditPartsTracker(this, true, false, false) {
 			@Override
 			protected void setCloneActive(boolean cloneActive) {
 				super.setCloneActive(false); // Disable cloning

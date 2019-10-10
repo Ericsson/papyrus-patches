@@ -14,6 +14,7 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.commands;
 
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,12 +22,24 @@ import java.util.function.Supplier;
 
 import org.eclipse.gmf.runtime.common.core.command.CommandResult;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraph;
+import org.eclipse.uml2.uml.Element;
 
 public class InteractionGraphEditActionBuilder {
-	public InteractionGraphEditActionBuilder(InteractionGraph interactionGraph) {
-		this.action = new Action(interactionGraph);
+	public InteractionGraphEditActionBuilder(String name) {
+		this.action = new Action(name);
 	}
 	
+	public InteractionGraphEditActionBuilder isApplicableIfExist(Element... els) {
+		this.action.applicable = (InteractionGraph g)->Arrays.asList(els).stream().allMatch(				
+				d->(g.getNodeFor(d) != null || g.getLinkFor(d) != null) && d.eResource() != null);
+		return this;
+	}
+
+	public InteractionGraphEditActionBuilder isApplicable(Function<InteractionGraph, Boolean> applicable) {
+		this.action.applicable = applicable;
+		return this;
+	}
+
 	public InteractionGraphEditActionBuilder prepare(Function<InteractionGraph, Boolean> prepare) {
 		this.action.prepare = prepare;
 		return this;
@@ -79,24 +92,24 @@ public class InteractionGraphEditActionBuilder {
 	private Action action;
 	
 	private static class Action implements InteractionGraphEditAction {
-		public Action(InteractionGraph interactionGraph) {
-			this.interactionGraph = interactionGraph;
+		public Action(String name) {
+			this.name = name;
 		}
-		
-		protected InteractionGraph getInteractionGraph() {
-			return interactionGraph;
-		}
-	
-		
 		
 		@Override
-		public boolean prepare() {
+		public boolean isApplicable(InteractionGraph interactionGraph) {
+			if (applicable == null)
+				return true;
+			return applicable.apply(interactionGraph);
+		};
+
+		@Override
+		public boolean prepare(InteractionGraph interactionGraph) {
 			if (prepare != null)
 				return prepare.apply(interactionGraph);
 			return true;
 		};
-	
-	
+		
 		@Override
 		public boolean apply(InteractionGraph graph) {
 			if (apply == null)
@@ -128,7 +141,8 @@ public class InteractionGraphEditActionBuilder {
 			}
 		}
 
-		private InteractionGraph interactionGraph;
+		private String name;
+		private Function<InteractionGraph, Boolean> applicable;
 		private Function<InteractionGraph, Boolean> prepare;
 		private Function<InteractionGraph, ?> apply;
 		private BiConsumer<InteractionGraph, ?> postApply;

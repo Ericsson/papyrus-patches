@@ -37,7 +37,6 @@ import org.eclipse.gef.Request;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
 import org.eclipse.gef.requests.CreateRequest;
 import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editpolicies.DragDropEditPolicy;
 import org.eclipse.gmf.runtime.diagram.ui.editpolicies.EditPolicyRoles;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateUnspecifiedTypeRequest;
 import org.eclipse.gmf.runtime.diagram.ui.requests.CreateViewAndElementRequest;
@@ -45,7 +44,6 @@ import org.eclipse.gmf.runtime.diagram.ui.util.EditPartUtil;
 import org.eclipse.gmf.runtime.emf.type.core.IElementType;
 import org.eclipse.gmf.runtime.gef.ui.figures.NodeFigure;
 import org.eclipse.gmf.runtime.notation.View;
-import org.eclipse.papyrus.infra.gmfdiag.common.snap.PapyrusDragEditPartsTrackerEx;
 import org.eclipse.papyrus.uml.diagram.common.draw2d.anchors.FixedAnchor;
 import org.eclipse.papyrus.uml.diagram.sequence.LifelineNodePlate;
 import org.eclipse.papyrus.uml.diagram.sequence.edit.policies.InteractionGraphGraphicalNodeEditPolicy;
@@ -61,6 +59,7 @@ import org.eclipse.papyrus.uml.diagram.sequence.locator.TimeElementLocator;
 import org.eclipse.papyrus.uml.diagram.sequence.providers.UMLElementTypes;
 import org.eclipse.papyrus.uml.diagram.sequence.referencialgrilling.DisplayEvent;
 import org.eclipse.papyrus.uml.diagram.sequence.runtime.internal.interactiongraph.editpolicies.InteractionGraphSemanticEditPolicy;
+import org.eclipse.papyrus.uml.diagram.sequence.tools.PapyrusSequenceDragEditPartsTracker;
 import org.eclipse.papyrus.uml.diagram.sequence.util.SequenceUtil;
 import org.eclipse.uml2.uml.Message;
 import org.eclipse.uml2.uml.MessageEnd;
@@ -393,7 +392,7 @@ public class CLifeLineEditPart extends LifelineEditPart {
 
 	@Override
 	public DragTracker getDragTracker(Request req) {
-		return new PapyrusDragEditPartsTrackerEx(this, true, false, false) {
+		return new PapyrusSequenceDragEditPartsTracker(this, true, false, false) {
 			@Override
 			protected void setCloneActive(boolean cloneActive) {
 				super.setCloneActive(false); // Disable cloning

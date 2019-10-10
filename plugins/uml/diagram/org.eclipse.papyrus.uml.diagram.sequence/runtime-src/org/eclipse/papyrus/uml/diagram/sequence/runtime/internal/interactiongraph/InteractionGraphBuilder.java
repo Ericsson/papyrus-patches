@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -63,11 +64,13 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		DiagramEditPart editPart = viewer == null ? null : (DiagramEditPart) viewer.getEditPartRegistry().get(diagram);
 		graph = new InteractionGraphImpl(interaction, diagram, editPart);
 		graph.setBuilder(this);
-		cache(graph.getInteraction(), graph);
 		this.viewer = viewer;
 	}
 
 	public InteractionGraph build() {
+		nodeCache = new HashMap<>();
+		cache(graph.getInteraction(), graph);
+		
 		startExecutionSpecification = graph.getInteraction().getLifelines().stream()
 				.map(Lifeline::getCoveredBys).flatMap(List::stream)
 				.filter(ExecutionSpecification.class::isInstance)
@@ -200,8 +203,9 @@ class InteractionGraphBuilder extends UMLSwitch<Node> {
 		ClusterImpl execSpecCluster = startNode.getParent();
 
 		NodeImpl node = new NodeImpl(element);
+		node.setBoundsPosition(PositionConstants.TOP | PositionConstants.CENTER);
 		execSpecCluster.addNode(node);
-		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));
+		node.setView(ViewUtilities.getViewForElement(graph.getDiagram(), element));		
 		cache(element, node);
 
 		return node;

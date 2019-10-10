@@ -16,23 +16,15 @@
 
 package org.eclipse.papyrus.uml.diagram.sequence.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.Request;
 import org.eclipse.gef.SharedCursors;
 import org.eclipse.gef.commands.Command;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.DiagramRootEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.GraphicalEditPart;
-import org.eclipse.gmf.runtime.diagram.ui.editparts.IGraphicalEditPart;
+import org.eclipse.gef.requests.LocationRequest;
 import org.eclipse.papyrus.infra.gmfdiag.common.selection.SelectSeveralLinksEditPartTracker;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.AbstractMessageEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.edit.parts.MessageCreateEditPart;
-import org.eclipse.papyrus.uml.diagram.sequence.part.UMLDiagramEditorPlugin;
+import org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph.InteractionGraphSelectionCommandProxy;
 import org.eclipse.swt.graphics.Cursor;
 
 /**
@@ -55,4 +47,28 @@ public class SelectMessagesEditPartTracker extends SelectSeveralLinksEditPartTra
 		
 		return super.calculateCursor();
 	}
+
+	@Override
+	protected Command getCommand() {
+		LocationRequest request = (LocationRequest)getSourceRequest();
+		EditPart editPart = getSourceEditPart();
+		Point p = getLocation();
+		request.setLocation(p);
+		request.getExtendedData().put(InteractionGraphSelectionCommandProxy.START_LOCATION, getStartLocation());
+		selectionCommandProxy.setRequest(request, editPart);
+		// Check if command is null. 
+		Command cmd = selectionCommandProxy.getMultiSelectionCommand();
+		if (cmd != null)
+			return cmd;
+		return super.getCommand();
+	}
+	
+	protected Request getSourceRequest() {
+		if (sourceRequest == null)
+			sourceRequest = createSourceRequest();
+		return sourceRequest;		
+	}
+	
+	private Request sourceRequest;
+	private InteractionGraphSelectionCommandProxy selectionCommandProxy = new InteractionGraphSelectionCommandProxy();
 }

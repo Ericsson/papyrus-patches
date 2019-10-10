@@ -17,6 +17,7 @@ package org.eclipse.papyrus.uml.diagram.sequence.runtime.interactiongraph;
 
 import java.util.Map;
 
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gmf.runtime.notation.Location;
 import org.eclipse.gmf.runtime.notation.View;
@@ -51,6 +52,8 @@ public interface GraphItem {
 	 */
 	public View getView();
 
+	public Rectangle getBounds();
+	
 	/**
 	 * The EditPart associated to the view in the notation model. The edit parts are used to calculate the position
 	 * in the diagram editor.
@@ -61,6 +64,6 @@ public interface GraphItem {
 
 	public Object getProperty(String name);
 	public void setProperty(String name, Object value);
-	public Map<String,Object> getProperties();
+	public Map<String,Object> getProperties();	
 
 }

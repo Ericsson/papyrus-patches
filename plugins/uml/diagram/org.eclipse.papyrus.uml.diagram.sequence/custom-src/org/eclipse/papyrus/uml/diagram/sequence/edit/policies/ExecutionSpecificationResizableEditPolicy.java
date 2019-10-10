@@ -85,7 +85,7 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 		if (request.getEditParts() == null || request.getEditParts().isEmpty())
 			return null;
 		
-		GraphicalEditPart ep = (GraphicalEditPart)request.getEditParts().get(0);
+		EditPart ep = getHost();
 		View view = (View)ep.getModel();
 		ExecutionSpecification exec = (ExecutionSpecification)view.getElement();
 		Cluster execCluster = graph.getClusterFor(exec); 
@@ -114,7 +114,7 @@ public class ExecutionSpecificationResizableEditPolicy extends ResizableShapeEdi
 		if (graph == null)
 			return null;
 		
-		GraphicalEditPart ep = (GraphicalEditPart)request.getEditParts().get(0);
+		EditPart ep = getHost();
 		View view = (View)ep.getModel();
 		ExecutionSpecification exec = (ExecutionSpecification)view.getElement();
 		boolean detaching = KeyboardHandler.getKeyboardHandler().isAnyPressed();		

@@ -67,6 +67,9 @@ public class InteractionGraphRequestHelper {
 			view = view.getDiagram();
 		}
 
+		if (view == null)
+			return null;
+		
 		Diagram dia = (Diagram) view;
 		Object el = dia.getElement();
 		if (!(el instanceof Interaction)) {

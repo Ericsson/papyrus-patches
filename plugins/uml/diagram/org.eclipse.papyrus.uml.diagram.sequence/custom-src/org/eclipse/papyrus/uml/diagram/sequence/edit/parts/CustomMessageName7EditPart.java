@@ -55,7 +55,8 @@ public class CustomMessageName7EditPart extends MessageFoundNameEditPart impleme
 	protected void createDefaultEditPolicies() {
 		super.createDefaultEditPolicies();
 		installEditPolicy(EditPolicy.PRIMARY_DRAG_ROLE, new MessageLinkLabelDragPolicy());
-		installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new DefaultSemanticEditPolicy());
+		removeEditPolicy(EditPolicyRoles.SEMANTIC_ROLE);
+		//installEditPolicy(EditPolicyRoles.SEMANTIC_ROLE, new DefaultSemanticEditPolicy());
 	}
 
 	@Override

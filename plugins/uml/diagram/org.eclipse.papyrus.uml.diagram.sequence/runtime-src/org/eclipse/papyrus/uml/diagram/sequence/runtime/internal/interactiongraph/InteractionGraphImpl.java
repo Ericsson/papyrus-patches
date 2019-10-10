@@ -77,6 +77,30 @@ public class InteractionGraphImpl extends FragmentClusterImpl implements Interac
 	}
 
 	@Override
+	public void reset() {
+		super.reset();
+		this.gridEnabled = ViewUtilities.isSnapToGrid(viewer, diagram);
+		if (!gridEnabled)
+			this.gridSpacing = 20;
+		else
+			this.gridSpacing = (int)ViewUtilities.getGridSpacing(viewer, diagram);
+		
+		if (this.gridSpacing < 20) {
+			this.gridSpacing = 20;
+		}
+
+		setView(ViewUtilities.getViewForElement(diagram, getElement()));		
+
+		lifelineClusters = new ArrayList<>();
+		messageLinks = new ArrayList<>();
+		rows = new ArrayList<>();
+		columns = new ArrayList<>();
+		layoutMarks = new ArrayList<>();
+		
+		builder.build();
+	}
+	
+	@Override
 	public InteractionGraphImpl getInteractionGraph() {
 		return this;
 	}
